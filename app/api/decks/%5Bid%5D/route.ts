@@ -1,3 +1,4 @@
+```
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
@@ -5,7 +6,7 @@ import { prisma } from "@/app/lib/prisma";
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     // @ts-ignore
     const session = await getServerSession(authOptions);
