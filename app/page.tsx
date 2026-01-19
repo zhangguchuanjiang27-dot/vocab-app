@@ -145,7 +145,7 @@ export default function Home() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="text-center md:text-left">
             <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              AI Vocabulary Builder
+              AI Vocabulary Builder v1.0
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
               Your Personal Cloud Dictionary
