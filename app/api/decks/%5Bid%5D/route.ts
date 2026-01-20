@@ -1,14 +1,12 @@
-```
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
 export async function DELETE(
-    req: Request,
+    _req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    // @ts-ignore
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -21,7 +19,6 @@ export async function DELETE(
         const result = await prisma.deck.deleteMany({
             where: {
                 id: id,
-                // @ts-ignore
                 userId: session.user.id
             }
         });
