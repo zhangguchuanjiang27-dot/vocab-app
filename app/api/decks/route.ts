@@ -3,6 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
+interface WordInput {
+  word: string;
+  meaning: string;
+  example?: string;
+  example_jp?: string;
+}
+
 export async function GET(req: Request) {
     // @ts-ignore
     const session = await getServerSession(authOptions);
