@@ -61,8 +61,8 @@ export async function POST(req: Request) {
           create: words.map((w: WordInput) => ({
             word: w.word,
             meaning: w.meaning,
-            example: w.example || null,       // undefined対策
-            example_jp: w.example_jp || null  // undefined対策
+            example: w.example || "",       // undefined対策
+            example_jp: w.example_jp || ""  // undefined対策
           }))
         }
       },
