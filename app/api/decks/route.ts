@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
+// POSTで受け取るデータの型を定義（anyを避けるため）
 interface WordInput {
   word: string;
   meaning: string;
@@ -10,59 +11,67 @@ interface WordInput {
   example_jp?: string;
 }
 
-export async function GET(req: Request) {
-    // @ts-ignore
-    const session = await getServerSession(authOptions);
+export async function GET() {
+  const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+  // session.user.id が存在するかチェック
+  // 注意: NextAuthの型定義をしていない場合、ここでエラーが出ることがあるためキャストしています
+  const userId = (session?.user as any)?.id;
 
-    try {
-        const decks = await prisma.deck.findMany({
-            // @ts-ignore
-            where: { userId: session.user.id },
-            include: { words: true },
-            orderBy: { createdAt: 'desc' }
-        });
-        return NextResponse.json(decks);
-    } catch (err) {
-        console.error(err);
-        return NextResponse.json({ error: "Failed to fetch decks" }, { status: 500 });
-    }
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const decks = await prisma.deck.findMany({
+      where: { userId: userId }, // 取得したIDを使用
+      include: { words: true },
+      orderBy: { createdAt: 'desc' }
+    });
+    return NextResponse.json(decks);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed to fetch decks" }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
-    // @ts-ignore
-    const session = await getServerSession(authOptions);
+  const session = await getServerSession(authOptions);
+  
+  const userId = (session?.user as any)?.id;
 
-    if (!session?.user?.id) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const body = await req.json();
+    const { title, words } = body;
+
+    // バリデーション: タイトルや単語リストがない場合を弾く
+    if (!title || !Array.isArray(words)) {
+        return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    try {
-        const { title, words } = await req.json();
+    const deck = await prisma.deck.create({
+      data: {
+        title,
+        userId: userId,
+        words: {
+          create: words.map((w: WordInput) => ({
+            word: w.word,
+            meaning: w.meaning,
+            example: w.example || null,       // undefined対策
+            example_jp: w.example_jp || null  // undefined対策
+          }))
+        }
+      },
+      include: { words: true }
+    });
 
-        const deck = await prisma.deck.create({
-            data: {
-                title,
-                // @ts-ignore
-                userId: session.user.id,
-                words: {
-                    create: words.map((w: any) => ({
-                        word: w.word,
-                        meaning: w.meaning,
-                        example: w.example,
-                        example_jp: w.example_jp
-                    }))
-                }
-            },
-            include: { words: true }
-        });
-
-        return NextResponse.json(deck);
-    } catch (err) {
-        console.error(err);
-        return NextResponse.json({ error: "Failed to create deck" }, { status: 500 });
-    }
+    return NextResponse.json(deck);
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed to create deck" }, { status: 500 });
+  }
 }
