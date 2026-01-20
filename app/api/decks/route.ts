@@ -37,7 +37,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  
+
   const userId = (session?.user as any)?.id;
 
   if (!userId) {
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
     // バリデーション: タイトルや単語リストがない場合を弾く
     if (!title || !Array.isArray(words)) {
-        return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
     const deck = await prisma.deck.create({
