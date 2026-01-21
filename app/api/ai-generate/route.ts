@@ -36,8 +36,18 @@ export async function POST(req: Request) {
       入力された単語の数がこれより多い場合でも、必ず **最大 ${userCredits} 個まで** に制限して出力してください。
       リストの上から順に ${userCredits} 個を選んでください。
       
+      【重要：前処理ルール】
+      1. **原形への変換**: 入力された単語が変化形（過去形、複数形、進行形など）の場合、**必ず原形（辞書の見出し語）**に直してください。（例: running -> run, cats -> cat）
+      2. **スペル修正**: 軽微なスペルミスは修正してください。（例: aple -> apple）
+      3. **不明な単語**: もし「実在しない単語」や「意味不明な文字列」の場合は、その単語の情報を以下のように返してください：
+         - word: 元の入力文字列
+         - partOfSpeech: "不明"
+         - meaning: "UNKNOWN"
+         - example: "-"
+         - example_jp: "-"
+      
       各単語について以下の情報を含めてください：
-      1. word: 元の英単語
+      1. word: 修正後の英単語（原形）
       2. partOfSpeech: 品詞（名詞, 動詞, 形容詞, 副詞 etc. 日本語で）
       3. meaning: 日本語の核心的な意味（簡潔に）
       4. example: その単語を使った英語の例文（短くシンプルに）
@@ -46,7 +56,8 @@ export async function POST(req: Request) {
       出力は以下のJSON形式のみを返してください：
       {
         "words": [
-          { "word": "apple", "partOfSpeech": "名詞", "meaning": "りんご", "example": "I ate an apple.", "example_jp": "私はりんごを食べた。" }
+          { "word": "apple", "partOfSpeech": "名詞", "meaning": "りんご", "example": "I ate an apple.", "example_jp": "私はりんごを食べた。" },
+          { "word": "dsjfkl", "partOfSpeech": "不明", "meaning": "UNKNOWN", "example": "-", "example_jp": "-" }
         ]
       }
 
