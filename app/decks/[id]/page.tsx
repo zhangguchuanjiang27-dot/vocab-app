@@ -37,6 +37,10 @@ export default function DeckPage() {
     const [isFlipped, setIsFlipped] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
 
+    // Title edit state
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editTitle, setEditTitle] = useState("");
+
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/");
@@ -51,6 +55,7 @@ export default function DeckPage() {
             if (res.ok) {
                 const data = await res.json();
                 setDeck(data);
+                setEditTitle(data.title);
             } else {
                 alert("Failed to load deck");
                 router.push("/");
@@ -60,6 +65,52 @@ export default function DeckPage() {
             alert("Error loading deck");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUpdateTitle = async () => {
+        if (!editTitle.trim() || !deck) return;
+
+        try {
+            const res = await fetch(`/api/decks/${deckId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ title: editTitle }),
+            });
+
+            if (res.ok) {
+                setDeck({ ...deck, title: editTitle });
+                setIsEditingTitle(false);
+            } else {
+                alert("Failed to update title");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error updating title");
+        }
+    };
+
+    const handleDeleteWord = async (wordId: string | undefined) => {
+        if (!wordId || !deck) return;
+        if (!confirm("本当にこの単語を削除しますか？")) return;
+
+        try {
+            const res = await fetch(`/api/words/${wordId}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                // ローカルstateから削除
+                setDeck({
+                    ...deck,
+                    words: deck.words.filter(w => w.id !== wordId)
+                });
+            } else {
+                alert("削除に失敗しました");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました");
         }
     };
 
@@ -236,19 +287,43 @@ export default function DeckPage() {
             <main className="max-w-4xl mx-auto">
                 {/* Cover / Info */}
                 <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-3xl sm:text-4xl font-black mb-2" style={{ fontFamily: 'var(--font-merriweather)' }}>{deck.title}</h1>
+                    <div className="flex-1">
+                        {isEditingTitle ? (
+                            <div className="flex gap-2 mb-2 justify-center sm:justify-start">
+                                <input
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    className="text-3xl sm:text-4xl font-black bg-neutral-100 dark:bg-neutral-800 border-2 border-indigo-500 rounded-lg px-2 py-1 w-full max-w-md focus:outline-none"
+                                    autoFocus
+                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
+                                />
+                                <button onClick={handleUpdateTitle} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg text-sm shrink-0">Save</button>
+                                <button onClick={() => setIsEditingTitle(false)} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 font-bold rounded-lg text-sm shrink-0">Cancel</button>
+                            </div>
+                        ) : (
+                            <h1
+                                className="text-3xl sm:text-4xl font-black mb-2 group cursor-pointer flex items-center gap-3 justify-center sm:justify-start"
+                                onClick={() => setIsEditingTitle(true)}
+                                title="Click to rename"
+                            >
+                                <span style={{ fontFamily: 'var(--font-merriweather)' }}>{deck.title}</span>
+                                <span className="opacity-0 group-hover:opacity-100 text-neutral-400 text-sm">✎</span>
+                            </h1>
+                        )}
                         <p className="text-neutral-500 font-mono">{deck.words.length} items</p>
                     </div>
-                    <button
-                        onClick={() => {
-                            handleRestart();
-                            setMode('flashcard');
-                        }}
-                        className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3"
-                    >
-                        <span className="text-2xl">▶</span> Start Flashcards
-                    </button>
+
+                    {deck.words.length > 0 && (
+                        <button
+                            onClick={() => {
+                                handleRestart();
+                                setMode('flashcard');
+                            }}
+                            className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3"
+                        >
+                            <span className="text-2xl">▶</span> Start Flashcards
+                        </button>
+                    )}
                 </div>
 
                 {/* Word List */}
@@ -256,20 +331,35 @@ export default function DeckPage() {
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex items-center justify-between">
                         <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">Word List</h2>
                     </div>
-                    {deck.words.map((card, idx) => (
-                        <div key={idx} className="p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex flex-col sm:flex-row gap-4 sm:items-baseline">
-                            <div className="flex items-baseline gap-3 min-w-[200px]">
-                                <span className="text-lg font-bold font-serif" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
-                                {card.partOfSpeech && (
-                                    <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-medium">{card.partOfSpeech}</span>
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-1" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
-                                <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
-                            </div>
+                    {deck.words.length === 0 ? (
+                        <div className="p-12 text-center text-neutral-400">
+                            No words in this deck. Add some from the home page!
                         </div>
-                    ))}
+                    ) : (
+                        deck.words.map((card, idx) => (
+                            <div key={idx} className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex flex-col sm:flex-row gap-4 sm:items-baseline relative">
+                                <div className="flex items-baseline gap-3 min-w-[200px]">
+                                    <span className="text-lg font-bold font-serif" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                    {card.partOfSpeech && (
+                                        <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-medium">{card.partOfSpeech}</span>
+                                    )}
+                                </div>
+                                <div className="flex-1 pr-8">
+                                    <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-1" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
+                                    <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
+                                </div>
+
+                                {/* Delete Button */}
+                                <button
+                                    onClick={() => handleDeleteWord(card.id)}
+                                    className="absolute top-4 right-4 sm:top-1/2 sm:-translate-y-1/2 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full"
+                                    title="Remove word"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                </button>
+                            </div>
+                        ))
+                    )}
                 </div>
             </main>
         </div>
