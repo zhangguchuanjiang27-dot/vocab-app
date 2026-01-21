@@ -11,11 +11,13 @@ export async function POST(req: Request) {
 
     // Check credits
     const user = await prisma.user.findUnique({
-        where: { id: session.user.id }, // session.user.id is guaranteed by auth.ts callback
+        where: { id: session.user.id },
         select: { credits: true }
     });
 
-    if (!user || (user.credits ?? 0) <= 0) {
+    const userCredits = user?.credits ?? 0;
+
+    if (!user || userCredits <= 0) {
         return NextResponse.json(
             { error: "Insufficient credits", type: "credit_limit" },
             { status: 403 }
@@ -29,12 +31,17 @@ export async function POST(req: Request) {
       あなたは英語学習のエキスパートです。
       以下の英単語リスト（改行区切り）をもとに、学習用の単語帳データをJSON形式で生成してください。
       
+      【重要】
+      ユーザーの残りクレジットは ${userCredits} です。
+      入力された単語の数がこれより多い場合でも、必ず **最大 ${userCredits} 個まで** に制限して出力してください。
+      リストの上から順に ${userCredits} 個を選んでください。
+      
       各単語について以下の情報を含めてください：
       1. word: 元の英単語
       2. meaning: 日本語の核心的な意味（簡潔に）
       3. example: その単語を使った英語の例文（短くシンプルに）
       4. example_jp: 例文の和訳
-
+      
       出力は以下のJSON形式のみを返してください：
       {
         "words": [
