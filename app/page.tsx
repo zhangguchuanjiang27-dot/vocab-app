@@ -190,8 +190,68 @@ export default function Home() {
     }
   };
 
+  // 既存のデッキに追加するためのステート
+  const [showAddToDeckModal, setShowAddToDeckModal] = useState(false);
+
+  // 既存のデッキに追加処理
+  const handleAddToExistingDeck = async (deckId: string, deckTitle: string) => {
+    if (!words.length) return;
+    if (!confirm(`単語帳 "${deckTitle}" に現在の ${words.length} 語を追加しますか？`)) return;
+
+    try {
+      const res = await fetch(`/api/decks/${deckId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ words }),
+      });
+
+      if (!res.ok) throw new Error("Failed to add words");
+
+      alert(`"${deckTitle}" に追加しました！`);
+      setShowAddToDeckModal(false);
+      setWords([]); // 追加後はクリア
+      fetchDecks(); // 一覧更新
+    } catch (e) {
+      console.error(e);
+      alert("追加に失敗しました");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-8 sm:p-20 transition-colors duration-300">
+      {/* Add To Deck Modal */}
+      {showAddToDeckModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
+            <h3 className="text-xl font-bold mb-4">どの単語帳に追加しますか？</h3>
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-2 mb-4">
+              {savedDecks.length === 0 ? (
+                <p className="text-neutral-500 text-center py-4">保存された単語帳がありません</p>
+              ) : (
+                savedDecks.map((deck) => (
+                  <button
+                    key={deck.id}
+                    onClick={() => handleAddToExistingDeck(deck.id, deck.title)}
+                    className="flex justify-between items-center p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left group"
+                  >
+                    <span className="font-bold">{deck.title}</span>
+                    <span className="text-xs text-neutral-400 group-hover:text-indigo-500">
+                      + Add here
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+            <button
+              onClick={() => setShowAddToDeckModal(false)}
+              className="w-full py-3 rounded-xl bg-neutral-200 dark:bg-neutral-800 font-bold text-sm hover:opacity-80 transition-opacity"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-6xl mx-auto flex flex-col gap-12">
 
         {/* Header with Auth */}
@@ -356,18 +416,27 @@ export default function Home() {
                         </div>
                         <input
                           type="text"
-                          placeholder="単語帳の名前（例: Chapter 1）"
+                          placeholder="新しい単語帳の名前"
                           value={deckTitle}
                           onChange={(e) => setDeckTitle(e.target.value)}
                           className="flex-1 bg-transparent border-none focus:ring-0 text-lg font-medium placeholder:text-neutral-400 min-w-0"
                         />
                       </div>
-                      <button
-                        onClick={handleSaveDeck}
-                        className="w-full sm:w-auto whitespace-nowrap px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95"
-                      >
-                        保存する
-                      </button>
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <button
+                          onClick={() => setShowAddToDeckModal(true)}
+                          className="flex-1 sm:flex-none whitespace-nowrap px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm font-bold rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all active:scale-95"
+                          title="既存の単語帳に追加"
+                        >
+                          + 既存に追加
+                        </button>
+                        <button
+                          onClick={handleSaveDeck}
+                          className="flex-1 sm:flex-none whitespace-nowrap px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95"
+                        >
+                          新規保存
+                        </button>
+                      </div>
                     </div>
 
                     {/* Cards Grid */}
