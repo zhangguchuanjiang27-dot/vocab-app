@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { signOut, useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // 型定義
 type WordCard = {
@@ -22,6 +23,7 @@ type Deck = {
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const isLoadingSession = status === "loading";
 
   // 生成・編集用ステート
@@ -131,12 +133,9 @@ export default function Home() {
     }
   };
 
-  // デッキ読み込み処理
-  const handleLoadDeck = (deck: Deck) => {
-    setWords(deck.words);
-    setInput(deck.words.map(w => w.word).join("\n"));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setShowSaved(false);
+  // 単語帳クリック時の処理（詳細ページへ遷移）
+  const handleDeckClick = (deckId: string) => {
+    router.push(`/decks/${deckId}`);
   };
 
   const handleGenerate = async () => {
@@ -158,10 +157,6 @@ export default function Home() {
       if (data.words) {
         // 既存のリストに追加（追記モード）
         setWords((prev) => [...prev, ...data.words]);
-        // 入力欄はクリアしない方が連続入力しやすいかもしれないが、
-        // ユーザーが「Enterwordsに残っている」と言及していたので、
-        // 使い勝手を考慮して、生成成功したら入力欄は空にしたほうが親切かも？
-        // 今回はユーザーの要望的に「どんどん追加」なので、入力欄はクリアして次を入れやすくする。
         setInput("");
       } else {
         throw new Error("Invalid response format");
@@ -316,7 +311,7 @@ export default function Home() {
                     {savedDecks.map((deck) => (
                       <div
                         key={deck.id}
-                        onClick={() => handleLoadDeck(deck)}
+                        onClick={() => handleDeckClick(deck.id)}
                         className="group relative p-6 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer"
                       >
                         <button
