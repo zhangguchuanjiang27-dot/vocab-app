@@ -176,12 +176,15 @@ export default function Home() {
 
   // 単語個別削除
   const handleRemoveWord = (index: number) => {
-    setWords((prev) => prev.filter((_, i) => i !== index));
+    if (confirm("この単語をリストから削除しますか？")) {
+      setWords((prev) => prev.filter((_, i) => i !== index));
+    }
   };
 
   // リスト全クリア
   const handleClearList = () => {
-    if (confirm("作成中のリストを全て消去しますか？")) {
+    if (words.length === 0) return;
+    if (confirm("現在作成中のリストを全て消去しますか？\n（この操作は取り消せません）")) {
       setWords([]);
       setDeckTitle("");
     }
