@@ -18,9 +18,17 @@ export async function POST(req: Request) {
 
     try {
         if (!endpointSecret) throw new Error("Stripe webhook secret is missing");
+
+        console.log("Webhook signature:", sig);
+        console.log("Webhook body length:", body.length);
+
         event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
     } catch (err: any) {
-        console.error(`Webhook signature verification failed.`, err.message);
+        console.error(`Webhook signature verification failed. Error: ${err.message}`);
+        // キーの一部だけログに出して確認（セキュリティのため全表示は避ける）
+        const secretHint = endpointSecret ? `...${endpointSecret.slice(-4)}` : "missing";
+        console.error(`Secret hint: ${secretHint}, Sig hint: ${sig ? "present" : "missing"}`);
+
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
 
