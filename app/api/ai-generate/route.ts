@@ -69,11 +69,15 @@ export async function POST(req: Request) {
         const data = await response.json();
         const result = JSON.parse(data.choices[0].message.content || "{}");
 
-        // Deduct credit
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { credits: { decrement: 1 } }
-        });
+        const generatedCount = result.words ? result.words.length : 0;
+
+        // Deduct credits based on the number of words generated
+        if (generatedCount > 0) {
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { credits: { decrement: generatedCount } }
+            });
+        }
 
         return NextResponse.json(result);
 
