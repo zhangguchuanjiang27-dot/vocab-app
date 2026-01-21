@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
 
 export async function POST(req: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Check credits
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id }, // session.user.id is guaranteed by auth.ts callback
+        select: { credits: true }
+    });
+
+    if (!user || (user.credits ?? 0) <= 0) {
+        return NextResponse.json(
+            { error: "Insufficient credits", type: "credit_limit" },
+            { status: 403 }
+        );
     }
 
     try {
@@ -54,6 +68,13 @@ export async function POST(req: Request) {
 
         const data = await response.json();
         const result = JSON.parse(data.choices[0].message.content || "{}");
+
+        // Deduct credit
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: { credits: { decrement: 1 } }
+        });
+
         return NextResponse.json(result);
 
     } catch (error) {

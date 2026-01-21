@@ -44,6 +44,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   decks         Deck[]
+  credits       Int       @default(5)
 }
 
 model VerificationToken {

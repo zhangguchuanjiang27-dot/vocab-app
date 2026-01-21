@@ -38,6 +38,7 @@ export default function Home() {
   useEffect(() => {
     if (session?.user) {
       fetchDecks();
+      fetchCredits();
     } else {
       setSavedDecks([]);
     }
@@ -54,6 +55,35 @@ export default function Home() {
       console.error("Failed to fetch decks", e);
     }
   };
+
+  const [credits, setCredits] = useState<number | null>(null);
+
+  const fetchCredits = async () => {
+    try {
+      const res = await fetch("/api/user/credits");
+      if (res.ok) {
+        const data = await res.json();
+        setCredits(data.credits);
+      }
+    } catch (e) {
+      console.error("Failed to fetch credits", e);
+    }
+  };
+
+  const handlePurchase = async () => {
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      if (!res.ok) throw new Error("Checkout failed");
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (e) {
+      console.error("Purchase error:", e);
+      alert("決済ページへの移動に失敗しました");
+    }
+  };
+
 
   // デッキ保存処理
   const handleSaveDeck = async () => {
@@ -161,8 +191,22 @@ export default function Home() {
                   {session.user?.image && (
                     <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-200" />
                   )}
-                  <span className="text-sm font-medium hidden sm:inline">{session.user?.name}</span>
+                  <div className="flex flex-col text-right">
+                    <span className="text-sm font-medium hidden sm:inline">{session.user?.name}</span>
+                    {credits !== null && (
+                      <span className="text-xs text-neutral-500 font-mono">
+                        Coins: {credits}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <button
+                  onClick={handlePurchase}
+                  className="px-4 py-2 rounded-full font-bold text-xs bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-sm hover:shadow-orange-500/30 transition-all active:scale-95"
+                >
+                  + Buy Coins
+                </button>
+
                 <button
                   onClick={() => setShowSaved(!showSaved)}
                   className="px-5 py-2.5 rounded-full font-medium text-sm transition-all border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-900 flex items-center gap-2"
