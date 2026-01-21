@@ -156,7 +156,13 @@ export default function Home() {
 
       const data = await response.json();
       if (data.words) {
-        setWords(data.words);
+        // 既存のリストに追加（追記モード）
+        setWords((prev) => [...prev, ...data.words]);
+        // 入力欄はクリアしない方が連続入力しやすいかもしれないが、
+        // ユーザーが「Enterwordsに残っている」と言及していたので、
+        // 使い勝手を考慮して、生成成功したら入力欄は空にしたほうが親切かも？
+        // 今回はユーザーの要望的に「どんどん追加」なので、入力欄はクリアして次を入れやすくする。
+        setInput("");
       } else {
         throw new Error("Invalid response format");
       }
@@ -165,6 +171,19 @@ export default function Home() {
       setError("AI生成中にエラーが発生しました。");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 単語個別削除
+  const handleRemoveWord = (index: number) => {
+    setWords((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // リスト全クリア
+  const handleClearList = () => {
+    if (confirm("作成中のリストを全て消去しますか？")) {
+      setWords([]);
+      setDeckTitle("");
     }
   };
 
@@ -320,9 +339,16 @@ export default function Home() {
                 {words.length > 0 ? (
                   <>
                     {/* Save Bar */}
-                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl flex flex-col sm:flex-row gap-3 items-center justify-between border border-indigo-100 dark:border-indigo-500/20 shadow-sm">
+                    <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl flex flex-col sm:flex-row gap-3 items-center justify-between border border-indigo-100 dark:border-indigo-500/20 shadow-sm sticky top-8 z-10">
                       <div className="flex items-center gap-3 w-full">
-                        <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-xl">
+                        <button
+                          onClick={handleClearList}
+                          className="px-3 py-2 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-lg transition-colors"
+                          title="Clear all"
+                        >
+                          Clear
+                        </button>
+                        <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-xl shrink-0">
                           💾
                         </div>
                         <input
@@ -330,7 +356,7 @@ export default function Home() {
                           placeholder="単語帳の名前（例: Chapter 1）"
                           value={deckTitle}
                           onChange={(e) => setDeckTitle(e.target.value)}
-                          className="flex-1 bg-transparent border-none focus:ring-0 text-lg font-medium placeholder:text-neutral-400"
+                          className="flex-1 bg-transparent border-none focus:ring-0 text-lg font-medium placeholder:text-neutral-400 min-w-0"
                         />
                       </div>
                       <button
@@ -349,8 +375,17 @@ export default function Home() {
                           key={idx}
                           className="group border-b border-neutral-200 dark:border-neutral-800 last:border-0 p-5 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors relative"
                         >
+                          {/* Remove Button (Visible on Hover or always on mobile) */}
+                          <button
+                            onClick={() => handleRemoveWord(idx)}
+                            className="absolute top-2 right-2 p-1.5 text-neutral-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 z-10"
+                            title="Remove word"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                          </button>
+
                           {/* Row 1: Word, POS, Meaning */}
-                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 mb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 mb-3 pr-6">
                             <div className="flex items-baseline gap-3">
                               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400">
                                 {card.word}
@@ -378,7 +413,7 @@ export default function Home() {
                             </p>
                           </div>
 
-                          <div className="absolute top-2 right-2 text-[10px] text-neutral-300 dark:text-neutral-700 font-mono">
+                          <div className="absolute bottom-2 right-2 text-[10px] text-neutral-300 dark:text-neutral-700 font-mono">
                             #{idx + 1}
                           </div>
                         </div>
