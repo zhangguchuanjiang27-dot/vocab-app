@@ -41,9 +41,10 @@ export async function POST(req: Request) {
 
         if (userId && creditsStr) {
             const creditsToAdd = parseInt(creditsStr, 10);
+            console.log(`Processing webhook for UserID: ${userId}, Credits: ${creditsToAdd}`);
 
             try {
-                await prisma.user.update({
+                const updatedUser = await prisma.user.update({
                     where: { id: userId },
                     data: {
                         credits: {
@@ -51,12 +52,14 @@ export async function POST(req: Request) {
                         }
                     }
                 });
-                console.log(`Added ${creditsToAdd} credits to user ${userId}`);
+                console.log(`Successfully added credits. New balance: ${updatedUser.credits}`);
             } catch (error) {
-                console.error('Error updating user credits:', error);
-                // Webhookは200を返しておかないとリトライされてしまうが、DBエラーはログに残す
+                console.error('Database update failed:', error);
+                // ユーザーIDが存在しない場合などのエラー詳細を出力
                 return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
             }
+        } else {
+            console.error("Missing metadata in webhook session", { userId, creditsStr });
         }
     }
 
