@@ -69,6 +69,7 @@ model WordCard {
     id        String   @id @default(cuid())
     word      String
     meaning   String
+    partOfSpeech String? // 品詞（動詞、名詞など）
     example   String
     example_jp String
     deckId    String

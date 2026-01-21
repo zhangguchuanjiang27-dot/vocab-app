@@ -7,6 +7,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 type WordCard = {
   id?: string;
   word: string;
+  partOfSpeech?: string; // 品詞
   meaning: string;
   example: string;
   example_jp: string;
@@ -341,30 +342,44 @@ export default function Home() {
                     </div>
 
                     {/* Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-500">
+                    {/* Word List (Paper Style) */}
+                    <div className="flex flex-col gap-0 border-t border-neutral-200 dark:border-neutral-800 animate-in fade-in duration-500 bg-white dark:bg-neutral-900 shadow-sm rounded-xl overflow-hidden">
                       {words.map((card, idx) => (
                         <div
                           key={idx}
-                          className="group relative bg-white dark:bg-neutral-900 rounded-xl p-5 shadow-sm border border-neutral-200 dark:border-neutral-800 hover:shadow-md transition-all duration-300"
+                          className="group border-b border-neutral-200 dark:border-neutral-800 last:border-0 p-5 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors relative"
                         >
-                          <div className="flex flex-col gap-2">
-                            <div className="flex justify-between items-baseline border-b border-neutral-100 dark:border-neutral-800 pb-2 mb-1">
-                              <h2 className="text-2xl font-bold text-neutral-900 dark:text-white">
+                          {/* Row 1: Word, POS, Meaning */}
+                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4 mb-3">
+                            <div className="flex items-baseline gap-3">
+                              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400">
                                 {card.word}
-                              </h2>
-                              <span className="text-xs font-mono text-neutral-400">#{idx + 1}</span>
+                              </span>
+                              {card.partOfSpeech && (
+                                <span className="text-xs font-mono px-1.5 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 text-neutral-500 dark:text-neutral-400">
+                                  {card.partOfSpeech}
+                                </span>
+                              )}
                             </div>
-                            <p className="text-indigo-600 dark:text-indigo-400 font-semibold text-sm">
-                              {card.meaning}
+                            <div className="flex-1">
+                              <span className="text-lg text-neutral-800 dark:text-neutral-200 font-serif">
+                                {card.meaning}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Row 2: Examples */}
+                          <div className="pl-0 sm:pl-4 border-l-2 border-neutral-100 dark:border-neutral-800 ml-1 space-y-1">
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
+                              {card.example}
                             </p>
-                            <div className="mt-2 text-sm space-y-1">
-                              <p className="text-neutral-700 dark:text-neutral-300 italic border-l-2 border-neutral-200 dark:border-neutral-700 pl-2">
-                                {card.example}
-                              </p>
-                              <p className="text-neutral-500 dark:text-neutral-500 pl-2.5 text-xs">
-                                {card.example_jp}
-                              </p>
-                            </div>
+                            <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                              {card.example_jp}
+                            </p>
+                          </div>
+
+                          <div className="absolute top-2 right-2 text-[10px] text-neutral-300 dark:text-neutral-700 font-mono">
+                            #{idx + 1}
                           </div>
                         </div>
                       ))}
