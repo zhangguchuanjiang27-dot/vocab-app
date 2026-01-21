@@ -71,7 +71,7 @@ export async function DELETE(
     }
 }
 
-// 既存のデッキに単語を追加する
+// デッキの更新（単語追加 または タイトル変更）
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -86,11 +86,7 @@ export async function PUT(
 
     try {
         const body = await req.json();
-        const { words } = body;
-
-        if (!Array.isArray(words)) {
-            return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
-        }
+        const { words, title } = body;
 
         // まずデッキが本人のものか確認
         const deck = await prisma.deck.findUnique({
@@ -101,23 +97,33 @@ export async function PUT(
             return NextResponse.json({ error: "Deck not found" }, { status: 404 });
         }
 
-        // 単語を一括追加
-        // createMany はSQLiteなどで非対応の場合があるがPostgresならOK
-        // WordInput型はあちらのファイルにあるがこちらで再定義か似た形にする
-        const newWordsData = words.map((w: any) => ({
-            word: w.word,
-            partOfSpeech: w.partOfSpeech || null,
-            meaning: w.meaning,
-            example: w.example || "",
-            example_jp: w.example_jp || "",
-            deckId: id
-        }));
+        // タイトル変更のリクエストがある場合
+        if (title) {
+            await prisma.deck.update({
+                where: { id },
+                data: { title }
+            });
+        }
 
-        await prisma.wordCard.createMany({
-            data: newWordsData
-        });
+        // 単語追加のリクエストがある場合
+        if (words && Array.isArray(words) && words.length > 0) {
+            const newWordsData = words.map((w: any) => ({
+                word: w.word,
+                partOfSpeech: w.partOfSpeech || null,
+                meaning: w.meaning,
+                example: w.example || "",
+                example_jp: w.example_jp || "",
+                deckId: id
+            }));
 
-        return NextResponse.json({ success: true, added: newWordsData.length });
+            await prisma.wordCard.createMany({
+                data: newWordsData
+            });
+
+            return NextResponse.json({ success: true, added: newWordsData.length, titleUpdated: !!title });
+        }
+
+        return NextResponse.json({ success: true, titleUpdated: !!title });
 
     } catch (err) {
         console.error(err);
