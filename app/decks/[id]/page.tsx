@@ -548,20 +548,22 @@ export default function DeckPage() {
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </button>
                                         <div className="mb-4 last:mb-0">
-                                            <div className="flex gap-2 items-start">
-                                                <div>
-                                                    <p className="text-lg italic font-serif text-indigo-50 leading-tight">"{currentCard.example}"</p>
-                                                    <p className="text-sm text-indigo-200 font-light mt-1">{currentCard.example_jp}</p>
+                                            {currentCard.example && (
+                                                <div className="flex gap-2 items-start">
+                                                    <div>
+                                                        <p className="text-lg italic font-serif text-indigo-50 leading-tight">{currentCard.example}</p>
+                                                        {currentCard.example_jp && <p className="text-sm text-indigo-200 font-light mt-1">{currentCard.example_jp}</p>}
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
                                         </div>
-                                        {currentCard.otherExamples?.map((ex, i) => (
+                                        {currentCard.otherExamples?.filter(ex => ex.text.trim() !== "").map((ex, i) => (
                                             <div key={i} className="mb-4 last:mb-0 border-t border-white/10 pt-4">
                                                 <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70 mb-1 block">{ex.role}</span>
                                                 <div className="flex gap-2 items-start">
                                                     <div>
-                                                        <p className="text-base italic font-serif text-indigo-50 leading-tight">"{ex.text}"</p>
-                                                        <p className="text-xs text-indigo-200 font-light mt-1">{ex.translation}</p>
+                                                        <p className="text-base italic font-serif text-indigo-50 leading-tight">{ex.text}</p>
+                                                        {ex.translation && <p className="text-xs text-indigo-200 font-light mt-1">{ex.translation}</p>}
                                                     </div>
                                                 </div>
                                             </div>
