@@ -760,7 +760,8 @@ export default function DeckPage() {
                                                     {/* メイン例文 */}
                                                     {/* メイン例文 (データがある場合のみ表示) */}
                                                     {/* メイン例文 (データがある場合のみ表示) */}
-                                                    {card.example && card.example.trim().length > 0 && (
+                                                    {/* メイン例文 (データがある場合のみ表示) */}
+                                                    {(typeof card.example === 'string' && card.example.trim() !== "") ? (
                                                         <div>
                                                             <div className="flex items-start gap-2">
                                                                 <button
@@ -774,7 +775,7 @@ export default function DeckPage() {
                                                             </div>
                                                             <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
                                                         </div>
-                                                    )}
+                                                    ) : null}
 
                                                     {/* 追加の例文表示 (リスト表示) */}
                                                     {/* 追加の例文表示 (リスト表示) */}
