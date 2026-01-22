@@ -107,32 +107,28 @@ export async function PUT(
 
         // 単語追加のリクエストがある場合
         if (words && Array.isArray(words) && words.length > 0) {
-            const newWordsData = words.map((w: any) => ({
-                word: w.word,
-                partOfSpeech: w.partOfSpeech || null,
-                meaning: w.meaning,
-                example: w.example || "",
-                example_jp: w.example_jp || "",
-                otherExamples: (w.otherExamples || []) as any,
-                deckId: id
-            }));
+            // データ変換：otherExamplesをexample_jpに埋め込む（スキーマ変更回避のため）
+            const newWordsData = words.map((w: any) => {
+                let exampleJp = w.example_jp || "";
+                if (w.otherExamples && Array.isArray(w.otherExamples) && w.otherExamples.length > 0) {
+                    // 区切り文字を使ってJSONを埋め込む
+                    exampleJp += `|||EXT|||${JSON.stringify(w.otherExamples)}`;
+                }
 
-            try {
-                // まず通常通り保存を試みる
-                await prisma.wordCard.createMany({
-                    data: newWordsData
-                });
-            } catch (dbError) {
-                console.error("First attempt failed, retrying without otherExamples:", dbError);
-                // 失敗した場合（カラムがない等）、otherExamplesを除外して再試行（フォールバック）
-                const fallbackData = newWordsData.map(w => {
-                    const { otherExamples, ...rest } = w;
-                    return rest;
-                });
-                await prisma.wordCard.createMany({
-                    data: fallbackData
-                });
-            }
+                return {
+                    word: w.word,
+                    partOfSpeech: w.partOfSpeech || null,
+                    meaning: w.meaning,
+                    example: w.example || "",
+                    example_jp: exampleJp,
+                    // otherExamplesカラムへの保存は諦め、上記に統合
+                    deckId: id
+                };
+            });
+
+            await prisma.wordCard.createMany({
+                data: newWordsData
+            });
 
             return NextResponse.json({ success: true, added: newWordsData.length, titleUpdated: !!title });
         }

@@ -69,7 +69,27 @@ export default function DeckPage() {
             const res = await fetch(`/api/decks/${deckId}`);
             if (res.ok) {
                 const data = await res.json();
-                setDeck(data);
+
+                // 埋め込まれた追加例文のパース処理
+                const processedWords = data.words.map((w: WordCard) => {
+                    if (w.example_jp && w.example_jp.includes('|||EXT|||')) {
+                        const parts = w.example_jp.split('|||EXT|||');
+                        try {
+                            const extra = JSON.parse(parts[1]);
+                            return {
+                                ...w,
+                                example_jp: parts[0],
+                                otherExamples: extra
+                            };
+                        } catch (e) {
+                            // JSONパースエラーの場合は元の単語を返す
+                            return w;
+                        }
+                    }
+                    return w;
+                });
+
+                setDeck({ ...data, words: processedWords });
                 setEditTitle(data.title);
             } else {
                 alert("Failed to load deck");
