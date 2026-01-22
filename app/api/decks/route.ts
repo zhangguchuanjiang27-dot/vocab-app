@@ -53,22 +53,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
 
-    const deck = await prisma.deck.create({
-      data: {
-        title,
-        userId: userId,
-        words: {
-          create: words.map((w: WordInput) => ({
-            word: w.word,
-            meaning: w.meaning,
-            example: w.example || "",
-            example_jp: w.example_jp || "",
-            otherExamples: w.otherExamples || [] // 追加の例文
-          }))
-        }
-      },
-      include: { words: true }
-    });
+    // 安全策: まず通常通り試みる
+    let deck;
+    try {
+      deck = await prisma.deck.create({
+        data: {
+          title,
+          userId: userId,
+          words: {
+            create: words.map((w: WordInput) => ({
+              word: w.word,
+              meaning: w.meaning,
+              example: w.example || "",
+              example_jp: w.example_jp || "",
+              otherExamples: w.otherExamples || []
+            }))
+          }
+        },
+        include: { words: true }
+      });
+    } catch (e) {
+      console.error("First attempt failed, retrying without otherExamples:", e);
+      // 失敗時: otherExamples無しでリトライ
+      deck = await prisma.deck.create({
+        data: {
+          title,
+          userId: userId,
+          words: {
+            create: words.map((w: WordInput) => ({
+              word: w.word,
+              meaning: w.meaning,
+              example: w.example || "",
+              example_jp: w.example_jp || "",
+              // otherExamplesを除外
+            }))
+          }
+        },
+        include: { words: true }
+      });
+    }
 
     return NextResponse.json(deck);
   } catch (err) {

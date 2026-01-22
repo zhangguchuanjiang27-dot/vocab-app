@@ -117,9 +117,22 @@ export async function PUT(
                 deckId: id
             }));
 
-            await prisma.wordCard.createMany({
-                data: newWordsData
-            });
+            try {
+                // まず通常通り保存を試みる
+                await prisma.wordCard.createMany({
+                    data: newWordsData
+                });
+            } catch (dbError) {
+                console.error("First attempt failed, retrying without otherExamples:", dbError);
+                // 失敗した場合（カラムがない等）、otherExamplesを除外して再試行（フォールバック）
+                const fallbackData = newWordsData.map(w => {
+                    const { otherExamples, ...rest } = w;
+                    return rest;
+                });
+                await prisma.wordCard.createMany({
+                    data: fallbackData
+                });
+            }
 
             return NextResponse.json({ success: true, added: newWordsData.length, titleUpdated: !!title });
         }

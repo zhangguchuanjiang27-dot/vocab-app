@@ -7,7 +7,7 @@
     "build": "prisma db push && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && prisma db push"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",
