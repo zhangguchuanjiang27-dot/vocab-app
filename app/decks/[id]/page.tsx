@@ -735,7 +735,8 @@ export default function DeckPage() {
                                                 <div className="space-y-3">
                                                     {/* メイン例文 */}
                                                     {/* メイン例文 (データがある場合のみ表示) */}
-                                                    {(typeof card.example === 'string' && card.example.trim() !== "") ? (
+                                                    {/* メイン例文 (データがある場合のみ表示: 可視文字が含まれているかチェック) */}
+                                                    {(typeof card.example === 'string' && /[^\s\u00A0\u2000-\u200B]/.test(card.example)) ? (
                                                         <div>
                                                             <div className="flex items-start gap-2">
                                                                 <button
