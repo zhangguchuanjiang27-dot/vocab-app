@@ -38,27 +38,24 @@ export async function POST(req: Request) {
       
       【重要：処理ルール】
       1. **1行1エントリー**: 入力の1行につき1つのカードを作ってください。文字列の中にスペースが含まれていても、それは「熟語（イディオム）」として扱い、**絶対に分割しないでください**。（例: "broaden one's horizons" は1つの単語として扱う）
-      2. **原形への変換**: 単語単体の場合は原形に直してください。熟語の場合も、文法的に自然な見出し語の形（辞書形）に直してください。（例: "running" -> "run", "got up" -> "get up"）
-      3. **スペル修正**: 軽微なスペルミスは修正してください。
-      4. **不明な単語**: もし「実在しない単語」や「意味不明な文字列」の場合は、その単語の情報を以下のように返してください：
-         - word: 元の入力文字列
-         - partOfSpeech: "不明"
-         - meaning: "UNKNOWN"
-         - example: "-"
-         - example_jp: "-"
+      2. **多義語の扱い**: その単語に**複数の重要な品詞や意味**がある場合（TOEICや受験で頻出な場合）、**1つのカードにまとめて**出力してください。
+         - 品詞: "形容詞 / 名詞" のようにスラッシュ区切り
+         - 意味: "【形】必須の 【名】命令" のように、どの品詞の意味か分かるように書く
+      3. **原形への変換**: 単語単体の場合は原形に直してください。
+      4. **スペル修正**: 軽微なスペルミスは修正してください。
       
       各項目について以下の情報を含めてください：
       1. word: 修正後の英単語または熟語
-      2. partOfSpeech: 品詞（名詞, 動詞, 熟語 etc. 日本語で）
-      3. meaning: 日本語の核心的な意味（簡潔に）
-      4. example: その単語/熟語を使った英語の例文（短くシンプルに）
+      2. partOfSpeech: 品詞（重要なものが複数ある場合は "/ " で区切って列挙）
+      3. meaning: 日本語の意味（多義語の場合は "【形】... 【名】..." のように区別して記述）
+      4. example: 代表的な意味を使った英語の例文（1文）
       5. example_jp: 例文の和訳
       
       出力は以下のJSON形式のみを返してください：
       {
         "words": [
-          { "word": "apple", "partOfSpeech": "名詞", "meaning": "りんご", "example": "I ate an apple.", "example_jp": "私はりんごを食べた。" },
-          { "word": "get up", "partOfSpeech": "熟語", "meaning": "起きる", "example": "I get up at 7.", "example_jp": "私は7時に起きる。" }
+          { "word": "imperative", "partOfSpeech": "形容詞 / 名詞", "meaning": "【形】必須の 【名】命令", "example": "It is imperative that we act now.", "example_jp": "今すぐ行動することが必須だ。" },
+          { "word": "book", "partOfSpeech": "名詞 / 動詞", "meaning": "【名】本 【動】予約する", "example": "I booked a hotel room.", "example_jp": "私はホテルの部屋を予約した。" }
         ]
       }
 
