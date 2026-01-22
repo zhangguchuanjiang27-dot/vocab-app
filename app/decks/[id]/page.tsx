@@ -13,6 +13,7 @@ type WordCard = {
     example: string;
     example_jp: string;
     otherExamples?: { role: string; text: string; translation: string }[];
+    isUnlocked?: boolean;
     createdAt?: string;
 };
 
@@ -70,23 +71,35 @@ export default function DeckPage() {
             if (res.ok) {
                 const data = await res.json();
 
-                // 埋め込まれた追加例文のパース処理
+                // 埋め込まれた追加例文とアンロック情報のパース処理
                 const processedWords = data.words.map((w: WordCard) => {
-                    if (w.example_jp && w.example_jp.includes('|||EXT|||')) {
-                        const parts = w.example_jp.split('|||EXT|||');
+                    let cleanExampleJp = w.example_jp || "";
+                    let isUnlocked = false;
+                    let otherExamples = w.otherExamples || [];
+
+                    // 1. アンロックマーカーのチェック
+                    if (cleanExampleJp.includes('|||UNLOCKED|||')) {
+                        isUnlocked = true;
+                        cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
+                    }
+
+                    // 2. 追加例文マーカーのチェック
+                    if (cleanExampleJp.includes('|||EXT|||')) {
+                        const parts = cleanExampleJp.split('|||EXT|||');
+                        cleanExampleJp = parts[0];
                         try {
-                            const extra = JSON.parse(parts[1]);
-                            return {
-                                ...w,
-                                example_jp: parts[0],
-                                otherExamples: extra
-                            };
+                            otherExamples = JSON.parse(parts[1]);
                         } catch (e) {
-                            // JSONパースエラーの場合は元の単語を返す
-                            return w;
+                            // パースエラー時はそのまま
                         }
                     }
-                    return w;
+
+                    return {
+                        ...w,
+                        example_jp: cleanExampleJp,
+                        otherExamples: otherExamples,
+                        isUnlocked: isUnlocked
+                    };
                 });
 
                 setDeck({ ...data, words: processedWords });
@@ -100,6 +113,32 @@ export default function DeckPage() {
             alert("Error loading deck");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleUnlock = async (wordId: string) => {
+        if (!confirm("2コインを使って例文をアンロックしますか？")) return;
+
+        try {
+            const res = await fetch(`/api/words/${wordId}/unlock`, { method: "POST" });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to unlock");
+            }
+
+            // 成功したらローカルのstateを更新
+            if (deck) {
+                const updatedWords = deck.words.map(w => {
+                    if (w.id === wordId) {
+                        return { ...w, isUnlocked: true };
+                    }
+                    return w;
+                });
+                setDeck({ ...deck, words: updatedWords });
+                // alert("アンロックしました！");
+            }
+        } catch (e: any) {
+            alert(e.message);
         }
     };
 
@@ -374,12 +413,24 @@ export default function DeckPage() {
 
                                 {/* 例文セクション (トグル式) */}
                                 {!showExamples ? (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
-                                        className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
-                                    >
-                                        Show Examples
-                                    </button>
+                                    currentCard.isUnlocked ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
+                                            className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
+                                        >
+                                            Show Examples
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (currentCard.id) handleUnlock(currentCard.id);
+                                            }}
+                                            className="px-6 py-2 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full text-sm font-bold shadow-lg transition-all flex items-center gap-2"
+                                        >
+                                            <span>🔒</span> Unlock Examples (🪙2)
+                                        </button>
+                                    )
                                 ) : (
                                     <div className="w-full bg-black/10 rounded-xl p-6 text-left relative animate-in fade-in duration-300 max-h-[200px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                                         <div className="mb-4 last:mb-0">
@@ -595,27 +646,38 @@ export default function DeckPage() {
                                             {/* 追加の例文表示 (アコーディオン) */}
                                             {card.otherExamples && card.otherExamples.length > 0 && (
                                                 <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                                    <button
-                                                        onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
-                                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
-                                                    >
-                                                        {expandedWordId === card.id ? "Hide details" : `Show ${card.otherExamples.length} more examples`}
-                                                        <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
-                                                    </button>
+                                                    {card.isUnlocked ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
+                                                                className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
+                                                            >
+                                                                {expandedWordId === card.id ? "Hide details" : `Show ${card.otherExamples.length} more examples`}
+                                                                <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
+                                                            </button>
 
-                                                    {expandedWordId === card.id && (
-                                                        <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
-                                                            {card.otherExamples.map((ex, i) => (
-                                                                <div key={i} className="text-sm">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
-                                                                        <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
-                                                                    </div>
-                                                                    <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
-                                                                    <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                            {expandedWordId === card.id && (
+                                                                <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
+                                                                    {card.otherExamples.map((ex, i) => (
+                                                                        <div key={i} className="text-sm">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
+                                                                                <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                            </div>
+                                                                            <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
+                                                                            <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
-                                                            ))}
-                                                        </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => card.id && handleUnlock(card.id)}
+                                                            className="text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1"
+                                                        >
+                                                            <span>🔒</span> Unlock Details (2 Coins)
+                                                        </button>
                                                     )}
                                                 </div>
                                             )}
