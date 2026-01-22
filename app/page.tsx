@@ -12,6 +12,7 @@ type WordCard = {
   meaning: string;
   example: string;
   example_jp: string;
+  otherExamples?: { role: string; text: string; translation: string }[];
 };
 
 type Deck = {

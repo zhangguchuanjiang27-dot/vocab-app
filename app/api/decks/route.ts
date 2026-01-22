@@ -3,19 +3,19 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 
-// POSTで受け取るデータの型を定義（anyを避けるため）
+// POSTで受け取るデータの型を定義
 interface WordInput {
   word: string;
   meaning: string;
   example?: string;
   example_jp?: string;
+  otherExamples?: any[];
 }
 
 export async function GET() {
   const session = await getServerSession(authOptions);
 
   // session.user.id が存在するかチェック
-  // 注意: NextAuthの型定義をしていない場合、ここでエラーが出ることがあるためキャストしています
   const userId = (session?.user as any)?.id;
 
   if (!userId) {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { title, words } = body;
 
-    // バリデーション: タイトルや単語リストがない場合を弾く
+    // バリデーション
     if (!title || !Array.isArray(words)) {
       return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
     }
@@ -61,8 +61,9 @@ export async function POST(req: Request) {
           create: words.map((w: WordInput) => ({
             word: w.word,
             meaning: w.meaning,
-            example: w.example || "",       // undefined対策
-            example_jp: w.example_jp || ""  // undefined対策
+            example: w.example || "",
+            example_jp: w.example_jp || "",
+            otherExamples: w.otherExamples || [] // 追加の例文
           }))
         }
       },
