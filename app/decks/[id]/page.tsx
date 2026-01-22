@@ -530,8 +530,17 @@ export default function DeckPage() {
                                     <div className="flex-1">
                                         <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
                                         <div className="space-y-1">
-                                            <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
-                                            <div className="text-xs text-neutral-400 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
+                                            <div className="flex items-start gap-2">
+                                                <button
+                                                    onClick={() => speak(card.example)}
+                                                    className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                                    title="Play example"
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                </button>
+                                                <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
+                                            </div>
+                                            <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
                                         </div>
                                     </div>
                                 </div>
