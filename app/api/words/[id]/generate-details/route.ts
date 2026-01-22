@@ -42,20 +42,18 @@ export async function POST(
             英単語「${word.word}」の意味は「${word.meaning}」です。
             この単語について、以下の情報をJSONで生成してください。
             
-            1. otherExamples: この単語を使った、メインの例文とは異なるニュアンスや使い方の例文（1つ）。
-               - 例文がない場合は無理に作らず空配列でもよいが、できるだけ作成してください。
-               - 形式: { "role": "形容詞", "text": "...", "translation": "..." }
-            2. synonyms: 類義語（1〜3個）
-            3. antonyms: 対義語（1〜2個）
-
-            既存の例文: ${word.example}
-            これとは違う例文にしてください。
+            1. otherExamples:
+               - この単語が持つ**異なる意味やニュアンスごと**の例文を生成してください。
+               - 既存の例文「${word.example}」とは異なる意味や文脈のものを優先してください。
+               - 形式: { "role": "品詞または意味のニュアンス", "text": "英文", "translation": "和訳" }
+               - 2〜3個程度生成してください。
 
             出力JSON形式:
             {
-               "examples": [ { "role": "...", "text": "...", "translation": "..." } ],
-               "synonyms": ["...", "..."],
-               "antonyms": ["..."]
+               "examples": [ 
+                  { "role": "名詞(種類)", "text": "...", "translation": "..." },
+                  { "role": "形容詞(親切な)", "text": "...", "translation": "..." }
+               ]
             }
             `;
 
