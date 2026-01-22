@@ -131,6 +131,19 @@ export default function DeckPage() {
         }
     };
 
+    const handleAccessExamples = async (card: WordCard) => {
+        if (!card.id) return;
+
+        // exampleが空でない = データがある
+        const hasData = card.example && card.example.trim() !== "";
+
+        if (hasData) {
+            await handleUnlock(card.id);
+        } else {
+            await handleGenerateDetails(card.id);
+        }
+    };
+
     const handleUnlock = async (wordId: string) => {
         if (!confirm("2コインを使って例文をアンロックしますか？")) return;
 
@@ -158,7 +171,7 @@ export default function DeckPage() {
     };
 
     const handleGenerateDetails = async (wordId: string) => {
-        if (!confirm("1コインを使ってAIで詳細（例文・類義語・対義語）を生成しますか？")) return;
+        if (!confirm("2コインを使って例文を生成・表示しますか？")) return;
 
         try {
             const res = await fetch(`/api/words/${wordId}/generate-details`, { method: "POST" });
@@ -175,10 +188,12 @@ export default function DeckPage() {
                     if (w.id === wordId) {
                         return {
                             ...w,
+                            example: data.generatedContent.mainExample ? data.generatedContent.mainExample.text : w.example,
+                            example_jp: data.generatedContent.mainExample ? data.generatedContent.mainExample.translation : w.example_jp,
                             otherExamples: data.generatedContent.examples,
-                            synonyms: data.generatedContent.synonyms,
-                            antonyms: data.generatedContent.antonyms,
-                            isUnlocked: true // 生成したら即座に見えるようにする
+                            synonyms: [],
+                            antonyms: [],
+                            isUnlocked: true
                         };
                     }
                     return w;
@@ -763,6 +778,7 @@ export default function DeckPage() {
                                                     </div>
 
                                                     {/* 追加の例文表示 (リスト表示) */}
+                                                    {/* 追加の例文表示 (リスト表示) */}
                                                     {card.otherExamples && card.otherExamples.length > 0 && (
                                                         <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3 animate-in fade-in">
                                                             {card.otherExamples.map((ex, i) => (
@@ -777,20 +793,10 @@ export default function DeckPage() {
                                                             ))}
                                                         </div>
                                                     )}
-
-                                                    {/* もし追加例文がなく、AI生成したい場合 */}
-                                                    {(!card.otherExamples || card.otherExamples.length === 0) && (
-                                                        <button
-                                                            onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center gap-1 mt-2"
-                                                        >
-                                                            <span>✨</span> 他の意味の例文もAIで生成 (1コイン)
-                                                        </button>
-                                                    )}
                                                 </div>
                                             ) : (
                                                 <button
-                                                    onClick={() => card.id && handleUnlock(card.id)}
+                                                    onClick={() => card.id && handleAccessExamples(card)}
                                                     className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
                                                 >
                                                     <span>🔒</span> 例文を表示 (2コイン)

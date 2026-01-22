@@ -15,7 +15,7 @@ export async function POST(
 
     const { id } = await params;
     const userId = session.user.id;
-    const GENERATE_COST = 1; // 生成コスト
+    const GENERATE_COST = 2; // 生成コスト
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -42,9 +42,8 @@ export async function POST(
             英単語「${word.word}」の意味は「${word.meaning}」です。
             この単語について、以下の情報をJSONで生成してください。
             
-            1. otherExamples:
+            1. examples:
                - この単語が持つ**異なる意味やニュアンスごと**の例文を生成してください。
-               - 既存の例文「${word.example}」とは異なる意味や文脈のものを優先してください。
                - 形式: { "role": "品詞または意味のニュアンス", "text": "英文", "translation": "和訳" }
                - 2〜3個程度生成してください。
 
