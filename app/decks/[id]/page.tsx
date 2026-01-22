@@ -816,7 +816,7 @@ export default function DeckPage() {
                                                             {/* 追加の例文表示 (リスト表示) */}
                                                             {card.otherExamples && card.otherExamples.length > 0 && (
                                                                 <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
-                                                                    {card.otherExamples.filter((ex: any) => ex.text && ex.text.trim() !== "").map((ex, i) => (
+                                                                    {card.otherExamples.filter((ex: any) => ex && ex.text && ex.text.trim() !== "").map((ex, i) => (
                                                                         <div key={i} className="text-sm">
                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                 <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
