@@ -45,10 +45,10 @@ export default function DeckPage() {
     // Sort & Filter
     const [sortKey, setSortKey] = useState<'created_desc' | 'created_asc' | 'pos'>('created_asc');
 
-    // Move Word State
-    const [myDecks, setMyDecks] = useState<Deck[]>([]); // 移動先候補用
+    // Selection & Batch Move
+    const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
+    const [myDecks, setMyDecks] = useState<Deck[]>([]);
     const [showMoveModal, setShowMoveModal] = useState(false);
-    const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -83,7 +83,6 @@ export default function DeckPage() {
             const res = await fetch("/api/decks");
             if (res.ok) {
                 const data = await res.json();
-                // 自分自身以外のデッキを候補にする
                 setMyDecks(data.filter((d: Deck) => d.id !== deckId));
             }
         } catch (e) {
@@ -127,6 +126,10 @@ export default function DeckPage() {
                     ...deck,
                     words: deck.words.filter(w => w.id !== wordId)
                 });
+                // 選択状態からも削除
+                const newSet = new Set(selectedWords);
+                newSet.delete(wordId);
+                setSelectedWords(newSet);
             } else {
                 alert("削除に失敗しました");
             }
@@ -136,25 +139,50 @@ export default function DeckPage() {
         }
     };
 
-    const handleMoveWord = async (targetDeckId: string) => {
-        if (!selectedWordId || !deck) return;
+    // 選択ロジック
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedWords);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        setSelectedWords(newSet);
+    };
+
+    const toggleSelectAll = () => {
+        if (!deck) return;
+        if (selectedWords.size === deck.words.length) {
+            setSelectedWords(new Set());
+        } else {
+            const allIds = deck.words.map(w => w.id).filter((id): id is string => !!id);
+            setSelectedWords(new Set(allIds));
+        }
+    };
+
+    // 一括移動実行
+    const handleBatchMove = async (targetDeckId: string) => {
+        if (selectedWords.size === 0 || !deck) return;
 
         try {
-            const res = await fetch(`/api/words/${selectedWordId}`, {
+            const res = await fetch(`/api/words/batch`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ deckId: targetDeckId })
+                body: JSON.stringify({
+                    wordIds: Array.from(selectedWords),
+                    targetDeckId
+                })
             });
 
             if (res.ok) {
                 // 現在のリストから削除
                 setDeck({
                     ...deck,
-                    words: deck.words.filter(w => w.id !== selectedWordId)
+                    words: deck.words.filter(w => w.id && !selectedWords.has(w.id))
                 });
                 setShowMoveModal(false);
-                setSelectedWordId(null);
-                alert("移動しました！");
+                setSelectedWords(new Set());
+                alert(`${selectedWords.size} 語を移動しました！`);
             } else {
                 alert("移動に失敗しました");
             }
@@ -281,13 +309,13 @@ export default function DeckPage() {
 
     // --- リストモード ---
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300">
+        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
 
             {/* Move Modal */}
             {showMoveModal && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
-                        <h3 className="text-lg font-bold mb-4">Move to...</h3>
+                        <h3 className="text-lg font-bold mb-4">Move {selectedWords.size} words to...</h3>
                         <div className="max-h-[300px] overflow-y-auto flex flex-col gap-2 mb-4">
                             {myDecks.length === 0 ? (
                                 <p className="text-neutral-500 text-sm">移動先の単語帳がありません</p>
@@ -295,7 +323,7 @@ export default function DeckPage() {
                                 myDecks.map(d => (
                                     <button
                                         key={d.id}
-                                        onClick={() => handleMoveWord(d.id)}
+                                        onClick={() => handleBatchMove(d.id)}
                                         className="text-left px-4 py-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-bold"
                                     >
                                         {d.title}
@@ -304,6 +332,28 @@ export default function DeckPage() {
                             )}
                         </div>
                         <button onClick={() => setShowMoveModal(false)} className="w-full py-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg font-bold text-sm">Cancel</button>
+                    </div>
+                </div>
+            )}
+
+            {/* Bulk Action Bar (Floating) */}
+            {selectedWords.size > 0 && (
+                <div className="fixed bottom-6 left-0 right-0 mx-auto w-max z-40 animate-in slide-in-from-bottom-4 fade-in">
+                    <div className="bg-neutral-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-xl flex items-center gap-4">
+                        <span className="font-bold text-sm">{selectedWords.size} selected</span>
+                        <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
+                        <button
+                            onClick={() => setShowMoveModal(true)}
+                            className="font-bold text-sm hover:text-indigo-400 dark:hover:text-indigo-600 transition-colors"
+                        >
+                            Move to Deck
+                        </button>
+                        <button
+                            onClick={() => setSelectedWords(new Set())}
+                            className="ml-2 text-xs opacity-50 hover:opacity-100"
+                        >
+                            Cancel
+                        </button>
                     </div>
                 </div>
             )}
@@ -346,7 +396,15 @@ export default function DeckPage() {
                 {/* Word List */}
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">Word List</h2>
+                        <div className="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                checked={deck.words.length > 0 && selectedWords.size === deck.words.length}
+                                onChange={toggleSelectAll}
+                                className="w-5 h-5 rounded border-neutral-300 accent-indigo-600 cursor-pointer"
+                            />
+                            <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">Select All</h2>
+                        </div>
 
                         {/* Sort Controls */}
                         <div className="flex items-center gap-2 text-sm">
@@ -367,39 +425,44 @@ export default function DeckPage() {
                         <div className="p-12 text-center text-neutral-400">No words in this deck. Add some from the home page!</div>
                     ) : (
                         sortedWords.map((card, idx) => (
-                            <div key={card.id || idx} className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex flex-col sm:flex-row gap-4 sm:items-baseline relative">
-                                <div className="flex items-baseline gap-3 min-w-[200px]">
-                                    <span className="text-lg font-bold font-serif" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
-                                    {card.partOfSpeech && (
-                                        <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-medium">{card.partOfSpeech}</span>
-                                    )}
+                            <div
+                                key={card.id || idx}
+                                className={`group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative
+                                ${card.id && selectedWords.has(card.id) ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""}`}
+                            >
+                                <div className="pt-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={!!(card.id && selectedWords.has(card.id))}
+                                        onChange={() => card.id && toggleSelect(card.id)}
+                                        className="w-5 h-5 rounded border-neutral-300 accent-indigo-600 cursor-pointer"
+                                    />
                                 </div>
-                                <div className="flex-1 pr-16">
-                                    <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
-                                    <div className="space-y-1">
-                                        <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
-                                        {/* 和訳を追加表示 */}
-                                        <div className="text-xs text-neutral-400 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
+
+                                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
+                                    <div className="flex items-baseline gap-3 min-w-[200px]">
+                                        <span className="text-lg font-bold font-serif" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                        {card.partOfSpeech && (
+                                            <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-medium">{card.partOfSpeech}</span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
+                                        <div className="space-y-1">
+                                            <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
+                                            <div className="text-xs text-neutral-400 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Action Buttons */}
-                                <div className="absolute top-4 right-4 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        onClick={() => { setSelectedWordId(card.id || null); setShowMoveModal(true); }}
-                                        className="p-2 text-neutral-300 hover:text-indigo-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full"
-                                        title="Move to another deck"
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" /></svg>
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteWord(card.id)}
-                                        className="p-2 text-neutral-300 hover:text-red-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full"
-                                        title="Remove word"
-                                    >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                    </button>
-                                </div>
+                                {/* Delete Button */}
+                                <button
+                                    onClick={() => handleDeleteWord(card.id)}
+                                    className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Remove word"
+                                >
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                </button>
                             </div>
                         ))
                     )}
