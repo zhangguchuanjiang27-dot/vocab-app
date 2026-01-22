@@ -41,6 +41,8 @@ export async function POST(req: Request) {
       2. **多義語の扱い**: その単語に**複数の重要な品詞や意味**がある場合（TOEICや受験で頻出な場合）、**1つのカードにまとめて**出力してください。
          - 品詞: "形容詞 / 名詞" のようにスラッシュ区切り
          - 意味: "【形】必須の 【名】命令" のように、どの品詞の意味か分かるように書く
+         - **他の例文**: メインの例文以外に、他の品詞や意味に対応する例文があれば \`otherExamples\` 配列に入れてください。
+
       3. **原形への変換**: 単語単体の場合は原形に直してください。
       4. **スペル修正**: 軽微なスペルミスは修正してください。
       
@@ -50,12 +52,24 @@ export async function POST(req: Request) {
       3. meaning: 日本語の意味（多義語の場合は "【形】... 【名】..." のように区別して記述）
       4. example: 代表的な意味を使った英語の例文（1文）
       5. example_jp: 例文の和訳
+      6. otherExamples: 追加例文の配列（なければ空配列）
+         - role: 役割や品詞（例: "名詞", "医学用語"）
+         - text: 英語の例文
+         - translation: 和訳
       
       出力は以下のJSON形式のみを返してください：
       {
         "words": [
-          { "word": "imperative", "partOfSpeech": "形容詞 / 名詞", "meaning": "【形】必須の 【名】命令", "example": "It is imperative that we act now.", "example_jp": "今すぐ行動することが必須だ。" },
-          { "word": "book", "partOfSpeech": "名詞 / 動詞", "meaning": "【名】本 【動】予約する", "example": "I booked a hotel room.", "example_jp": "私はホテルの部屋を予約した。" }
+          { 
+            "word": "imperative", 
+            "partOfSpeech": "形容詞 / 名詞", 
+            "meaning": "【形】必須の 【名】命令", 
+            "example": "It is imperative that we act now.", 
+            "example_jp": "今すぐ行動することが必須だ。",
+            "otherExamples": [
+              { "role": "名詞", "text": "It is a moral imperative.", "translation": "それは道徳的な至上命令だ。" }
+            ]
+          }
         ]
       }
 

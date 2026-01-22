@@ -12,6 +12,7 @@ type WordCard = {
     meaning: string;
     example: string;
     example_jp: string;
+    otherExamples?: { role: string; text: string; translation: string }[];
     createdAt?: string;
 };
 
@@ -37,6 +38,10 @@ export default function DeckPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
+    const [showExamples, setShowExamples] = useState(false); // フラッシュカード用例文表示
+
+    // List Item Detail State
+    const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
 
     // Title edit state
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -245,6 +250,7 @@ export default function DeckPage() {
     const handleNext = () => {
         if (!deck) return;
         setIsFlipped(false);
+        setShowExamples(false);
         if (currentIndex < deck.words.length - 1) {
             setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
         } else {
@@ -255,6 +261,7 @@ export default function DeckPage() {
     const handlePrev = () => {
         if (currentIndex > 0) {
             setIsFlipped(false);
+            setShowExamples(false);
             setTimeout(() => setCurrentIndex((prev) => prev - 1), 150);
         }
     };
@@ -263,6 +270,7 @@ export default function DeckPage() {
         setIsFinished(false);
         setCurrentIndex(0);
         setIsFlipped(false);
+        setShowExamples(false); // Reset example visibility
     };
 
     // --- 音声読み上げ ---
@@ -343,21 +351,43 @@ export default function DeckPage() {
                             <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 sm:p-12 text-center">
                                 <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-6 border-b border-indigo-400/30 pb-1">Meaning</span>
                                 <h3 className="text-3xl sm:text-4xl font-bold mb-8" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
-                                <div className="w-full bg-black/10 rounded-xl p-6 text-left relative">
+
+                                {/* 例文セクション (トグル式) */}
+                                {!showExamples ? (
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); speak(currentCard.example); }}
-                                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors"
-                                        title="Play example"
+                                        onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
+                                        className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
                                     >
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                        Show Examples
                                     </button>
-                                    <p className="text-lg italic font-serif mb-2 text-indigo-50 pr-8">"{currentCard.example}"</p>
-                                    <p className="text-sm text-indigo-200 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.example_jp}</p>
-                                </div>
+                                ) : (
+                                    <div className="w-full bg-black/10 rounded-xl p-6 text-left relative animate-in fade-in duration-300 max-h-[200px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                        <div className="mb-4 last:mb-0">
+                                            <div className="flex gap-2 items-start">
+                                                <button onClick={() => speak(currentCard.example)} className="mt-1 p-1 bg-white/20 rounded-full hover:bg-white/40 shrink-0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                <div>
+                                                    <p className="text-lg italic font-serif text-indigo-50 leading-tight">"{currentCard.example}"</p>
+                                                    <p className="text-sm text-indigo-200 font-light mt-1">{currentCard.example_jp}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {currentCard.otherExamples?.map((ex, i) => (
+                                            <div key={i} className="mb-4 last:mb-0 border-t border-white/10 pt-4">
+                                                <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70 mb-1 block">{ex.role}</span>
+                                                <div className="flex gap-2 items-start">
+                                                    <button onClick={() => speak(ex.text)} className="mt-1 p-1 bg-white/20 rounded-full hover:bg-white/40 shrink-0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                    <div>
+                                                        <p className="text-base italic font-serif text-indigo-50 leading-tight">"{ex.text}"</p>
+                                                        <p className="text-xs text-indigo-200 font-light mt-1">{ex.translation}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
-// ... (controls remain same)
                     <div className="flex items-center gap-6 mt-12 w-full max-w-sm justify-between">
                         <button onClick={handlePrev} disabled={currentIndex === 0} className={`p-4 rounded-full transition-all ${currentIndex === 0 ? "text-neutral-300 cursor-not-allowed" : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-lg hover:scale-110 active:scale-95"}`}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg></button>
                         <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{isFlipped ? "Back" : "Front"}</span>
@@ -541,6 +571,34 @@ export default function DeckPage() {
                                                 <div className="text-sm text-neutral-500 italic">"{card.example}"</div>
                                             </div>
                                             <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
+
+                                            {/* 追加の例文表示 (アコーディオン) */}
+                                            {card.otherExamples && card.otherExamples.length > 0 && (
+                                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                                    <button
+                                                        onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
+                                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
+                                                    >
+                                                        {expandedWordId === card.id ? "Hide details" : `Show ${card.otherExamples.length} more examples`}
+                                                        <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
+                                                    </button>
+
+                                                    {expandedWordId === card.id && (
+                                                        <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
+                                                            {card.otherExamples.map((ex, i) => (
+                                                                <div key={i} className="text-sm">
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
+                                                                        <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                    </div>
+                                                                    <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
+                                                                    <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
