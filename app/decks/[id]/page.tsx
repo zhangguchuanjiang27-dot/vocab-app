@@ -427,11 +427,10 @@ export default function DeckPage() {
                     </div>
                     <button
                         onClick={toggleRandomMode}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
-                            isRandomMode
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${isRandomMode
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-300'
-                        }`}
+                            }`}
                     >
                         🔀 {isRandomMode ? 'ランダム' : '順序'}
                     </button>
@@ -504,7 +503,7 @@ export default function DeckPage() {
                                                 </div>
                                             </div>
                                         ))}
-                                        
+
                                         {/* 類義語・対義語セクション */}
                                         {(currentCard.synonyms?.length || 0) > 0 || (currentCard.antonyms?.length || 0) > 0 ? (
                                             <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
@@ -723,31 +722,66 @@ export default function DeckPage() {
                                             </div>
                                             <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
 
-                                            {/* 追加の例文表示 (アコーディオン) */}
-                                            {card.otherExamples && card.otherExamples.length > 0 && (
+                                            {/* 詳細情報セクション (例文・類義語・対義語) */}
+                                            {((card.otherExamples && card.otherExamples.length > 0) || (card.synonyms && card.synonyms.length > 0) || (card.antonyms && card.antonyms.length > 0)) && (
                                                 <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                                                     {card.isUnlocked ? (
                                                         <>
-                                                            <button
-                                                                onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
-                                                                className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
-                                                            >
-                                                                {expandedWordId === card.id ? "詳細を隠す" : `例文を ${card.otherExamples.length} 件表示`}
-                                                                <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
-                                                            </button>
+                                                            {/* 追加の例文表示 (アコーディオン) */}
+                                                            {card.otherExamples && card.otherExamples.length > 0 && (
+                                                                <div className="mb-3">
+                                                                    <button
+                                                                        onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
+                                                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
+                                                                    >
+                                                                        {expandedWordId === card.id ? "詳細を隠す" : `例文を ${card.otherExamples.length} 件表示`}
+                                                                        <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
+                                                                    </button>
 
-                                                            {expandedWordId === card.id && (
-                                                                <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
-                                                                    {card.otherExamples.map((ex, i) => (
-                                                                        <div key={i} className="text-sm">
-                                                                            <div className="flex items-center gap-2 mb-1">
-                                                                                <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
-                                                                                <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
-                                                                            </div>
-                                                                            <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
-                                                                            <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                    {expandedWordId === card.id && (
+                                                                        <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
+                                                                            {card.otherExamples.map((ex, i) => (
+                                                                                <div key={i} className="text-sm">
+                                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                                        <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
+                                                                                        <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                                    </div>
+                                                                                    <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
+                                                                                    <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
+                                                                    )}
+                                                                </div>
+                                                            )}
+
+                                                            {/* 類義語・対義語表示 */}
+                                                            {((card.synonyms && card.synonyms.length > 0) || (card.antonyms && card.antonyms.length > 0)) && (
+                                                                <div className="space-y-2">
+                                                                    {card.synonyms && card.synonyms.length > 0 && (
+                                                                        <div>
+                                                                            <span className="text-[10px] font-bold text-neutral-400 uppercase">類義語</span>
+                                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                                {card.synonyms.map((syn, i) => (
+                                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
+                                                                                        {syn}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    {card.antonyms && card.antonyms.length > 0 && (
+                                                                        <div>
+                                                                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase">対義語</span>
+                                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                                {card.antonyms.map((ant, i) => (
+                                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-red-50 dark:bg-red-900/20 rounded text-red-600 dark:text-red-400">
+                                                                                        {ant}
+                                                                                    </span>
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </>
@@ -758,39 +792,6 @@ export default function DeckPage() {
                                                         >
                                                             <span>🔒</span> 詳細をアンロック (2コイン)
                                                         </button>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* 類義語・対義語表示 (アンロック後のみ) */}
-                                            {card.isUnlocked && (card.synonyms?.length || 0 > 0 || card.antonyms?.length || 0 > 0) && (
-                                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
-                                                    {card.synonyms && card.synonyms.length > 0 && (
-                                                        <div>
-                                                            <span className="text-[10px] font-bold text-neutral-400 uppercase">類義語</span>
-                                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                                {card.synonyms.map((syn, i) => (
-                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
-                                                                        {syn}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {card.antonyms && card.antonyms.length > 0 && (
-                                                        <div>
-                                                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase">対義語</span>
-                                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                                {card.antonyms.map((ant, i) => (
-                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-red-50 dark:bg-red-900/20 rounded text-red-600 dark:text-red-400">
-                                                                        {ant}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
                                                     )}
                                                 </div>
                                             )}
