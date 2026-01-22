@@ -113,7 +113,7 @@ export async function PUT(
                 meaning: w.meaning,
                 example: w.example || "",
                 example_jp: w.example_jp || "",
-                otherExamples: w.otherExamples || [],
+                otherExamples: (w.otherExamples || []) as any,
                 deckId: id
             }));
 
