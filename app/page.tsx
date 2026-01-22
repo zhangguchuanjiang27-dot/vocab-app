@@ -38,6 +38,18 @@ export default function Home() {
   const [savedDecks, setSavedDecks] = useState<Deck[]>([]);
   const [showSaved, setShowSaved] = useState(false);
 
+  // 詳細表示と音声用
+  const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
+
+  const speak = (text: string) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   // 初回ロード時にデータをAPIから取得
   useEffect(() => {
     if (session?.user) {
@@ -403,8 +415,39 @@ export default function Home() {
                             </div>
 
                             <div className="pl-4 border-l-2 border-indigo-100 dark:border-indigo-900/30 space-y-1">
-                              <p className="text-sm text-neutral-600 dark:text-neutral-400 italic font-serif">"{card.example}"</p>
-                              <p className="text-xs text-neutral-400 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</p>
+                              <div className="flex items-start gap-2">
+                                <button onClick={() => speak(card.example)} className="mt-0.5 text-neutral-300 hover:text-indigo-500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 italic font-serif">"{card.example}"</p>
+                              </div>
+                              <p className="text-xs text-neutral-400 font-light pl-6" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</p>
+
+                              {/* 追加の例文表示 (アコーディオン) */}
+                              {card.otherExamples && card.otherExamples.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                  <button
+                                    onClick={() => setExpandedWordIndex(expandedWordIndex === idx ? null : idx)}
+                                    className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
+                                  >
+                                    {expandedWordIndex === idx ? "Hide details" : `Show ${card.otherExamples.length} more examples`}
+                                    <span className={`transition-transform ${expandedWordIndex === idx ? "rotate-180" : ""}`}>▼</span>
+                                  </button>
+
+                                  {expandedWordIndex === idx && (
+                                    <div className="space-y-3 pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 animate-in slide-in-from-top-2 fade-in">
+                                      {card.otherExamples.map((ex, i) => (
+                                        <div key={i} className="text-sm">
+                                          <div className="flex items-center gap-2 mb-1">
+                                            <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
+                                            <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                          </div>
+                                          <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
+                                          <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             <div className="absolute top-6 right-6 text-xs text-neutral-200 font-mono select-none group-hover:text-transparent">
