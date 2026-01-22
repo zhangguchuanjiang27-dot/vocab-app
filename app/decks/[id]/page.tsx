@@ -428,8 +428,8 @@ export default function DeckPage() {
                     <button
                         onClick={toggleRandomMode}
                         className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${isRandomMode
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-300'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-300'
                             }`}
                     >
                         🔀 {isRandomMode ? 'ランダム' : '順序'}
@@ -726,10 +726,10 @@ export default function DeckPage() {
                                             {((card.otherExamples && card.otherExamples.length > 0) || (card.synonyms && card.synonyms.length > 0) || (card.antonyms && card.antonyms.length > 0)) && (
                                                 <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                                                     {card.isUnlocked ? (
-                                                        <>
+                                                        <div className="space-y-3">
                                                             {/* 追加の例文表示 (アコーディオン) */}
                                                             {card.otherExamples && card.otherExamples.length > 0 && (
-                                                                <div className="mb-3">
+                                                                <div>
                                                                     <button
                                                                         onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
                                                                         className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
@@ -784,7 +784,7 @@ export default function DeckPage() {
                                                                     )}
                                                                 </div>
                                                             )}
-                                                        </>
+                                                        </div>
                                                     ) : (
                                                         <button
                                                             onClick={() => card.id && handleUnlock(card.id)}
