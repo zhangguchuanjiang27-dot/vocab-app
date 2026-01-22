@@ -40,6 +40,8 @@ export default function DeckPage() {
     const [isFlipped, setIsFlipped] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [showExamples, setShowExamples] = useState(false); // フラッシュカード用例文表示
+    const [isRandomMode, setIsRandomMode] = useState(false);
+    const [shuffledWords, setShuffledWords] = useState<WordCard[]>([]);
 
     // List Item Detail State
     const [expandedWordId, setExpandedWordId] = useState<string | null>(null);
@@ -308,9 +310,10 @@ export default function DeckPage() {
 
     const handleNext = () => {
         if (!deck) return;
+        const words = isRandomMode ? shuffledWords : deck.words;
         setIsFlipped(false);
         setShowExamples(false);
-        if (currentIndex < deck.words.length - 1) {
+        if (currentIndex < words.length - 1) {
             setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
         } else {
             setIsFinished(true);
@@ -330,6 +333,30 @@ export default function DeckPage() {
         setCurrentIndex(0);
         setIsFlipped(false);
         setShowExamples(false); // Reset example visibility
+    };
+
+    // シャッフル機能
+    const shuffleArray = (array: WordCard[]): WordCard[] => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    };
+
+    const toggleRandomMode = () => {
+        if (!isRandomMode && deck) {
+            // ランダムモードに切り替え
+            setShuffledWords(shuffleArray(deck.words));
+            setIsRandomMode(true);
+        } else {
+            // 通常モードに切り替え
+            setIsRandomMode(false);
+        }
+        setCurrentIndex(0);
+        setIsFlipped(false);
+        setShowExamples(false);
     };
 
     // --- 音声読み上げ ---
@@ -374,7 +401,8 @@ export default function DeckPage() {
             );
         }
 
-        const currentCard = deck.words[currentIndex];
+        const displayWords = isRandomMode ? shuffledWords : deck.words;
+        const currentCard = displayWords[currentIndex];
 
         return (
             <div className="min-h-screen bg-neutral-100 dark:bg-[#111] text-neutral-900 dark:text-neutral-100 p-6 flex flex-col">
@@ -384,7 +412,16 @@ export default function DeckPage() {
                         <h1 className="font-bold text-lg dark:text-white/90">{deck.title}</h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
                     </div>
-                    <div className="w-12"></div>
+                    <button
+                        onClick={toggleRandomMode}
+                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                            isRandomMode
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-300'
+                        }`}
+                    >
+                        🔀 {isRandomMode ? 'ランダム' : '順序'}
+                    </button>
                 </header>
 
                 <main className="flex-1 flex flex-col items-center justify-center perspective-1000 w-full max-w-2xl mx-auto">
