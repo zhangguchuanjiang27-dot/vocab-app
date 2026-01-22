@@ -271,58 +271,39 @@ export default function Home() {
       )}
 
       <main className="max-w-7xl mx-auto flex flex-col gap-8">
-        {/* Header */}
-        <header className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-6">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-neutral-900 dark:text-white" style={{ fontFamily: 'var(--font-merriweather)' }}>
-              Vocab Builder
+        {!session ? (
+          <div className="text-center py-24 px-6 animate-in fade-in zoom-in duration-500">
+            <h1 className="text-5xl sm:text-7xl font-black mb-8 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-white">
+              瞬間英単語帳
             </h1>
-            <p className="text-neutral-500 text-sm mt-1">AI-Powered Vocabulary Notebook</p>
+            <p className="text-xl text-neutral-500 max-w-2xl mx-auto mb-12 leading-relaxed">
+              AIが生成するフラッシュカードで、試験も日常会話も完璧に。<br className="hidden sm:block" />
+              あなたの入力から、意味・例文・音声を一瞬で作成します。
+            </p>
+            <button
+              onClick={() => signIn("google")}
+              className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2 mx-auto"
+            >
+              <span>✨</span> 今すぐ始める (ログイン)
+            </button>
           </div>
-
-          <div className="flex items-center gap-3">
-            {session ? (
-              <>
-                <div className="bg-neutral-100 dark:bg-neutral-900 px-4 py-2 rounded-full flex items-center gap-2 border border-neutral-200 dark:border-neutral-800">
-                  <span className="text-xs font-bold text-neutral-500 uppercase">Credits</span>
-                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{credits ?? '-'}</span>
-                </div>
-                <button
-                  onClick={handlePurchase}
-                  className="px-4 py-2 rounded-full font-bold text-xs bg-amber-400 text-amber-900 hover:bg-amber-300 transition-colors"
-                >
-                  + Coins
-                </button>
-                <button
-                  onClick={() => setShowSaved(!showSaved)}
-                  className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300'}`}
-                >
-                  {showSaved ? "Close Library" : "My Library"}
-                </button>
-                <button
-                  onClick={() => signOut()}
-                  className="px-4 py-2 text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={() => signIn("google")}
-                className="px-6 py-2.5 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-black font-bold text-sm hover:opacity-80"
-              >
-                Sign In
-              </button>
-            )}
+        ) : (
+          <div className="flex justify-end pt-4">
+            <button
+              onClick={() => setShowSaved(!showSaved)}
+              className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300'}`}
+            >
+              {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
+            </button>
           </div>
-        </header>
+        )}
 
         {session && (
           <>
             {showSaved ? (
               <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-4">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                  Your Library
+                  保存した単語帳
                 </h2>
                 {savedDecks.length === 0 ? (
                   <div className="text-center py-12 text-neutral-400">
@@ -343,7 +324,7 @@ export default function Home() {
                           ✕
                         </button>
                         <h3 className="font-bold text-lg mb-2 pr-6">{deck.title}</h3>
-                        <p className="text-xs text-neutral-500 font-mono">{deck.words.length} words</p>
+                        <p className="text-xs text-neutral-500 font-mono">{deck.words.length} 語</p>
                         <p className="text-xs text-neutral-400 mt-4">{new Date(deck.createdAt).toLocaleDateString()}</p>
                       </div>
                     ))}
@@ -356,7 +337,7 @@ export default function Home() {
                 <div className="flex flex-col gap-4 sticky top-8">
                   <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
                     <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
-                      Enter Words
+                      単語を入力
                     </label>
                     <textarea
                       className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
@@ -371,7 +352,7 @@ export default function Home() {
                           ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
                         `}
                     >
-                      {loading ? "Generating..." : "Generate List"}
+                      {loading ? "生成中..." : "リストを生成"}
                     </button>
                     {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
                   </div>
@@ -388,21 +369,21 @@ export default function Home() {
                       {/* Toolbar */}
                       <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
                         <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
-                          <button onClick={handleClearList} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">Clear</button>
+                          <button onClick={handleClearList} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">クリア</button>
                           <input
                             type="text"
                             value={deckTitle}
                             onChange={(e) => setDeckTitle(e.target.value)}
-                            placeholder="List Title..."
+                            placeholder="単語帳のタイトル..."
                             className="flex-1 bg-transparent font-bold text-lg focus:outline-none placeholder:font-normal"
                           />
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
                           <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors">
-                            + Add Existing
+                            + 既存に追加
                           </button>
                           <button onClick={handleSaveDeck} className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                            Save New
+                            新規保存
                           </button>
                         </div>
                       </div>

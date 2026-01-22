@@ -105,12 +105,12 @@ export default function DeckPage() {
                 setDeck({ ...data, words: processedWords });
                 setEditTitle(data.title);
             } else {
-                alert("Failed to load deck");
+                alert("単語帳の読み込みに失敗しました");
                 router.push("/");
             }
         } catch (e) {
             console.error(e);
-            alert("Error loading deck");
+            alert("読み込みエラー");
         } finally {
             setLoading(false);
         }
@@ -168,11 +168,11 @@ export default function DeckPage() {
                 setDeck({ ...deck, title: editTitle });
                 setIsEditingTitle(false);
             } else {
-                alert("Failed to update title");
+                alert("タイトルの更新に失敗しました");
             }
         } catch (e) {
             console.error(e);
-            alert("Error updating title");
+            alert("タイトル更新エラー");
         }
     };
 
@@ -379,7 +379,7 @@ export default function DeckPage() {
         return (
             <div className="min-h-screen bg-neutral-100 dark:bg-[#111] text-neutral-900 dark:text-neutral-100 p-6 flex flex-col">
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
-                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ Close</button>
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ 閉じる</button>
                     <div className="text-center">
                         <h1 className="font-bold text-lg dark:text-white/90">{deck.title}</h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
@@ -392,7 +392,7 @@ export default function DeckPage() {
                         <div className={`absolute inset-0 w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? "rotate-y-180" : ""}`}>
                             {/* Front */}
                             <div className="absolute inset-0 backface-hidden bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 border border-neutral-200 dark:border-neutral-800">
-                                <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">Word</span>
+                                <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">単語</span>
                                 <div className="flex items-center gap-3">
                                     <h2 className="text-5xl sm:text-6xl font-black text-center mb-0" style={{ fontFamily: 'var(--font-merriweather)' }}>{currentCard.word}</h2>
                                     {/* 音声再生ボタン (Front) */}
@@ -404,11 +404,11 @@ export default function DeckPage() {
                                     </button>
                                 </div>
                                 {currentCard.partOfSpeech && <span className="mt-4 px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-full text-sm font-medium">{currentCard.partOfSpeech}</span>}
-                                <p className="absolute bottom-8 text-neutral-300 dark:text-neutral-600 text-xs font-bold animate-pulse">Click to flip ↻</p>
+                                <p className="absolute bottom-8 text-neutral-300 dark:text-neutral-600 text-xs font-bold animate-pulse">クリックして反転 ↻</p>
                             </div>
                             {/* Back */}
                             <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 sm:p-12 text-center">
-                                <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-6 border-b border-indigo-400/30 pb-1">Meaning</span>
+                                <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-6 border-b border-indigo-400/30 pb-1">意味</span>
                                 <h3 className="text-3xl sm:text-4xl font-bold mb-8" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
 
                                 {/* 例文セクション (トグル式) */}
@@ -418,7 +418,7 @@ export default function DeckPage() {
                                             onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
                                             className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
                                         >
-                                            Show Examples
+                                            例文を見る
                                         </button>
                                     ) : (
                                         <button
@@ -428,7 +428,7 @@ export default function DeckPage() {
                                             }}
                                             className="px-6 py-2 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full text-sm font-bold shadow-lg transition-all flex items-center gap-2"
                                         >
-                                            <span>🔒</span> Unlock Examples (🪙2)
+                                            <span>🔒</span> 例文をアンロック (2コイン)
                                         </button>
                                     )
                                 ) : (
@@ -503,19 +503,19 @@ export default function DeckPage() {
             {selectedWords.size > 0 && (
                 <div className="fixed bottom-6 left-0 right-0 mx-auto w-max z-40 animate-in slide-in-from-bottom-4 fade-in">
                     <div className="bg-neutral-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-xl flex items-center gap-4">
-                        <span className="font-bold text-sm">{selectedWords.size} selected</span>
+                        <span className="font-bold text-sm">{selectedWords.size} 件選択中</span>
                         <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
                         <button
                             onClick={() => setShowMoveModal(true)}
                             className="font-bold text-sm hover:text-indigo-400 dark:hover:text-indigo-600 transition-colors"
                         >
-                            Move
+                            移動
                         </button>
                         <button
                             onClick={handleBatchDelete}
                             className="font-bold text-sm text-red-400 hover:text-red-300 dark:text-red-600 dark:hover:text-red-500 transition-colors"
                         >
-                            Delete
+                            削除
                         </button>
 
                         <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
@@ -524,14 +524,14 @@ export default function DeckPage() {
                             onClick={() => setSelectedWords(new Set())}
                             className="ml-2 text-xs opacity-50 hover:opacity-100"
                         >
-                            Cancel
+                            キャンセル
                         </button>
                     </div>
                 </div>
             )}
 
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
-                <Link href="/" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors">← Back to Home</Link>
+                <Link href="/" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors">← ホームに戻る</Link>
             </header>
 
             <main className="max-w-4xl mx-auto">
@@ -546,8 +546,8 @@ export default function DeckPage() {
                                     className="text-3xl sm:text-4xl font-black bg-neutral-100 dark:bg-neutral-800 border-2 border-indigo-500 rounded-lg px-2 py-1 w-full max-w-md focus:outline-none"
                                     onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
                                 />
-                                <button onClick={handleUpdateTitle} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg text-sm shrink-0">Save</button>
-                                <button onClick={() => setIsEditingTitle(false)} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 font-bold rounded-lg text-sm shrink-0">Cancel</button>
+                                <button onClick={handleUpdateTitle} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg text-sm shrink-0">保存</button>
+                                <button onClick={() => setIsEditingTitle(false)} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 font-bold rounded-lg text-sm shrink-0">キャンセル</button>
                             </div>
                         ) : (
                             <h1 className="text-3xl sm:text-4xl font-black mb-2 group cursor-pointer flex items-center gap-3 justify-center sm:justify-start" onClick={() => setIsEditingTitle(true)}>
@@ -555,12 +555,12 @@ export default function DeckPage() {
                                 <span className="opacity-0 group-hover:opacity-100 text-neutral-400 text-sm">✎</span>
                             </h1>
                         )}
-                        <p className="text-neutral-500 font-mono">{deck.words.length} items</p>
+                        <p className="text-neutral-500 font-mono">{deck.words.length} 語</p>
                     </div>
 
                     {deck.words.length > 0 && (
                         <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
-                            <span className="text-2xl">▶</span> Start Flashcards
+                            <span className="text-2xl">▶</span> 学習スタート
                         </button>
                     )}
                 </div>
@@ -575,26 +575,26 @@ export default function DeckPage() {
                                 onChange={toggleSelectAll}
                                 className="w-5 h-5 rounded border-neutral-300 accent-indigo-600 cursor-pointer"
                             />
-                            <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">Select All</h2>
+                            <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">全選択</h2>
                         </div>
 
                         {/* Sort Controls */}
                         <div className="flex items-center gap-2 text-sm">
-                            <span className="text-neutral-500 font-bold text-xs uppercase">Sort by:</span>
+                            <span className="text-neutral-500 font-bold text-xs uppercase">並び替え:</span>
                             <select
                                 value={sortKey}
                                 onChange={(e) => setSortKey(e.target.value as any)}
                                 className="bg-white dark:bg-black border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 font-bold focus:outline-none"
                             >
-                                <option value="created_asc">Created (Oldest)</option>
-                                <option value="created_desc">Created (Newest)</option>
-                                <option value="pos">Part of Speech</option>
+                                <option value="created_asc">作成順 (古い順)</option>
+                                <option value="created_desc">作成順 (新しい順)</option>
+                                <option value="pos">品詞順</option>
                             </select>
                         </div>
                     </div>
 
                     {sortedWords.length === 0 ? (
-                        <div className="p-12 text-center text-neutral-400">No words in this deck. Add some from the home page!</div>
+                        <div className="p-12 text-center text-neutral-400">単語がありません。ホーム画面から追加してください。</div>
                     ) : (
                         sortedWords.map((card, idx) => (
                             <div
@@ -652,7 +652,7 @@ export default function DeckPage() {
                                                                 onClick={() => setExpandedWordId(expandedWordId === card.id ? null : card.id || null)}
                                                                 className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mb-2"
                                                             >
-                                                                {expandedWordId === card.id ? "Hide details" : `Show ${card.otherExamples.length} more examples`}
+                                                                {expandedWordId === card.id ? "詳細を隠す" : `例文を ${card.otherExamples.length} 件表示`}
                                                                 <span className={`transition-transform ${expandedWordId === card.id ? "rotate-180" : ""}`}>▼</span>
                                                             </button>
 
@@ -676,7 +676,7 @@ export default function DeckPage() {
                                                             onClick={() => card.id && handleUnlock(card.id)}
                                                             className="text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1"
                                                         >
-                                                            <span>🔒</span> Unlock Details (2 Coins)
+                                                            <span>🔒</span> 詳細をアンロック (2コイン)
                                                         </button>
                                                     )}
                                                 </div>
