@@ -265,6 +265,20 @@ export default function DeckPage() {
         setIsFlipped(false);
     };
 
+    // --- 音声読み上げ ---
+    const speak = (text: string) => {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            // キャンセルして重複再生を防ぐ
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US'; // 英語（米国）
+            utterance.rate = 1.0; // 速度
+            // 必要なら voice を選ぶ処理も追加できるが、デフォルトでも十分
+            window.speechSynthesis.speak(utterance);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black">
@@ -312,21 +326,38 @@ export default function DeckPage() {
                             {/* Front */}
                             <div className="absolute inset-0 backface-hidden bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 border border-neutral-200 dark:border-neutral-800">
                                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-4">Word</span>
-                                <h2 className="text-5xl sm:text-6xl font-black text-center mb-4" style={{ fontFamily: 'var(--font-merriweather)' }}>{currentCard.word}</h2>
-                                {currentCard.partOfSpeech && <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-full text-sm font-medium">{currentCard.partOfSpeech}</span>}
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-5xl sm:text-6xl font-black text-center mb-0" style={{ fontFamily: 'var(--font-merriweather)' }}>{currentCard.word}</h2>
+                                    {/* 音声再生ボタン (Front) */}
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); speak(currentCard.word); }}
+                                        className="p-3 bg-neutral-100 dark:bg-neutral-800 rounded-full hover:bg-indigo-100 dark:hover:bg-indigo-900 text-indigo-500 transition-colors"
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    </button>
+                                </div>
+                                {currentCard.partOfSpeech && <span className="mt-4 px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 rounded-full text-sm font-medium">{currentCard.partOfSpeech}</span>}
                                 <p className="absolute bottom-8 text-neutral-300 dark:text-neutral-600 text-xs font-bold animate-pulse">Click to flip ↻</p>
                             </div>
                             {/* Back */}
                             <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 sm:p-12 text-center">
                                 <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-6 border-b border-indigo-400/30 pb-1">Meaning</span>
                                 <h3 className="text-3xl sm:text-4xl font-bold mb-8" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
-                                <div className="w-full bg-black/10 rounded-xl p-6 text-left">
-                                    <p className="text-lg italic font-serif mb-2 text-indigo-50">"{currentCard.example}"</p>
+                                <div className="w-full bg-black/10 rounded-xl p-6 text-left relative">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); speak(currentCard.example); }}
+                                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors"
+                                        title="Play example"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                    </button>
+                                    <p className="text-lg italic font-serif mb-2 text-indigo-50 pr-8">"{currentCard.example}"</p>
                                     <p className="text-sm text-indigo-200 font-light" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.example_jp}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+// ... (controls remain same)
                     <div className="flex items-center gap-6 mt-12 w-full max-w-sm justify-between">
                         <button onClick={handlePrev} disabled={currentIndex === 0} className={`p-4 rounded-full transition-all ${currentIndex === 0 ? "text-neutral-300 cursor-not-allowed" : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-lg hover:scale-110 active:scale-95"}`}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg></button>
                         <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{isFlipped ? "Back" : "Front"}</span>
@@ -481,7 +512,15 @@ export default function DeckPage() {
 
                                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
                                     <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
-                                        <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                            <button
+                                                onClick={() => speak(card.word)}
+                                                className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                            </button>
+                                        </div>
                                         {card.partOfSpeech && (
                                             <span className="text-xs bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-600 dark:text-neutral-400 font-bold whitespace-nowrap self-center sm:self-auto">
                                                 {card.partOfSpeech}
