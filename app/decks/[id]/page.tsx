@@ -509,15 +509,7 @@ export default function DeckPage() {
                         <h1 className="font-bold text-lg dark:text-white/90">{deck.title}</h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
                     </div>
-                    <button
-                        onClick={toggleRandomMode}
-                        className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${isRandomMode
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-300'
-                            }`}
-                    >
-                        🔀 {isRandomMode ? 'ランダム' : '順序'}
-                    </button>
+                    <div className="w-20"></div>
                 </header>
 
                 <main className="flex-1 flex flex-col items-center justify-center perspective-1000 w-full max-w-2xl mx-auto">
@@ -691,10 +683,10 @@ export default function DeckPage() {
                                 disabled={isAnswerChecked}
                                 placeholder="単語を入力..."
                                 className={`w-full p-4 text-2xl font-bold text-center bg-neutral-50 dark:bg-black border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
-                                        ? isCorrect
-                                            ? 'border-green-500 bg-green-50 dark:bg-green-950/20 text-green-600'
-                                            : 'border-red-500 bg-red-50 dark:bg-red-950/20 text-red-600'
-                                        : 'border-neutral-200 dark:border-neutral-800 focus:border-indigo-500'
+                                    ? isCorrect
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-950/20 text-green-600'
+                                        : 'border-red-500 bg-red-50 dark:bg-red-950/20 text-red-600'
+                                    : 'border-neutral-200 dark:border-neutral-800 focus:border-indigo-500'
                                     }`}
                             />
 
@@ -767,13 +759,32 @@ export default function DeckPage() {
                     </div>
 
                     {deck.words.length > 0 && (
-                        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-                            <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
-                                <span className="text-2xl">▶</span> 学習スタート
-                            </button>
-                            <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                <span className="text-2xl">📝</span> Writingテスト
-                            </button>
+                        <div className="flex flex-col gap-4">
+                            <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl w-fit self-center sm:self-start mb-2">
+                                <button
+                                    onClick={() => setIsRandomMode(false)}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isRandomMode ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                >
+                                    🔢 順序通り
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (deck) setShuffledWords(shuffleArray(deck.words));
+                                        setIsRandomMode(true);
+                                    }}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-700'}`}
+                                >
+                                    🔀 ランダム
+                                </button>
+                            </div>
+                            <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
+                                    <span className="text-2xl">🎴</span> フラッシュカード
+                                </button>
+                                <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                    <span className="text-2xl">📝</span> Writingテスト
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
