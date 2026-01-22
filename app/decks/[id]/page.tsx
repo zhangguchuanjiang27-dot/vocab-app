@@ -13,6 +13,8 @@ type WordCard = {
     example: string;
     example_jp: string;
     otherExamples?: { role: string; text: string; translation: string }[];
+    synonyms?: string[];
+    antonyms?: string[];
     isUnlocked?: boolean;
     createdAt?: string;
 };
@@ -78,6 +80,8 @@ export default function DeckPage() {
                     let cleanExampleJp = w.example_jp || "";
                     let isUnlocked = false;
                     let otherExamples = w.otherExamples || [];
+                    let synonyms = w.synonyms || [];
+                    let antonyms = w.antonyms || [];
 
                     // 1. アンロックマーカーのチェック
                     if (cleanExampleJp.includes('|||UNLOCKED|||')) {
@@ -90,7 +94,14 @@ export default function DeckPage() {
                         const parts = cleanExampleJp.split('|||EXT|||');
                         cleanExampleJp = parts[0];
                         try {
-                            otherExamples = JSON.parse(parts[1]);
+                            const parsed = JSON.parse(parts[1]);
+                            if (Array.isArray(parsed)) {
+                                otherExamples = parsed;
+                            } else if (parsed.examples) {
+                                otherExamples = parsed.examples;
+                                synonyms = parsed.synonyms || [];
+                                antonyms = parsed.antonyms || [];
+                            }
                         } catch (e) {
                             // パースエラー時はそのまま
                         }
@@ -100,6 +111,8 @@ export default function DeckPage() {
                         ...w,
                         example_jp: cleanExampleJp,
                         otherExamples: otherExamples,
+                        synonyms: synonyms,
+                        antonyms: antonyms,
                         isUnlocked: isUnlocked
                     };
                 });
@@ -491,6 +504,36 @@ export default function DeckPage() {
                                                 </div>
                                             </div>
                                         ))}
+                                        
+                                        {/* 類義語・対義語セクション */}
+                                        {(currentCard.synonyms?.length || 0) > 0 || (currentCard.antonyms?.length || 0) > 0 ? (
+                                            <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                                                {currentCard.synonyms && currentCard.synonyms.length > 0 && (
+                                                    <div>
+                                                        <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70">類義語</span>
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {currentCard.synonyms.map((syn, i) => (
+                                                                <span key={i} className="px-2.5 py-1 text-xs bg-white/10 rounded-full text-indigo-100 font-medium">
+                                                                    {syn}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {currentCard.antonyms && currentCard.antonyms.length > 0 && (
+                                                    <div>
+                                                        <span className="text-[10px] uppercase font-bold text-red-200 opacity-70">対義語</span>
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {currentCard.antonyms.map((ant, i) => (
+                                                                <span key={i} className="px-2.5 py-1 text-xs bg-red-500/20 rounded-full text-red-100 font-medium">
+                                                                    {ant}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 )}
                             </div>
@@ -715,6 +758,39 @@ export default function DeckPage() {
                                                         >
                                                             <span>🔒</span> 詳細をアンロック (2コイン)
                                                         </button>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* 類義語・対義語表示 (アンロック後のみ) */}
+                                            {card.isUnlocked && (card.synonyms?.length || 0 > 0 || card.antonyms?.length || 0 > 0) && (
+                                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800 space-y-2">
+                                                    {card.synonyms && card.synonyms.length > 0 && (
+                                                        <div>
+                                                            <span className="text-[10px] font-bold text-neutral-400 uppercase">類義語</span>
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {card.synonyms.map((syn, i) => (
+                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-600 dark:text-neutral-400">
+                                                                        {syn}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {card.antonyms && card.antonyms.length > 0 && (
+                                                        <div>
+                                                            <span className="text-[10px] font-bold text-red-600 dark:text-red-400 uppercase">対義語</span>
+                                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                                {card.antonyms.map((ant, i) => (
+                                                                    <span key={i} className="px-2 py-0.5 text-xs bg-red-50 dark:bg-red-900/20 rounded text-red-600 dark:text-red-400">
+                                                                        {ant}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                                     )}
                                                 </div>
                                             )}

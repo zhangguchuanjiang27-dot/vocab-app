@@ -74,6 +74,8 @@ export async function POST(req: Request) {
          - role: "形容詞(奥深い)" の形式
          - text: 英語の例文
          - translation: 和訳
+      7. synonyms: 類義語の英単語リスト（例: ["deep", "profound"]）- 3個程度まで
+      8. antonyms: 対義語の英単語リスト（例: ["shallow"]）- 1～2個程度
       
       出力は以下のJSON形式のみを返してください：
       {
@@ -86,7 +88,9 @@ export async function POST(req: Request) {
             "example_jp": "彼女はその主題について深い理解を持っている。",
             "otherExamples": [
               { "role": "形容詞(奥深い)", "text": "His words had a profound impact on me.", "translation": "彼の言葉は私に深い影響を与えた。" }
-            ]
+            ],
+            "synonyms": ["deep", "serious"],
+            "antonyms": ["shallow", "superficial"]
           }
         ]
       }

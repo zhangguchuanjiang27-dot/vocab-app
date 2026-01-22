@@ -10,6 +10,8 @@ interface WordInput {
   example?: string;
   example_jp?: string;
   otherExamples?: any[];
+  synonyms?: string[];
+  antonyms?: string[];
 }
 
 export async function GET() {
@@ -60,9 +62,20 @@ export async function POST(req: Request) {
         words: {
           create: words.map((w: WordInput) => {
             let exampleJp = w.example_jp || "";
-            // 追加例文があれば埋め込む
+            // 追加例文と類義語・対義語を埋め込む
+            const extras: any = {};
             if (w.otherExamples && Array.isArray(w.otherExamples) && w.otherExamples.length > 0) {
-              exampleJp += `|||EXT|||${JSON.stringify(w.otherExamples)}`;
+              extras.examples = w.otherExamples;
+            }
+            if (w.synonyms && Array.isArray(w.synonyms) && w.synonyms.length > 0) {
+              extras.synonyms = w.synonyms;
+            }
+            if (w.antonyms && Array.isArray(w.antonyms) && w.antonyms.length > 0) {
+              extras.antonyms = w.antonyms;
+            }
+            
+            if (Object.keys(extras).length > 0) {
+              exampleJp += `|||EXT|||${JSON.stringify(extras)}`;
             }
 
             return {
@@ -70,7 +83,6 @@ export async function POST(req: Request) {
               meaning: w.meaning,
               example: w.example || "",
               example_jp: exampleJp
-              // otherExamples は渡さない
             };
           })
         }
