@@ -73,6 +73,8 @@ export async function POST(req: Request) {
     return NextResponse.json(deck);
   } catch (err) {
     console.error(err);
-    return NextResponse.json({ error: "Failed to create deck" }, { status: 500 });
+    return NextResponse.json({
+      error: `Failed to create deck: ${err instanceof Error ? err.message : String(err)}`
+    }, { status: 500 });
   }
 }

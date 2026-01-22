@@ -128,6 +128,8 @@ export async function PUT(
 
     } catch (err) {
         console.error(err);
-        return NextResponse.json({ error: "Failed to update deck" }, { status: 500 });
+        return NextResponse.json({
+            error: `Failed to update deck: ${err instanceof Error ? err.message : String(err)}`
+        }, { status: 500 });
     }
 }
