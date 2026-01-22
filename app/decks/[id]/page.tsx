@@ -532,7 +532,7 @@ export default function DeckPage() {
             // Fallback if index is out of bounds or card is missing
             return (
                 <div className="min-h-screen flex items-center justify-center">
-                    <div className="text-neutral-500">Card not found. <button onClick={handleRestart} className="underline">Restart</button></div>
+                    <div className="text-neutral-500">Card not found. <button onClick={() => handleRestart()} className="underline">Restart</button></div>
                 </div>
             );
         }
