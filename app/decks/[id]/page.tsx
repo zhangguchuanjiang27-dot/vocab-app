@@ -759,8 +759,6 @@ export default function DeckPage() {
                                                 <div className="space-y-3">
                                                     {/* メイン例文 */}
                                                     {/* メイン例文 (データがある場合のみ表示) */}
-                                                    {/* メイン例文 (データがある場合のみ表示) */}
-                                                    {/* メイン例文 (データがある場合のみ表示) */}
                                                     {(typeof card.example === 'string' && card.example.trim() !== "") ? (
                                                         <div>
                                                             <div className="flex items-start gap-2">
@@ -778,10 +776,9 @@ export default function DeckPage() {
                                                     ) : null}
 
                                                     {/* 追加の例文表示 (リスト表示) */}
-                                                    {/* 追加の例文表示 (リスト表示) */}
                                                     {card.otherExamples && card.otherExamples.length > 0 && (
                                                         <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3 animate-in fade-in">
-                                                            {card.otherExamples.map((ex, i) => (
+                                                            {card.otherExamples.filter((ex: any) => ex.text && ex.text.trim() !== "").map((ex, i) => (
                                                                 <div key={i} className="text-sm">
                                                                     <div className="flex items-center gap-2 mb-1">
                                                                         <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
