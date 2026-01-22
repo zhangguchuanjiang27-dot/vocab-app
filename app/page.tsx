@@ -356,7 +356,7 @@ export default function Home() {
                     </label>
                     <textarea
                       className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
-                      placeholder={`apple\nrun\nbeautiful`}
+                      placeholder={`apple\nrun\ntake off`}
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                     />
