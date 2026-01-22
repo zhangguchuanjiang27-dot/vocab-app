@@ -222,13 +222,22 @@ export default function DeckPage() {
             // Sequential execution to avoid overwhelming the server/DB transaction locks
             for (const word of wordsToUnlock) {
                 if (!word.id) continue;
-                const res = await fetch(`/api/words/${word.id}/unlock`, { method: "POST" });
+
+                // データがあるかどうかでAPIを変える
+                // exampleが空なら生成(generate-details)、あるならアンロック(unlock)
+                const hasData = word.example && word.example.trim() !== "";
+                const apiEndpoint = hasData
+                    ? `/api/words/${word.id}/unlock`
+                    : `/api/words/${word.id}/generate-details`;
+
+                const res = await fetch(apiEndpoint, { method: "POST" });
+
                 if (!res.ok) {
-                    console.error(`Failed to unlock word ${word.word}`);
+                    console.error(`Failed to process word ${word.word}`);
                 }
             }
             await fetchDeck();
-            alert("アンロックが完了しました！");
+            alert("処理が完了しました！");
         } catch (e) {
             console.error(e);
             alert("エラーが発生しました");
