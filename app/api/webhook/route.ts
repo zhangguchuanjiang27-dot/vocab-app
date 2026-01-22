@@ -33,14 +33,21 @@ export async function POST(req: Request) {
     }
 
     if (event.type === "checkout.session.completed") {
-        const session = event.data.object as Stripe.Checkout.Session;
+        const checkoutSession = event.data.object as Stripe.Checkout.Session;
 
         // metadataからユーザーIDと追加クレジット数を取得
-        const userId = session.metadata?.userId;
-        const creditsStr = session.metadata?.credits;
+        const userId = checkoutSession.metadata?.userId;
+        const creditsStr = checkoutSession.metadata?.credits;
 
         if (userId && creditsStr) {
             const creditsToAdd = parseInt(creditsStr, 10);
+            
+            // creditsToAddが有効な数字か確認
+            if (isNaN(creditsToAdd) || creditsToAdd <= 0) {
+                console.error("Invalid credits value", { creditsStr, parsed: creditsToAdd });
+                return NextResponse.json({ received: true }); // Stripeに成功を返す（リトライ防止）
+            }
+
             console.log(`Processing webhook for UserID: ${userId}, Credits: ${creditsToAdd}`);
 
             try {
@@ -56,7 +63,9 @@ export async function POST(req: Request) {
             } catch (error) {
                 console.error('Database update failed:', error);
                 // ユーザーIDが存在しない場合などのエラー詳細を出力
-                return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
+                if (error instanceof Error && error.message.includes('unique constraint')) {
+                    console.error('User not found or constraint error');
+                }
             }
         } else {
             console.error("Missing metadata in webhook session", { userId, creditsStr });

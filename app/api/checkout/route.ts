@@ -32,8 +32,8 @@ export async function POST(req: Request) {
                 },
             ],
             mode: "payment",
-            success_url: `${process.env.NEXTAUTH_URL}/?success=true`,
-            cancel_url: `${process.env.NEXTAUTH_URL}/?canceled=true`,
+            success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?success=true`,
+            cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?canceled=true`,
             metadata: {
                 userId: session.user.id,
                 type: "credit_purchase",

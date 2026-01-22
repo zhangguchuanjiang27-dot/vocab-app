@@ -100,6 +100,21 @@ export default function Home() {
     }
   };
 
+  // 支払い成功後の処理
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get('success')) {
+      // クレジットを再取得
+      setTimeout(() => {
+        if (session?.user) {
+          fetchCredits();
+        }
+      }, 2000); // Stripe webhookの処理完了を待つため2秒待機
+      // URLからパラメータを削除
+      window.history.replaceState({}, document.title, '/');
+    }
+  }, [session]);
+
 
   // デッキ保存処理
   const handleSaveDeck = async () => {
