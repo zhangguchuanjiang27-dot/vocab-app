@@ -577,10 +577,12 @@ export default function DeckPage() {
     // Visibility Toggle State
     const [hiddenWordIds, setHiddenWordIds] = useState<Set<string>>(new Set());
     const toggleVisibility = (id: string) => {
-        const newSet = new Set(hiddenWordIds);
-        if (newSet.has(id)) newSet.delete(id);
-        else newSet.add(id);
-        setHiddenWordIds(newSet);
+        setHiddenWordIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
+            return newSet;
+        });
     };
 
     const handleBatchGenerate = async () => {
