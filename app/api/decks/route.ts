@@ -7,6 +7,7 @@ import { prisma } from "@/app/lib/prisma";
 interface WordInput {
   word: string;
   meaning: string;
+  partOfSpeech?: string; // 追加
   example?: string;
   example_jp?: string;
   otherExamples?: any[];
@@ -61,28 +62,15 @@ export async function POST(req: Request) {
         userId: userId,
         words: {
           create: words.map((w: WordInput) => {
-            let exampleJp = w.example_jp || "";
-            // 追加例文と類義語・対義語を埋め込む
-            const extras: any = {};
-            if (w.otherExamples && Array.isArray(w.otherExamples) && w.otherExamples.length > 0) {
-              extras.examples = w.otherExamples;
-            }
-            if (w.synonyms && Array.isArray(w.synonyms) && w.synonyms.length > 0) {
-              extras.synonyms = w.synonyms;
-            }
-            if (w.antonyms && Array.isArray(w.antonyms) && w.antonyms.length > 0) {
-              extras.antonyms = w.antonyms;
-            }
-            
-            if (Object.keys(extras).length > 0) {
-              exampleJp += `|||EXT|||${JSON.stringify(extras)}`;
-            }
-
+            // 今回の仕様変更:
+            // 生成時は単語と意味のみ。例文などはアンロック時に生成・取得する。
+            // よって、example, example_jp は空文字で保存する。
             return {
               word: w.word,
               meaning: w.meaning,
-              example: w.example || "",
-              example_jp: exampleJp
+              partOfSpeech: w.partOfSpeech, // DBスキーマにpartOfSpeechがあるか要確認。なければ外すか、meaningに含める
+              example: "",
+              example_jp: ""
             };
           })
         }
