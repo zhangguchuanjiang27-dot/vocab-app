@@ -192,6 +192,37 @@ export default function DeckPage() {
         }
     };
 
+    // 一括削除実行
+    const handleBatchDelete = async () => {
+        if (selectedWords.size === 0 || !deck) return;
+        if (!confirm(`本当に ${selectedWords.size} 個の単語を削除しますか？この操作は取り消せません。`)) return;
+
+        try {
+            const res = await fetch(`/api/words/batch`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    wordIds: Array.from(selectedWords)
+                })
+            });
+
+            if (res.ok) {
+                // 現在のリストから削除
+                setDeck({
+                    ...deck,
+                    words: deck.words.filter(w => w.id && !selectedWords.has(w.id))
+                });
+                setSelectedWords(new Set());
+                alert("削除しました");
+            } else {
+                alert("削除に失敗しました");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました");
+        }
+    };
+
     // ソートロジック
     const getSortedWords = () => {
         if (!deck) return [];
@@ -346,8 +377,17 @@ export default function DeckPage() {
                             onClick={() => setShowMoveModal(true)}
                             className="font-bold text-sm hover:text-indigo-400 dark:hover:text-indigo-600 transition-colors"
                         >
-                            Move to Deck
+                            Move
                         </button>
+                        <button
+                            onClick={handleBatchDelete}
+                            className="font-bold text-sm text-red-400 hover:text-red-300 dark:text-red-600 dark:hover:text-red-500 transition-colors"
+                        >
+                            Delete
+                        </button>
+
+                        <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
+
                         <button
                             onClick={() => setSelectedWords(new Set())}
                             className="ml-2 text-xs opacity-50 hover:opacity-100"

@@ -53,3 +53,38 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Failed to batch move words" }, { status: 500 });
     }
 }
+
+// 単語の一括削除
+export async function DELETE(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    try {
+        const body = await req.json();
+        const { wordIds } = body;
+
+        if (!Array.isArray(wordIds) || wordIds.length === 0) {
+            return NextResponse.json({ error: "No words selected" }, { status: 400 });
+        }
+
+        // 削除実行
+        // wordIdsに含まれ、かつ所有者が自分である単語のみ削除する
+        const result = await prisma.wordCard.deleteMany({
+            where: {
+                id: { in: wordIds },
+                deck: {
+                    userId: session.user.id
+                }
+            }
+        });
+
+        return NextResponse.json({ success: true, count: result.count });
+
+    } catch (err) {
+        console.error(err);
+        return NextResponse.json({ error: "Failed to batch delete words" }, { status: 500 });
+    }
+}
