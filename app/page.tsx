@@ -116,7 +116,10 @@ export default function Home() {
         body: JSON.stringify({ title: deckTitle, words }),
       });
 
-      if (!res.ok) throw new Error("Failed to save");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Server Error");
+      }
 
       const newDeck = await res.json();
       setDeckTitle("");
@@ -124,9 +127,9 @@ export default function Home() {
 
       // リスト更新
       fetchDecks();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("保存できませんでした。ネットワーク接続などを確認してください。");
+      alert(`保存に失敗しました: ${e.message}`);
     }
   };
 
@@ -139,6 +142,9 @@ export default function Home() {
       const res = await fetch(`/api/decks/${id}`, { method: "DELETE" });
       if (res.ok) {
         fetchDecks(); // リスト再取得
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(`削除失敗: ${errData.error || "Unknown error"}`);
       }
     } catch (e) {
       console.error(e);
@@ -213,15 +219,18 @@ export default function Home() {
         body: JSON.stringify({ words }),
       });
 
-      if (!res.ok) throw new Error("Failed to add words");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Server Error");
+      }
 
       alert(`"${deckTitle}" に追加しました！`);
       setShowAddToDeckModal(false);
       setWords([]); // 追加後はクリア
       fetchDecks(); // 一覧更新
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("追加に失敗しました");
+      alert(`追加に失敗しました: ${e.message}`);
     }
   };
 
