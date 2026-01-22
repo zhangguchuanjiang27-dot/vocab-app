@@ -157,6 +157,40 @@ export default function DeckPage() {
         }
     };
 
+    const handleGenerateDetails = async (wordId: string) => {
+        if (!confirm("1コインを使ってAIで詳細（例文・類義語・対義語）を生成しますか？")) return;
+
+        try {
+            const res = await fetch(`/api/words/${wordId}/generate-details`, { method: "POST" });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to generate");
+            }
+
+            const data = await res.json();
+
+            // 成功したらローカルのstateを更新
+            if (deck) {
+                const updatedWords = deck.words.map(w => {
+                    if (w.id === wordId) {
+                        return {
+                            ...w,
+                            otherExamples: data.generatedContent.examples,
+                            synonyms: data.generatedContent.synonyms,
+                            antonyms: data.generatedContent.antonyms,
+                            isUnlocked: true // 生成したら即座に見えるようにする
+                        };
+                    }
+                    return w;
+                });
+                setDeck({ ...deck, words: updatedWords });
+                alert("生成しました！");
+            }
+        } catch (e: any) {
+            alert(e.message);
+        }
+    };
+
     const fetchMyDecks = async () => {
         try {
             const res = await fetch("/api/decks");
@@ -723,7 +757,7 @@ export default function DeckPage() {
                                             <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
 
                                             {/* 詳細情報セクション (例文・類義語・対義語) */}
-                                            {((card.otherExamples && card.otherExamples.length > 0) || (card.synonyms && card.synonyms.length > 0) || (card.antonyms && card.antonyms.length > 0)) && (
+                                            {((card.otherExamples && card.otherExamples.length > 0) || (card.synonyms && card.synonyms.length > 0) || (card.antonyms && card.antonyms.length > 0)) ? (
                                                 <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
                                                     {card.isUnlocked ? (
                                                         <div className="space-y-3">
@@ -793,6 +827,15 @@ export default function DeckPage() {
                                                             <span>🔒</span> 詳細をアンロック (2コイン)
                                                         </button>
                                                     )}
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                                                    <button
+                                                        onClick={() => card.id && handleGenerateDetails(card.id)}
+                                                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 flex items-center gap-1"
+                                                    >
+                                                        <span>✨</span> AIで詳細を生成 (1コイン)
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
