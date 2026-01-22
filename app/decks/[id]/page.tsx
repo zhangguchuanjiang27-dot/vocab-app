@@ -574,6 +574,50 @@ export default function DeckPage() {
         );
     }
 
+    // Visibility Toggle State
+    const [hiddenWordIds, setHiddenWordIds] = useState<Set<string>>(new Set());
+    const toggleVisibility = (id: string) => {
+        const newSet = new Set(hiddenWordIds);
+        if (newSet.has(id)) newSet.delete(id);
+        else newSet.add(id);
+        setHiddenWordIds(newSet);
+    };
+
+    const handleBatchGenerate = async () => {
+        if (!deck) return;
+        const targets = deck.words.filter(w => w.id && selectedWords.has(w.id) && !w.isUnlocked);
+
+        if (targets.length === 0) {
+            alert("生成対象の単語がありません（すでにアンロック済みか、選択されていません）");
+            return;
+        }
+
+        const cost = targets.length * 2;
+        if (!confirm(`${targets.length}語の例文を一括生成しますか？\n合計 ${cost} コインを消費します。`)) return;
+
+        setLoading(true);
+        try {
+            // 並列処理で高速化 (5並列ずつ制限するとサーバ負荷対策になるが、今回は簡易的に全並列)
+            await Promise.all(targets.map(async (w) => {
+                if (!w.id) return;
+                try {
+                    // UnlockしていないのでGenerateを呼ぶ (内部で課金+生成)
+                    await fetch(`/api/words/${w.id}/generate-details`, { method: "POST" });
+                } catch (e) {
+                    console.error(`Failed to generate for ${w.word}`, e);
+                }
+            }));
+
+            await fetchDeck();
+            alert("一括生成が完了しました！");
+            setSelectedWords(new Set()); // 選択解除
+        } catch (e) {
+            alert("エラーが発生しました");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // --- リストモード ---
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
@@ -609,6 +653,14 @@ export default function DeckPage() {
                     <div className="bg-neutral-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-xl flex items-center gap-4">
                         <span className="font-bold text-sm">{selectedWords.size} 件選択中</span>
                         <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
+
+                        <button
+                            onClick={handleBatchGenerate}
+                            className="font-bold text-sm text-emerald-400 hover:text-emerald-300 dark:text-emerald-600 dark:hover:text-emerald-500 transition-colors flex items-center gap-1"
+                        >
+                            <span>✨</span> 一括生成
+                        </button>
+
                         <button
                             onClick={() => setShowMoveModal(true)}
                             className="font-bold text-sm hover:text-indigo-400 dark:hover:text-indigo-600 transition-colors"
@@ -732,39 +784,48 @@ export default function DeckPage() {
                                         <div className="space-y-1">
                                             {/* 例文セクション (ロック機能付き) */}
                                             {card.isUnlocked ? (
-                                                <div className="space-y-3">
-                                                    {/* メイン例文 */}
-                                                    {/* メイン例文 (データがある場合のみ表示) */}
-                                                    {/* メイン例文 (データがある場合のみ表示: 可視文字が含まれているかチェック) */}
-                                                    {(typeof card.example === 'string' && /[^\s\u00A0\u2000-\u200B]/.test(card.example)) ? (
-                                                        <div>
-                                                            <div className="flex items-start gap-2">
-                                                                <button
-                                                                    onClick={() => speak(card.example)}
-                                                                    className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-                                                                    title="Play example"
-                                                                >
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                </button>
-                                                                <div className="text-sm text-neutral-600 dark:text-neutral-300 italic">"{card.example}"</div>
-                                                            </div>
-                                                            <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
-                                                        </div>
-                                                    ) : null}
+                                                <div>
+                                                    <button
+                                                        onClick={() => card.id && toggleVisibility(card.id)}
+                                                        className="text-[10px] text-neutral-400 mb-2 hover:text-indigo-500 flex items-center gap-1 font-bold"
+                                                    >
+                                                        {card.id && hiddenWordIds.has(card.id) ? "▶ 例文を表示" : "▼ 例文を隠す"}
+                                                    </button>
 
-                                                    {/* 追加の例文表示 (リスト表示) */}
-                                                    {card.otherExamples && card.otherExamples.length > 0 && (
-                                                        <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3 animate-in fade-in">
-                                                            {card.otherExamples.filter((ex: any) => ex.text && ex.text.trim() !== "").map((ex, i) => (
-                                                                <div key={i} className="text-sm">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
-                                                                        <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                    {(!card.id || !hiddenWordIds.has(card.id)) && (
+                                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                                            {/* メイン例文 (データがある場合のみ表示: 可視文字が含まれているかチェック) */}
+                                                            {(typeof card.example === 'string' && /[^\s\u00A0\u2000-\u200B]/.test(card.example)) ? (
+                                                                <div>
+                                                                    <div className="flex items-start gap-2">
+                                                                        <button
+                                                                            onClick={() => speak(card.example)}
+                                                                            className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                                                            title="Play example"
+                                                                        >
+                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                        </button>
+                                                                        <div className="text-sm text-neutral-600 dark:text-neutral-300 italic">"{card.example}"</div>
                                                                     </div>
-                                                                    <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
-                                                                    <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                    <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
                                                                 </div>
-                                                            ))}
+                                                            ) : null}
+
+                                                            {/* 追加の例文表示 (リスト表示) */}
+                                                            {card.otherExamples && card.otherExamples.length > 0 && (
+                                                                <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
+                                                                    {card.otherExamples.filter((ex: any) => ex.text && ex.text.trim() !== "").map((ex, i) => (
+                                                                        <div key={i} className="text-sm">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
+                                                                                <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                            </div>
+                                                                            <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
+                                                                            <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
