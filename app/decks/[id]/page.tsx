@@ -549,7 +549,6 @@ export default function DeckPage() {
                                         </button>
                                         <div className="mb-4 last:mb-0">
                                             <div className="flex gap-2 items-start">
-                                                <button onClick={() => speak(currentCard.example)} className="mt-1 p-1 bg-white/20 rounded-full hover:bg-white/40 shrink-0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                                                 <div>
                                                     <p className="text-lg italic font-serif text-indigo-50 leading-tight">"{currentCard.example}"</p>
                                                     <p className="text-sm text-indigo-200 font-light mt-1">{currentCard.example_jp}</p>
@@ -560,7 +559,6 @@ export default function DeckPage() {
                                             <div key={i} className="mb-4 last:mb-0 border-t border-white/10 pt-4">
                                                 <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70 mb-1 block">{ex.role}</span>
                                                 <div className="flex gap-2 items-start">
-                                                    <button onClick={() => speak(ex.text)} className="mt-1 p-1 bg-white/20 rounded-full hover:bg-white/40 shrink-0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
                                                     <div>
                                                         <p className="text-base italic font-serif text-indigo-50 leading-tight">"{ex.text}"</p>
                                                         <p className="text-xs text-indigo-200 font-light mt-1">{ex.translation}</p>
