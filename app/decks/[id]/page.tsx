@@ -205,6 +205,38 @@ export default function DeckPage() {
         }
     };
 
+    const handleBulkUnlock = async () => {
+        if (!deck) return;
+        const wordsToUnlock = deck.words.filter(w => w.id && selectedWordIds.has(w.id) && !w.isUnlocked);
+
+        if (wordsToUnlock.length === 0) {
+            alert("アンロックが必要な単語が選択されていません");
+            return;
+        }
+
+        const cost = wordsToUnlock.length * 2;
+        if (!confirm(`${wordsToUnlock.length} 件の単語の例文をアンロックします。\n合計 ${cost} コインを消費しますか？`)) return;
+
+        setLoading(true);
+        try {
+            // Sequential execution to avoid overwhelming the server/DB transaction locks
+            for (const word of wordsToUnlock) {
+                if (!word.id) continue;
+                const res = await fetch(`/api/words/${word.id}/unlock`, { method: "POST" });
+                if (!res.ok) {
+                    console.error(`Failed to unlock word ${word.word}`);
+                }
+            }
+            await fetchDeck();
+            alert("アンロックが完了しました！");
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAccessExamples = async (card: WordCard) => {
         if (!card.id) return;
 
@@ -632,6 +664,10 @@ export default function DeckPage() {
                                     </button>
                                     <button onClick={handleBulkCollapse} className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-xs font-bold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center gap-1">
                                         <span>▶</span> すべて閉じる
+                                    </button>
+                                    <div className="w-px h-4 bg-neutral-300 dark:bg-neutral-700 mx-1"></div>
+                                    <button onClick={handleBulkUnlock} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1">
+                                        <span>🔓</span> 一括アンロック
                                     </button>
                                 </div>
                             )}
