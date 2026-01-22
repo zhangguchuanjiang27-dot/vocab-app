@@ -62,6 +62,50 @@ export default function DeckPage() {
     // Sort & Filter
     const [sortKey, setSortKey] = useState<'created_desc' | 'created_asc' | 'pos'>('created_asc');
 
+    // Selection State
+    const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
+
+    const toggleSelectWord = (id: string) => {
+        const newResult = new Set(selectedWordIds);
+        if (newResult.has(id)) newResult.delete(id);
+        else newResult.add(id);
+        setSelectedWordIds(newResult);
+    };
+
+    const handleSelectAll = () => {
+        // 現在のソート済みリストを基準に全選択/解除
+        const allIds = getSortedWords().map(w => w.id).filter(Boolean) as string[];
+
+        // すてに全て選択されていれば解除、そうでなければ全選択
+        const isAllSelected = allIds.length > 0 && allIds.every(id => selectedWordIds.has(id));
+
+        if (isAllSelected) {
+            setSelectedWordIds(new Set());
+        } else {
+            setSelectedWordIds(new Set(allIds));
+        }
+    };
+
+    const handleBulkExpand = () => {
+        setExpandedListItems(prev => {
+            const next = { ...prev };
+            selectedWordIds.forEach(id => {
+                next[id] = true;
+            });
+            return next;
+        });
+    };
+
+    const handleBulkCollapse = () => {
+        setExpandedListItems(prev => {
+            const next = { ...prev };
+            selectedWordIds.forEach(id => {
+                next[id] = false;
+            });
+            return next;
+        });
+    };
+
 
 
     useEffect(() => {
@@ -566,8 +610,31 @@ export default function DeckPage() {
                 {/* Word List */}
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            {/* Selection removed */}
+                        <div className="flex items-center gap-4 flex-1">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={sortedWords.length > 0 && sortedWords.every(w => w.id && selectedWordIds.has(w.id))}
+                                    onChange={handleSelectAll}
+                                    className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                />
+                                {selectedWordIds.size > 0 && (
+                                    <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
+                                        {selectedWordIds.size} 選択中
+                                    </span>
+                                )}
+                            </div>
+
+                            {selectedWordIds.size > 0 && (
+                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
+                                    <button onClick={handleBulkExpand} className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-xs font-bold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center gap-1">
+                                        <span>▼</span> すべて開く
+                                    </button>
+                                    <button onClick={handleBulkCollapse} className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-xs font-bold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center gap-1">
+                                        <span>▶</span> すべて閉じる
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Sort Controls */}
@@ -591,8 +658,16 @@ export default function DeckPage() {
                         sortedWords.map((card, idx) => (
                             <div
                                 key={card.id || idx}
-                                className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative"
+                                className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative select-none"
                             >
+                                <div className="pt-1.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={card.id ? selectedWordIds.has(card.id) : false}
+                                        onChange={() => card.id && toggleSelectWord(card.id)}
+                                        className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                </div>
                                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
                                     <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
                                         <div className="flex items-center gap-2">
