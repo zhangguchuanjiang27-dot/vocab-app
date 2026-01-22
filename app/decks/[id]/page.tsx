@@ -440,10 +440,12 @@ export default function DeckPage() {
                                 </div>
 
                                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
-                                    <div className="flex items-baseline gap-3 min-w-[200px]">
-                                        <span className="text-lg font-bold font-serif" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                    <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
+                                        <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
                                         {card.partOfSpeech && (
-                                            <span className="text-xs bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-500 font-medium">{card.partOfSpeech}</span>
+                                            <span className="text-xs bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-600 dark:text-neutral-400 font-bold whitespace-nowrap self-center sm:self-auto">
+                                                {card.partOfSpeech}
+                                            </span>
                                         )}
                                     </div>
                                     <div className="flex-1">
