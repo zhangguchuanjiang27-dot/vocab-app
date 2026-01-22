@@ -55,17 +55,13 @@ export default function DeckPage() {
     // Sort & Filter
     const [sortKey, setSortKey] = useState<'created_desc' | 'created_asc' | 'pos'>('created_asc');
 
-    // Selection & Batch Move
-    const [selectedWords, setSelectedWords] = useState<Set<string>>(new Set());
-    const [myDecks, setMyDecks] = useState<Deck[]>([]);
-    const [showMoveModal, setShowMoveModal] = useState(false);
+
 
     useEffect(() => {
         if (status === "unauthenticated") {
             router.push("/");
         } else if (session?.user && deckId) {
             fetchDeck();
-            fetchMyDecks();
         }
     }, [session, status, deckId]);
 
@@ -76,46 +72,73 @@ export default function DeckPage() {
                 const data = await res.json();
 
                 // 埋め込まれた追加例文とアンロック情報のパース処理
-                const processedWords = data.words.map((w: WordCard) => {
-                    let cleanExampleJp = w.example_jp || "";
-                    let isUnlocked = false;
-                    let otherExamples = w.otherExamples || [];
-                    let synonyms = w.synonyms || [];
-                    let antonyms = w.antonyms || [];
+                const rawWords = Array.isArray(data.words) ? data.words : [];
+                const processedWords = rawWords
+                    .filter((w: any) => w && typeof w === 'object') // Filter out falsy/null items first
+                    .map((w: WordCard) => {
+                        // Force string conversion for safety
+                        let cleanExampleJp = String(w.example_jp || "");
+                        let isUnlocked = false;
 
-                    // 1. アンロックマーカーのチェック
-                    if (cleanExampleJp.includes('|||UNLOCKED|||')) {
-                        isUnlocked = true;
-                        cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
-                    }
+                        // Safety: Ensure these are arrays
+                        let otherExamples: any[] = Array.isArray(w.otherExamples) ? w.otherExamples : [];
+                        let synonyms: string[] = Array.isArray(w.synonyms) ? w.synonyms.map(String) : [];
+                        let antonyms: string[] = Array.isArray(w.antonyms) ? w.antonyms.map(String) : [];
 
-                    // 2. 追加例文マーカーのチェック
-                    if (cleanExampleJp.includes('|||EXT|||')) {
-                        const parts = cleanExampleJp.split('|||EXT|||');
-                        cleanExampleJp = parts[0];
-                        try {
-                            const parsed = JSON.parse(parts[1]);
-                            if (Array.isArray(parsed)) {
-                                otherExamples = parsed;
-                            } else if (parsed.examples) {
-                                otherExamples = parsed.examples;
-                                synonyms = parsed.synonyms || [];
-                                antonyms = parsed.antonyms || [];
-                            }
-                        } catch (e) {
-                            // パースエラー時はそのまま
+                        // 1. アンロックマーカーのチェック
+                        if (cleanExampleJp.includes('|||UNLOCKED|||')) {
+                            isUnlocked = true;
+                            cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
                         }
-                    }
 
-                    return {
-                        ...w,
-                        example_jp: cleanExampleJp,
-                        otherExamples: otherExamples,
-                        synonyms: synonyms,
-                        antonyms: antonyms,
-                        isUnlocked: isUnlocked
-                    };
-                });
+                        // 2. 追加例文マーカーのチェック
+                        if (cleanExampleJp.includes('|||EXT|||')) {
+                            const parts = cleanExampleJp.split('|||EXT|||');
+                            cleanExampleJp = parts[0] || "";
+                            try {
+                                const parsed = JSON.parse(parts[1]);
+                                if (Array.isArray(parsed)) {
+                                    otherExamples = parsed;
+                                } else if (parsed && typeof parsed === 'object') {
+                                    if (parsed.examples && Array.isArray(parsed.examples)) {
+                                        otherExamples = parsed.examples;
+                                    }
+                                    if (parsed.synonyms && Array.isArray(parsed.synonyms)) {
+                                        synonyms = parsed.synonyms.map((s: any) => String(s));
+                                    }
+                                    if (parsed.antonyms && Array.isArray(parsed.antonyms)) {
+                                        antonyms = parsed.antonyms.map((a: any) => String(a));
+                                    }
+                                }
+                            } catch (e) {
+                                // パースエラー時はそのまま
+                                console.warn("Failed to parse extended data", e);
+                            }
+                        }
+
+                        // Clean otherExamples to match expected structure and ensure safe rendering
+                        const safeOtherExamples = otherExamples.map((ex: any) => {
+                            if (!ex || typeof ex !== 'object') return null;
+                            return {
+                                role: String(ex.role || ''),
+                                text: String(ex.text || ''),
+                                translation: String(ex.translation || '')
+                            };
+                        }).filter(Boolean) as { role: string; text: string; translation: string }[];
+
+                        return {
+                            ...w,
+                            word: String(w.word || ""),
+                            meaning: String(w.meaning || ""),
+                            example: String(w.example || ""),
+                            partOfSpeech: w.partOfSpeech ? String(w.partOfSpeech) : undefined,
+                            example_jp: cleanExampleJp,
+                            otherExamples: safeOtherExamples,
+                            synonyms: synonyms, // now strictly string[]
+                            antonyms: antonyms, // now strictly string[]
+                            isUnlocked: isUnlocked
+                        };
+                    });
 
                 setDeck({ ...data, words: processedWords });
                 setEditTitle(data.title);
@@ -182,18 +205,6 @@ export default function DeckPage() {
         }
     };
 
-    const fetchMyDecks = async () => {
-        try {
-            const res = await fetch("/api/decks");
-            if (res.ok) {
-                const data = await res.json();
-                setMyDecks(data.filter((d: Deck) => d.id !== deckId));
-            }
-        } catch (e) {
-            console.error("Failed to fetch decks for move", e);
-        }
-    };
-
     const handleUpdateTitle = async () => {
         if (!editTitle.trim() || !deck) return;
 
@@ -230,10 +241,6 @@ export default function DeckPage() {
                     ...deck,
                     words: deck.words.filter(w => w.id !== wordId)
                 });
-                // 選択状態からも削除
-                const newSet = new Set(selectedWords);
-                newSet.delete(wordId);
-                setSelectedWords(newSet);
             } else {
                 alert("削除に失敗しました");
             }
@@ -243,101 +250,20 @@ export default function DeckPage() {
         }
     };
 
-    // 選択ロジック
-    const toggleSelect = (id: string) => {
-        const newSet = new Set(selectedWords);
-        if (newSet.has(id)) {
-            newSet.delete(id);
-        } else {
-            newSet.add(id);
-        }
-        setSelectedWords(newSet);
-    };
 
-    const toggleSelectAll = () => {
-        if (!deck) return;
-        if (selectedWords.size === deck.words.length) {
-            setSelectedWords(new Set());
-        } else {
-            const allIds = deck.words.map(w => w.id).filter((id): id is string => !!id);
-            setSelectedWords(new Set(allIds));
-        }
-    };
-
-    // 一括移動実行
-    const handleBatchMove = async (targetDeckId: string) => {
-        if (selectedWords.size === 0 || !deck) return;
-
-        try {
-            const res = await fetch(`/api/words/batch`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    wordIds: Array.from(selectedWords),
-                    targetDeckId
-                })
-            });
-
-            if (res.ok) {
-                // 現在のリストから削除
-                setDeck({
-                    ...deck,
-                    words: deck.words.filter(w => w.id && !selectedWords.has(w.id))
-                });
-                setShowMoveModal(false);
-                setSelectedWords(new Set());
-                alert(`${selectedWords.size} 語を移動しました！`);
-            } else {
-                alert("移動に失敗しました");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("エラーが発生しました");
-        }
-    };
-
-    // 一括削除実行
-    const handleBatchDelete = async () => {
-        if (selectedWords.size === 0 || !deck) return;
-        if (!confirm(`本当に ${selectedWords.size} 個の単語を削除しますか？この操作は取り消せません。`)) return;
-
-        try {
-            const res = await fetch(`/api/words/batch`, {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    wordIds: Array.from(selectedWords)
-                })
-            });
-
-            if (res.ok) {
-                // 現在のリストから削除
-                setDeck({
-                    ...deck,
-                    words: deck.words.filter(w => w.id && !selectedWords.has(w.id))
-                });
-                setSelectedWords(new Set());
-                alert("削除しました");
-            } else {
-                alert("削除に失敗しました");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("エラーが発生しました");
-        }
-    };
 
     // ソートロジック
     const getSortedWords = () => {
-        if (!deck) return [];
-        const words = [...deck.words];
+        if (!deck || !Array.isArray(deck.words)) return [];
+        // Filter nulls again just in case
+        const words = deck.words.filter(w => w && typeof w === 'object');
         switch (sortKey) {
             case 'created_asc':
-                return words.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+                return words.sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')));
             case 'created_desc':
-                return words.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+                return words.sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')));
             case 'pos':
-                return words.sort((a, b) => (a.partOfSpeech || '').localeCompare(b.partOfSpeech || ''));
+                return words.sort((a, b) => String(a.partOfSpeech || '').localeCompare(String(b.partOfSpeech || '')));
             default:
                 return words;
         }
@@ -441,6 +367,15 @@ export default function DeckPage() {
 
         const displayWords = isRandomMode ? shuffledWords : deck.words;
         const currentCard = displayWords[currentIndex];
+
+        if (!currentCard) {
+            // Fallback if index is out of bounds or card is missing
+            return (
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-neutral-500">Card not found. <button onClick={handleRestart} className="underline">Restart</button></div>
+                </div>
+            );
+        }
 
         return (
             <div className="min-h-screen bg-neutral-100 dark:bg-[#111] text-neutral-900 dark:text-neutral-100 p-6 flex flex-col">
@@ -574,120 +509,11 @@ export default function DeckPage() {
         );
     }
 
-    // Visibility Toggle State
-    const [hiddenWordIds, setHiddenWordIds] = useState<Set<string>>(new Set());
-    const toggleVisibility = (id: string) => {
-        setHiddenWordIds(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) newSet.delete(id);
-            else newSet.add(id);
-            return newSet;
-        });
-    };
 
-    const handleBatchGenerate = async () => {
-        if (!deck) return;
-        const targets = deck.words.filter(w => w.id && selectedWords.has(w.id) && !w.isUnlocked);
-
-        if (targets.length === 0) {
-            alert("生成対象の単語がありません（すでにアンロック済みか、選択されていません）");
-            return;
-        }
-
-        const cost = targets.length * 2;
-        if (!confirm(`${targets.length}語の例文を一括生成しますか？\n合計 ${cost} コインを消費します。`)) return;
-
-        setLoading(true);
-        try {
-            // 並列処理で高速化 (5並列ずつ制限するとサーバ負荷対策になるが、今回は簡易的に全並列)
-            await Promise.all(targets.map(async (w) => {
-                if (!w.id) return;
-                try {
-                    // UnlockしていないのでGenerateを呼ぶ (内部で課金+生成)
-                    await fetch(`/api/words/${w.id}/generate-details`, { method: "POST" });
-                } catch (e) {
-                    console.error(`Failed to generate for ${w.word}`, e);
-                }
-            }));
-
-            await fetchDeck();
-            alert("一括生成が完了しました！");
-            setSelectedWords(new Set()); // 選択解除
-        } catch (e) {
-            alert("エラーが発生しました");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     // --- リストモード ---
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
-
-            {/* Move Modal */}
-            {showMoveModal && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
-                        <h3 className="text-lg font-bold mb-4">Move {selectedWords.size} words to...</h3>
-                        <div className="max-h-[300px] overflow-y-auto flex flex-col gap-2 mb-4">
-                            {myDecks.length === 0 ? (
-                                <p className="text-neutral-500 text-sm">移動先の単語帳がありません</p>
-                            ) : (
-                                myDecks.map(d => (
-                                    <button
-                                        key={d.id}
-                                        onClick={() => handleBatchMove(d.id)}
-                                        className="text-left px-4 py-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 text-sm font-bold"
-                                    >
-                                        {d.title}
-                                    </button>
-                                ))
-                            )}
-                        </div>
-                        <button onClick={() => setShowMoveModal(false)} className="w-full py-2 bg-neutral-200 dark:bg-neutral-800 rounded-lg font-bold text-sm">Cancel</button>
-                    </div>
-                </div>
-            )}
-
-            {/* Bulk Action Bar (Floating) */}
-            {selectedWords.size > 0 && (
-                <div className="fixed bottom-6 left-0 right-0 mx-auto w-max z-40 animate-in slide-in-from-bottom-4 fade-in">
-                    <div className="bg-neutral-900 dark:bg-white text-white dark:text-black px-6 py-3 rounded-full shadow-xl flex items-center gap-4">
-                        <span className="font-bold text-sm">{selectedWords.size} 件選択中</span>
-                        <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
-
-                        <button
-                            onClick={handleBatchGenerate}
-                            className="font-bold text-sm text-emerald-400 hover:text-emerald-300 dark:text-emerald-600 dark:hover:text-emerald-500 transition-colors flex items-center gap-1"
-                        >
-                            <span>✨</span> 一括生成
-                        </button>
-
-                        <button
-                            onClick={() => setShowMoveModal(true)}
-                            className="font-bold text-sm hover:text-indigo-400 dark:hover:text-indigo-600 transition-colors"
-                        >
-                            移動
-                        </button>
-                        <button
-                            onClick={handleBatchDelete}
-                            className="font-bold text-sm text-red-400 hover:text-red-300 dark:text-red-600 dark:hover:text-red-500 transition-colors"
-                        >
-                            削除
-                        </button>
-
-                        <div className="h-4 w-px bg-white/20 dark:bg-black/20"></div>
-
-                        <button
-                            onClick={() => setSelectedWords(new Set())}
-                            className="ml-2 text-xs opacity-50 hover:opacity-100"
-                        >
-                            キャンセル
-                        </button>
-                    </div>
-                </div>
-            )}
-
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
                 <Link href="/" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors">← ホームに戻る</Link>
             </header>
@@ -727,13 +553,7 @@ export default function DeckPage() {
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <input
-                                type="checkbox"
-                                checked={deck.words.length > 0 && selectedWords.size === deck.words.length}
-                                onChange={toggleSelectAll}
-                                className="w-5 h-5 rounded border-neutral-300 accent-indigo-600 cursor-pointer"
-                            />
-                            <h2 className="font-bold text-neutral-400 uppercase tracking-widest text-sm">全選択</h2>
+                            {/* Selection removed */}
                         </div>
 
                         {/* Sort Controls */}
@@ -757,18 +577,8 @@ export default function DeckPage() {
                         sortedWords.map((card, idx) => (
                             <div
                                 key={card.id || idx}
-                                className={`group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative
-                                ${card.id && selectedWords.has(card.id) ? "bg-indigo-50/50 dark:bg-indigo-900/10" : ""}`}
+                                className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative"
                             >
-                                <div className="pt-2">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!(card.id && selectedWords.has(card.id))}
-                                        onChange={() => card.id && toggleSelect(card.id)}
-                                        className="w-5 h-5 rounded border-neutral-300 accent-indigo-600 cursor-pointer"
-                                    />
-                                </div>
-
                                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
                                     <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
                                         <div className="flex items-center gap-2">
@@ -787,8 +597,8 @@ export default function DeckPage() {
                                             {/* 例文セクション (ロック機能付き) */}
                                             {card.isUnlocked ? (
                                                 <div className="space-y-3">
-                                                    {/* メイン例文 (データがある場合のみ表示: 可視文字が含まれているかチェック) */}
-                                                    {(typeof card.example === 'string' && /[^\s\u00A0\u2000-\u200B]/.test(card.example)) ? (
+                                                    {/* メイン例文 */}
+                                                    {card.example && (
                                                         <div>
                                                             <div className="flex items-start gap-2">
                                                                 <button
@@ -802,16 +612,18 @@ export default function DeckPage() {
                                                             </div>
                                                             <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
                                                         </div>
-                                                    ) : null}
+                                                    )}
 
                                                     {/* 追加の例文表示 (リスト表示) */}
                                                     {card.otherExamples && card.otherExamples.length > 0 && (
                                                         <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
-                                                            {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex, i) => (
+                                                            {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
                                                                 <div key={i} className="text-sm">
                                                                     <div className="flex items-center gap-2 mb-1">
                                                                         <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
-                                                                        <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                        {ex.text && (
+                                                                            <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
+                                                                        )}
                                                                     </div>
                                                                     <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
                                                                     <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
