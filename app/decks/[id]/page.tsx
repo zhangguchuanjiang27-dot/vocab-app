@@ -145,7 +145,7 @@ export default function DeckPage() {
     };
 
     const handleUnlock = async (wordId: string) => {
-        if (!confirm("2コインを使って例文をアンロックしますか？")) return;
+        if (!confirm("2コインを使って例文を表示しますか？")) return;
 
         try {
             const res = await fetch(`/api/words/${wordId}/unlock`, { method: "POST" });
@@ -154,23 +154,16 @@ export default function DeckPage() {
                 throw new Error(data.error || "Failed to unlock");
             }
 
-            // 成功したらローカルのstateを更新
-            if (deck) {
-                const updatedWords = deck.words.map(w => {
-                    if (w.id === wordId) {
-                        return { ...w, isUnlocked: true };
-                    }
-                    return w;
-                });
-                setDeck({ ...deck, words: updatedWords });
-                // alert("アンロックしました！");
-            }
+            // 成功したら全データを再取得
+            await fetchDeck();
+
         } catch (e: any) {
             alert(e.message);
         }
     };
 
     const handleGenerateDetails = async (wordId: string) => {
+        // メッセージは共通化されているのでここでは確認しない
         if (!confirm("2コインを使って例文を生成・表示しますか？")) return;
 
         try {
@@ -180,27 +173,10 @@ export default function DeckPage() {
                 throw new Error(data.error || "Failed to generate");
             }
 
-            const data = await res.json();
+            // 成功したら全データを再取得
+            await fetchDeck();
+            alert("例文を生成しました！");
 
-            // 成功したらローカルのstateを更新
-            if (deck) {
-                const updatedWords = deck.words.map(w => {
-                    if (w.id === wordId) {
-                        return {
-                            ...w,
-                            example: data.generatedContent.mainExample ? data.generatedContent.mainExample.text : w.example,
-                            example_jp: data.generatedContent.mainExample ? data.generatedContent.mainExample.translation : w.example_jp,
-                            otherExamples: data.generatedContent.examples,
-                            synonyms: [],
-                            antonyms: [],
-                            isUnlocked: true
-                        };
-                    }
-                    return w;
-                });
-                setDeck({ ...deck, words: updatedWords });
-                alert("生成しました！");
-            }
         } catch (e: any) {
             alert(e.message);
         }
