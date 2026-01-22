@@ -34,8 +34,13 @@ export default function DeckPage() {
     const [deck, setDeck] = useState<Deck | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // モード管理: 'list' (一覧) | 'flashcard' (学習)
-    const [mode, setMode] = useState<'list' | 'flashcard'>('list');
+    // モード管理: 'list' (一覧) | 'flashcard' (学習) | 'writing_test' (テスト)
+    const [mode, setMode] = useState<'list' | 'flashcard' | 'writing_test'>('list');
+
+    // Writing Test State
+    const [writingInput, setWritingInput] = useState("");
+    const [isAnswerChecked, setIsAnswerChecked] = useState(false);
+    const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
     // Flashcard state
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -395,6 +400,27 @@ export default function DeckPage() {
         setCurrentIndex(0);
         setIsFlipped(false);
         setShowExamples(false); // Reset example visibility
+        setWritingInput("");
+        setIsAnswerChecked(false);
+        setIsCorrect(null);
+    };
+
+    const handleCheckAnswer = (correctWord: string) => {
+        const input = writingInput.trim().toLowerCase();
+        const expected = correctWord.trim().toLowerCase();
+        const correct = input === expected;
+        setIsCorrect(correct);
+        setIsAnswerChecked(true);
+        if (correct) {
+            speak(correctWord);
+        }
+    };
+
+    const handleWritingNext = () => {
+        setIsAnswerChecked(false);
+        setIsCorrect(null);
+        setWritingInput("");
+        handleNext();
     };
 
     // シャッフル機能
@@ -616,7 +642,100 @@ export default function DeckPage() {
 
 
 
-    // --- リストモード ---
+    // --- Writing Test Mode ---
+    if (mode === 'writing_test') {
+        if (isFinished) {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-black p-6">
+                    <div className="text-center space-y-6 animate-in zoom-in duration-300">
+                        <div className="text-6xl mb-4">📝</div>
+                        <h1 className="text-3xl font-bold dark:text-white">Test Completed!</h1>
+                        <p className="text-neutral-500">You've finished the writing test for "{deck.title}".</p>
+                        <div className="flex gap-4 justify-center mt-8">
+                            <button onClick={handleRestart} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Retry</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const displayWords = isRandomMode ? shuffledWords : deck.words;
+        const currentCard = displayWords[currentIndex];
+
+        if (!currentCard) return null;
+
+        return (
+            <div className="min-h-screen bg-neutral-100 dark:bg-[#111] text-neutral-900 dark:text-neutral-100 p-6 flex flex-col">
+                <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ キャンセル</button>
+                    <div className="text-center">
+                        <h1 className="font-bold text-lg dark:text-white/90">Writing Test</h1>
+                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
+                    </div>
+                    <div className="w-20"></div>
+                </header>
+
+                <main className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+                    <div className="w-full bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-12 border border-neutral-200 dark:border-neutral-800 flex flex-col items-center">
+                        <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6 border-b border-neutral-100 dark:border-neutral-800 pb-1">この意味を持つ単語は？</span>
+                        <h3 className="text-3xl sm:text-4xl font-bold mb-12 text-center" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
+
+                        <div className="w-full max-w-md space-y-6">
+                            <input
+                                autoFocus
+                                type="text"
+                                value={writingInput}
+                                onChange={(e) => setWritingInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.word)}
+                                disabled={isAnswerChecked}
+                                placeholder="単語を入力..."
+                                className={`w-full p-4 text-2xl font-bold text-center bg-neutral-50 dark:bg-black border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
+                                        ? isCorrect
+                                            ? 'border-green-500 bg-green-50 dark:bg-green-950/20 text-green-600'
+                                            : 'border-red-500 bg-red-50 dark:bg-red-950/20 text-red-600'
+                                        : 'border-neutral-200 dark:border-neutral-800 focus:border-indigo-500'
+                                    }`}
+                            />
+
+                            {isAnswerChecked && (
+                                <div className="animate-in slide-in-from-top-2 duration-300 text-center space-y-4">
+                                    {!isCorrect && (
+                                        <div>
+                                            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">正解:</p>
+                                            <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className={`text-lg font-bold ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                                            {isCorrect ? '✨ 正解！' : '📌 おしい！'}
+                                        </p>
+                                        <button
+                                            onClick={handleWritingNext}
+                                            autoFocus
+                                            className="mt-4 px-12 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                            次へ進む
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!isAnswerChecked && (
+                                <button
+                                    onClick={() => handleCheckAnswer(currentCard.word)}
+                                    disabled={!writingInput.trim()}
+                                    className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    回答をチェック
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
     return (
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
@@ -648,9 +767,14 @@ export default function DeckPage() {
                     </div>
 
                     {deck.words.length > 0 && (
-                        <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
-                            <span className="text-2xl">▶</span> 学習スタート
-                        </button>
+                        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+                            <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
+                                <span className="text-2xl">▶</span> 学習スタート
+                            </button>
+                            <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                <span className="text-2xl">📝</span> Writingテスト
+                            </button>
+                        </div>
                     )}
                 </div>
 
