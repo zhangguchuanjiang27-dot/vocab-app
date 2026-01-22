@@ -49,6 +49,8 @@ export default function DeckPage() {
     const [showExamples, setShowExamples] = useState(false); // フラッシュカード用例文表示
     const [isRandomMode, setIsRandomMode] = useState(false);
     const [shuffledWords, setShuffledWords] = useState<WordCard[]>([]);
+    const [wrongWordIds, setWrongWordIds] = useState<Set<string>>(new Set());
+    const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
 
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
@@ -58,6 +60,16 @@ export default function DeckPage() {
             ...prev,
             [id]: !prev[id]
         }));
+    };
+
+    const toggleWrongWord = (id: string, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+        setWrongWordIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
     };
 
     // Title edit state
@@ -395,22 +407,36 @@ export default function DeckPage() {
         }
     };
 
-    const handleRestart = () => {
+    const handleRestart = (isReviewMistakes = false) => {
+        if (isReviewMistakes && deck) {
+            const missed = (isRandomMode ? shuffledWords : deck.words).filter(w => w.id && wrongWordIds.has(w.id));
+            setReviewWords(missed);
+        } else {
+            setReviewWords(null);
+            setWrongWordIds(new Set());
+        }
+
         setIsFinished(false);
         setCurrentIndex(0);
         setIsFlipped(false);
-        setShowExamples(false); // Reset example visibility
+        setShowExamples(false);
         setWritingInput("");
         setIsAnswerChecked(false);
         setIsCorrect(null);
     };
 
-    const handleCheckAnswer = (correctWord: string) => {
+    const handleCheckAnswer = (cardId: string | undefined, correctWord: string) => {
         const input = writingInput.trim().toLowerCase();
         const expected = correctWord.trim().toLowerCase();
         const correct = input === expected;
+
         setIsCorrect(correct);
         setIsAnswerChecked(true);
+
+        if (!correct && cardId) {
+            setWrongWordIds(prev => new Set(prev).add(cardId));
+        }
+
         if (correct) {
             speak(correctWord);
         }
@@ -480,8 +506,13 @@ export default function DeckPage() {
                         <div className="text-6xl mb-4">🎉</div>
                         <h1 className="text-3xl font-bold dark:text-white">Congratulations!</h1>
                         <p className="text-neutral-500">You've completed "{deck.title}".</p>
-                        <div className="flex gap-4 justify-center mt-8">
-                            <button onClick={handleRestart} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Again</button>
+                        <div className="flex flex-wrap gap-4 justify-center mt-8">
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Another Session</button>
+                            {wrongWordIds.size > 0 && (
+                                <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
+                                    <span>🔁</span> {wrongWordIds.size}件を復習する
+                                </button>
+                            )}
                             <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
                         </div>
                     </div>
@@ -489,7 +520,12 @@ export default function DeckPage() {
             );
         }
 
-        const displayWords = isRandomMode ? shuffledWords : deck.words;
+        const getSessionWords = () => {
+            if (reviewWords) return reviewWords;
+            return isRandomMode ? shuffledWords : deck.words;
+        };
+
+        const displayWords = getSessionWords();
         const currentCard = displayWords[currentIndex];
 
         if (!currentCard) {
@@ -506,8 +542,8 @@ export default function DeckPage() {
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
                     <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ 閉じる</button>
                     <div className="text-center">
-                        <h1 className="font-bold text-lg dark:text-white/90">{deck.title}</h1>
-                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
+                        <h1 className="font-bold text-lg dark:text-white/90">{reviewWords ? 'Mistake Review' : deck.title}</h1>
+                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
                     </div>
                     <div className="w-20"></div>
                 </header>
@@ -532,7 +568,20 @@ export default function DeckPage() {
                                 <p className="absolute bottom-8 text-neutral-300 dark:text-neutral-600 text-xs font-bold animate-pulse">クリックして反転 ↻</p>
                             </div>
                             {/* Back */}
-                            <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 sm:p-12 text-center">
+                            <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 sm:p-12 text-center relative">
+                                {/* Mistake Tagging */}
+                                <button
+                                    onClick={(e) => currentCard.id && toggleWrongWord(currentCard.id, e)}
+                                    className={`absolute top-6 right-6 p-2 rounded-xl transition-all ${currentCard.id && wrongWordIds.has(currentCard.id)
+                                        ? 'bg-rose-500 text-white scale-110 shadow-lg'
+                                        : 'bg-white/10 text-white/40 hover:bg-white/20'
+                                        }`}
+                                    title="Mark as mistake"
+                                >
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
+                                    <p className="text-[10px] mt-1 font-bold">復習リスト</p>
+                                </button>
+
                                 <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest mb-6 border-b border-indigo-400/30 pb-1">意味</span>
                                 <h3 className="text-3xl sm:text-4xl font-bold mb-8" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
 
@@ -643,8 +692,13 @@ export default function DeckPage() {
                         <div className="text-6xl mb-4">📝</div>
                         <h1 className="text-3xl font-bold dark:text-white">Test Completed!</h1>
                         <p className="text-neutral-500">You've finished the writing test for "{deck.title}".</p>
-                        <div className="flex gap-4 justify-center mt-8">
-                            <button onClick={handleRestart} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Retry</button>
+                        <div className="flex flex-wrap gap-4 justify-center mt-8">
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Another Session</button>
+                            {wrongWordIds.size > 0 && (
+                                <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
+                                    <span>🔁</span> {wrongWordIds.size}件を復習する
+                                </button>
+                            )}
                             <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
                         </div>
                     </div>
@@ -652,7 +706,12 @@ export default function DeckPage() {
             );
         }
 
-        const displayWords = isRandomMode ? shuffledWords : deck.words;
+        const getWritingWords = () => {
+            if (reviewWords) return reviewWords;
+            return isRandomMode ? shuffledWords : deck.words;
+        };
+
+        const displayWords = getWritingWords();
         const currentCard = displayWords[currentIndex];
 
         if (!currentCard) return null;
@@ -662,8 +721,8 @@ export default function DeckPage() {
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
                     <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ キャンセル</button>
                     <div className="text-center">
-                        <h1 className="font-bold text-lg dark:text-white/90">Writing Test</h1>
-                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {deck.words.length}</p>
+                        <h1 className="font-bold text-lg dark:text-white/90">{reviewWords ? 'Mistake Review (Writing)' : 'Writing Test'}</h1>
+                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
                     </div>
                     <div className="w-20"></div>
                 </header>
@@ -679,7 +738,7 @@ export default function DeckPage() {
                                 type="text"
                                 value={writingInput}
                                 onChange={(e) => setWritingInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.word)}
+                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word)}
                                 disabled={isAnswerChecked}
                                 placeholder="単語を入力..."
                                 className={`w-full p-4 text-2xl font-bold text-center bg-neutral-50 dark:bg-black border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
@@ -715,7 +774,7 @@ export default function DeckPage() {
 
                             {!isAnswerChecked && (
                                 <button
-                                    onClick={() => handleCheckAnswer(currentCard.word)}
+                                    onClick={() => handleCheckAnswer(currentCard.id, currentCard.word)}
                                     disabled={!writingInput.trim()}
                                     className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
