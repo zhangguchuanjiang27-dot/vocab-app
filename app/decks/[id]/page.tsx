@@ -86,24 +86,30 @@ export default function DeckPage() {
         }
     };
 
-    const handleBulkExpand = () => {
-        setExpandedListItems(prev => {
-            const next = { ...prev };
-            selectedWordIds.forEach(id => {
-                next[id] = true;
-            });
-            return next;
-        });
-    };
+    const handleBulkDelete = async () => {
+        if (!deck || selectedWordIds.size === 0) return;
+        if (!confirm(`${selectedWordIds.size} 件の単語を削除しますか？`)) return;
 
-    const handleBulkCollapse = () => {
-        setExpandedListItems(prev => {
-            const next = { ...prev };
-            selectedWordIds.forEach(id => {
-                next[id] = false;
+        setLoading(true);
+        try {
+            const idsToDelete = Array.from(selectedWordIds);
+            for (const id of idsToDelete) {
+                const res = await fetch(`/api/words/${id}`, { method: "DELETE" });
+                if (!res.ok) console.error(`Failed to delete ${id}`);
+            }
+            // Update local state
+            setDeck({
+                ...deck,
+                words: deck.words.filter(w => !selectedWordIds.has(w.id || ""))
             });
-            return next;
-        });
+            setSelectedWordIds(new Set());
+            alert("削除が完了しました");
+        } catch (e) {
+            console.error(e);
+            alert("削除中にエラーが発生しました");
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -668,15 +674,11 @@ export default function DeckPage() {
 
                             {selectedWordIds.size > 0 && (
                                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                                    <button onClick={handleBulkExpand} className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-xs font-bold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center gap-1">
-                                        <span>▼</span> すべて開く
-                                    </button>
-                                    <button onClick={handleBulkCollapse} className="px-3 py-1.5 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-xs font-bold shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center gap-1">
-                                        <span>▶</span> すべて閉じる
-                                    </button>
-                                    <div className="w-px h-4 bg-neutral-300 dark:bg-neutral-700 mx-1"></div>
                                     <button onClick={handleBulkUnlock} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1">
                                         <span>🔓</span> 一括アンロック
+                                    </button>
+                                    <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
+                                        <span>�️</span> 一括削除
                                     </button>
                                 </div>
                             )}
