@@ -524,10 +524,10 @@ export default function DeckPage() {
                 <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-black p-6">
                     <div className="text-center space-y-6 animate-in zoom-in duration-300">
                         <div className="text-6xl mb-4">🎉</div>
-                        <h1 className="text-3xl font-bold dark:text-white">Congratulations!</h1>
-                        <p className="text-neutral-500">You've completed "{deck.title}".</p>
+                        <h1 className="text-3xl font-bold dark:text-white">お疲れ様でした！</h1>
+                        <p className="text-neutral-500">"{deck.title}" の学習が終了しました。</p>
                         <div className="flex flex-wrap gap-4 justify-center mt-8">
-                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Another Session</button>
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">最初から学習する</button>
                             {wrongWordIds.size > 0 && (
                                 <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
@@ -538,7 +538,7 @@ export default function DeckPage() {
                                     <span>↺</span> もう一度学習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
@@ -715,10 +715,10 @@ export default function DeckPage() {
                 <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-black p-6">
                     <div className="text-center space-y-6 animate-in zoom-in duration-300">
                         <div className="text-6xl mb-4">📝</div>
-                        <h1 className="text-3xl font-bold dark:text-white">Test Completed!</h1>
-                        <p className="text-neutral-500">You've finished the writing test for "{deck.title}".</p>
+                        <h1 className="text-3xl font-bold dark:text-white">テスト終了！</h1>
+                        <p className="text-neutral-500">"{deck.title}" のテストが完了しました。</p>
                         <div className="flex flex-wrap gap-4 justify-center mt-8">
-                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">Another Session</button>
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">最初から学習する</button>
                             {wrongWordIds.size > 0 && (
                                 <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
@@ -729,7 +729,7 @@ export default function DeckPage() {
                                     <span>↺</span> もう一度学習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
