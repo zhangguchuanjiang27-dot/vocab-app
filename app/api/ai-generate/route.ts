@@ -53,14 +53,13 @@ export async function POST(req: Request) {
          - 単一品詞: "形容詞" / "名詞" / "動詞" など
          - 複数品詞: "名詞 / 形容詞" のようにスラッシュで区切る
       
-      4. **詳細情報の生成**:
-         - **examples**: この単語が持つ**異なる意味やニュアンスごと**の例文を生成してください。
-           - role: 品詞または意味のニュアンス（例: "名詞", "〜として"）
+      4. **例文の生成（必須 - 重要）**:
+         - **examples**: この単語の代表的な使い方を示す例文を**必ず**作成してください。
+           - role: 品詞または用途（例: "基本"）
            - text: 英文
            - translation: 和訳
-           - 必ず2〜3個生成してください。
-         - **synonyms**: 類義語（英語、配列）
-         - **antonyms**: 対義語（英語、配列）
+           - 1〜2個生成してください。
+           - **類義語・対義語は生成しないでください。**
       
       5. **入力処理**: 単語単体で入力された場合は原形に直してください。
       
@@ -69,8 +68,6 @@ export async function POST(req: Request) {
       2. partOfSpeech: 品詞
       3. meaning: 日本語の意味
       4. examples: 例文リスト
-      5. synonyms: 類義語リスト
-      6. antonyms: 対義語リスト
       
       出力は以下のJSON形式のみを返してください：
       {
@@ -81,9 +78,7 @@ export async function POST(req: Request) {
             "meaning": "【形】①深い ②奥深い ③深遠な",
             "examples": [
                 { "role": "形容詞", "text": "This is a profound question.", "translation": "これは深遠な問いだ。" }
-            ],
-            "synonyms": ["deep"],
-            "antonyms": ["shallow"]
+            ]
           }
         ]
       }
@@ -122,10 +117,8 @@ export async function POST(req: Request) {
         // メインの例文として最初のひとつを設定
         example: w.examples?.[0]?.text || "",
         example_jp: w.examples?.[0]?.translation || "",
-        // 詳細データはそのまま渡す（保存時にEXTタグ等に変換される想定）
-        otherExamples: w.examples || [],
-        synonyms: w.synonyms || [],
-        antonyms: w.antonyms || []
+        // 詳細データはそのまま渡す
+        otherExamples: w.examples || []
       }))
     };
 

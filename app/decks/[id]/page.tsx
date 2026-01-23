@@ -1,4 +1,4 @@
-kore"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -13,9 +13,7 @@ type WordCard = {
     example: string;
     example_jp: string;
     otherExamples?: { role: string; text: string; translation: string }[];
-    synonyms?: string[];
-    synonyms?: string[];
-    antonyms?: string[];
+
     createdAt?: string;
 };
 
@@ -157,8 +155,7 @@ export default function DeckPage() {
 
                         // Safety: Ensure these are arrays
                         let otherExamples: any[] = Array.isArray(w.otherExamples) ? w.otherExamples : [];
-                        let synonyms: string[] = Array.isArray(w.synonyms) ? w.synonyms.map(String) : [];
-                        let antonyms: string[] = Array.isArray(w.antonyms) ? w.antonyms.map(String) : [];
+
 
                         // 1. アンロックマーカーのチェック (表示上は除去するが、ロック機能は廃止)
                         if (cleanExampleJp.includes('|||UNLOCKED|||')) {
@@ -177,11 +174,8 @@ export default function DeckPage() {
                                     if (parsed.examples && Array.isArray(parsed.examples)) {
                                         otherExamples = parsed.examples;
                                     }
-                                    if (parsed.synonyms && Array.isArray(parsed.synonyms)) {
-                                        synonyms = parsed.synonyms.map((s: any) => String(s));
-                                    }
-                                    if (parsed.antonyms && Array.isArray(parsed.antonyms)) {
-                                        antonyms = parsed.antonyms.map((a: any) => String(a));
+                                    if (parsed.examples && Array.isArray(parsed.examples)) {
+                                        otherExamples = parsed.examples;
                                     }
                                 }
                             } catch (e) {
@@ -208,8 +202,7 @@ export default function DeckPage() {
                             partOfSpeech: w.partOfSpeech ? String(w.partOfSpeech) : undefined,
                             example_jp: cleanExampleJp,
                             otherExamples: safeOtherExamples,
-                            synonyms: synonyms, // now strictly string[]
-                            antonyms: antonyms, // now strictly string[]
+
                         };
                     });
 
@@ -585,36 +578,8 @@ export default function DeckPage() {
                                             </div>
                                         ))}
 
-                                        {/* 類義語・対義語セクション */}
-                                        {(currentCard.synonyms?.length || 0) > 0 || (currentCard.antonyms?.length || 0) > 0 ? (
-                                            <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
-                                                {currentCard.synonyms && currentCard.synonyms.length > 0 && (
-                                                    <div>
-                                                        <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70">類義語</span>
-                                                        <div className="flex flex-wrap gap-2 mt-1">
-                                                            {currentCard.synonyms.map((syn, i) => (
-                                                                <span key={i} className="px-2.5 py-1 text-xs bg-white/10 rounded-full text-indigo-100 font-medium">
-                                                                    {syn}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                {currentCard.antonyms && currentCard.antonyms.length > 0 && (
-                                                    <div>
-                                                        <span className="text-[10px] uppercase font-bold text-red-200 opacity-70">対義語</span>
-                                                        <div className="flex flex-wrap gap-2 mt-1">
-                                                            {currentCard.antonyms.map((ant, i) => (
-                                                                <span key={i} className="px-2.5 py-1 text-xs bg-red-500/20 rounded-full text-red-100 font-medium">
-                                                                    {ant}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ) : null}
                                     </div>
+
                                 )}
                             </div>
                         </div>
@@ -624,9 +589,9 @@ export default function DeckPage() {
                         <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{isFlipped ? "Back" : "Front"}</span>
                         <button onClick={handleNext} className="p-4 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 hover:scale-110 transition-all active:scale-95"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg></button>
                     </div>
-                </main>
+                </main >
                 <style jsx global>{` .perspective-1000 { perspective: 1000px; } .preserve-3d { transform-style: preserve-3d; } .backface-hidden { backface-visibility: hidden; } .rotate-y-180 { transform: rotateY(180deg); } `}</style>
-            </div>
+            </div >
         );
     }
 

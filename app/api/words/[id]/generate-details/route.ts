@@ -77,9 +77,7 @@ export async function POST(
         }
 
         const extDataString = JSON.stringify({
-            examples: content.examples || [],
-            synonyms: content.synonyms || [],
-            antonyms: content.antonyms || []
+            examples: content.examples || []
         });
 
         newExampleJp = `${newExampleJp}|||EXT|||${extDataString}|||UNLOCKED|||`;

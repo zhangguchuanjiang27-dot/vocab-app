@@ -112,13 +112,12 @@ export async function PUT(
                 let exampleJp = w.example_jp || "";
 
                 // 拡張データを構築
+                // 拡張データを構築
                 const extData = {
-                    examples: w.otherExamples || [],
-                    synonyms: w.synonyms || [],
-                    antonyms: w.antonyms || []
+                    examples: w.otherExamples || []
                 };
 
-                if (extData.examples.length > 0 || extData.synonyms.length > 0 || extData.antonyms.length > 0) {
+                if (extData.examples.length > 0) {
                     // 区切り文字を使ってJSONを埋め込む
                     // 既存のEXTタグがあれば除去してから追記（重複防止）
                     if (exampleJp.includes("|||EXT|||")) {
