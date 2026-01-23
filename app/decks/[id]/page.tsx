@@ -874,8 +874,7 @@ export default function DeckPage() {
 
                                                     {expandedListItems[card.id!] && (
                                                         <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                                                            {/* メイン例文 */}
-                                                            {/* 例文表示: otherExamples優先、なければlegacy exampleを表示 */}
+                                                            {/* メイン例文 (Legacy) - 新しい例文がある場合は常に非表示にする（重複防止） */}
                                                             {(!card.otherExamples || card.otherExamples.length === 0) && card.example && (
                                                                 <div className="mb-3">
                                                                     <div className="flex items-start gap-2">
