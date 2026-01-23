@@ -38,6 +38,8 @@ export async function POST(
         2. **Generate Examples**: Create one example sentence for **EACH** distinct meaning identified from the user's input.
            - If the user provides 3 distinct meanings, generate exactly 3 examples.
            - If the user provides only 1 meaning, generate 1 example.
+           - **Crucial**: The sentences must be **meaningful**, **context-rich**, and clearly demonstrate how the word is used in a natural setting. Avoid short, generic, or ambiguous sentences (e.g., instead of "He ran fast", say "He ran fast enough to catch the bus just before it left").
+           - The sentence should fully illustrate the specific nuance of the meaning being targeted.
            - Use your knowledge to identify parts of speech if they are implied, but prioritize the user's categorization.
         4. **Role Format**: The "role" must strictly follow the format: "Part of Speech (Specific Meaning)" (e.g., "Verb (to run)", "Noun (a run)").
 
