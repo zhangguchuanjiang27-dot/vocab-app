@@ -949,11 +949,12 @@ export default function DeckPage() {
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
-                                            <input
+                                            <textarea
                                                 value={editFormData.meaning}
                                                 onChange={(e) => setEditFormData({ ...editFormData, meaning: e.target.value })}
-                                                className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold"
-                                            />
+                                                rows={3}
+                                                className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold text-sm"
+                                            ></textarea>
                                         </div>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
@@ -963,7 +964,7 @@ export default function DeckPage() {
                                                     onChange={(e) => setEditFormData({ ...editFormData, example: e.target.value })}
                                                     rows={2}
                                                     className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
-                                                />
+                                                ></textarea>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">例文 (JP)</label>
@@ -988,11 +989,6 @@ export default function DeckPage() {
                                                     <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
 
                                                 </div>
-                                                {card.partOfSpeech && (
-                                                    <span className="text-xs bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-600 dark:text-neutral-400 font-bold whitespace-nowrap self-center sm:self-auto">
-                                                        {card.partOfSpeech}
-                                                    </span>
-                                                )}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
@@ -1090,7 +1086,7 @@ export default function DeckPage() {
                         ))
                     )}
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
