@@ -284,6 +284,74 @@ export default function DeckPage() {
 
 
 
+
+    // --- Word Edit State ---
+    const [editingWordId, setEditingWordId] = useState<string | null>(null);
+    const [editFormData, setEditFormData] = useState({
+        word: "",
+        meaning: "",
+        partOfSpeech: "",
+        example: "",
+        example_jp: ""
+    });
+
+    const handleStartEdit = (word: WordCard) => {
+        setEditingWordId(word.id || null);
+        setEditFormData({
+            word: word.word,
+            meaning: word.meaning,
+            // partOfSpeech can be undefined in type, handle safely
+            partOfSpeech: word.partOfSpeech || "",
+            example: word.example,
+            example_jp: word.example_jp
+        });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingWordId(null);
+        setEditFormData({ word: "", meaning: "", partOfSpeech: "", example: "", example_jp: "" });
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingWordId || !deck) return;
+
+        try {
+            const res = await fetch(`/api/words/${editingWordId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editFormData)
+            });
+
+            if (res.ok) {
+                const updatedWord = await res.json();
+
+                // Update local state
+                setDeck({
+                    ...deck,
+                    words: deck.words.map(w => {
+                        if (w.id === editingWordId) {
+                            // Merge the updated fields
+                            return {
+                                ...w,
+                                ...updatedWord,
+                                // ensure consistency with WordCard type
+                                otherExamples: w.otherExamples
+                            };
+                        }
+                        return w;
+                    })
+                });
+
+                handleCancelEdit();
+            } else {
+                alert("更新に失敗しました");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("更新エラーが発生しました");
+        }
+    };
+
     // ソートロジック
     const getSortedWords = () => {
         if (!deck || !Array.isArray(deck.words)) return [];
@@ -846,97 +914,178 @@ export default function DeckPage() {
                                         />
                                     </div>
                                 )}
-                                <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
-                                    <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
 
+                                {/* Editing Form */}
+                                {editingWordId === card.id ? (
+                                    <div className="flex-1 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">単語</label>
+                                                <input
+                                                    value={editFormData.word}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, word: e.target.value })}
+                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-serif font-bold"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">品詞</label>
+                                                <select
+                                                    value={editFormData.partOfSpeech}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, partOfSpeech: e.target.value })}
+                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black"
+                                                >
+                                                    <option value="">(未設定)</option>
+                                                    <option value="noun">名詞 (noun)</option>
+                                                    <option value="verb">動詞 (verb)</option>
+                                                    <option value="adjective">形容詞 (adjective)</option>
+                                                    <option value="adverb">副詞 (adverb)</option>
+                                                    <option value="preposition">前置詞 (preposition)</option>
+                                                    <option value="conjunction">接続詞 (conjunction)</option>
+                                                    <option value="pronoun">代名詞 (pronoun)</option>
+                                                    <option value="interjection">間投詞 (interjection)</option>
+                                                    <option value="idiom">熟語 (idiom)</option>
+                                                </select>
+                                            </div>
                                         </div>
-                                        {card.partOfSpeech && (
-                                            <span className="text-xs bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-600 dark:text-neutral-400 font-bold whitespace-nowrap self-center sm:self-auto">
-                                                {card.partOfSpeech}
-                                            </span>
-                                        )}
+                                        <div>
+                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
+                                            <input
+                                                value={editFormData.meaning}
+                                                onChange={(e) => setEditFormData({ ...editFormData, meaning: e.target.value })}
+                                                className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">例文 (EN)</label>
+                                                <textarea
+                                                    value={editFormData.example}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, example: e.target.value })}
+                                                    rows={2}
+                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">例文 (JP)</label>
+                                                <textarea
+                                                    value={editFormData.example_jp}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, example_jp: e.target.value })}
+                                                    rows={2}
+                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-end gap-2 mt-2">
+                                            <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
+                                            <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold text-sm">保存</button>
+                                        </div>
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
-                                        <div className="space-y-1">
-                                            {/* 例文セクション (ロック機能なし) */}
-                                            {card.example ? (
-                                                <div className="space-y-3">
-                                                    <button
-                                                        onClick={() => card.id && toggleExampleVisibility(card.id)}
-                                                        className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors mb-2"
-                                                    >
-                                                        <span className="text-[10px]">{expandedListItems[card.id!] ? '▼' : '▶'}</span>
-                                                        {expandedListItems[card.id!] ? '例文を隠す' : '例文を表示'}
-                                                    </button>
+                                ) : (
+                                    <>
+                                        <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
+                                            <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
 
-                                                    {expandedListItems[card.id!] && (
-                                                        <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                                                            {/* メイン例文 (Legacy) - 新しい例文がある場合は常に非表示にする（重複防止） */}
-                                                            {(!card.otherExamples || card.otherExamples.length === 0) && card.example && (
-                                                                <div className="mb-3">
-                                                                    <div className="flex items-start gap-2">
-                                                                        <button
-                                                                            onClick={() => speak(card.example)}
-                                                                            className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-                                                                            title="Play example"
-                                                                        >
-                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                        </button>
-                                                                        <div className="text-sm text-neutral-600 dark:text-neutral-300 italic">"{card.example}"</div>
-                                                                    </div>
-                                                                    <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
-                                                                </div>
-                                                            )}
+                                                </div>
+                                                {card.partOfSpeech && (
+                                                    <span className="text-xs bg-neutral-200 dark:bg-neutral-800 px-2 py-0.5 rounded text-neutral-600 dark:text-neutral-400 font-bold whitespace-nowrap self-center sm:self-auto">
+                                                        {card.partOfSpeech}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
+                                                <div className="space-y-1">
+                                                    {/* 例文セクション (ロック機能なし) */}
+                                                    {card.example ? (
+                                                        <div className="space-y-3">
+                                                            <button
+                                                                onClick={() => card.id && toggleExampleVisibility(card.id)}
+                                                                className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors mb-2"
+                                                            >
+                                                                <span className="text-[10px]">{expandedListItems[card.id!] ? '▼' : '▶'}</span>
+                                                                {expandedListItems[card.id!] ? '例文を隠す' : '例文を表示'}
+                                                            </button>
 
-                                                            {/* 追加の例文表示 (リスト表示) */}
-                                                            {card.otherExamples && card.otherExamples.length > 0 && (
-                                                                <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
-                                                                    {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
-                                                                        <div key={i} className="text-sm">
-                                                                            {ex.role && (
-                                                                                <div className="mb-1">
-                                                                                    <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
-                                                                                </div>
-                                                                            )}
-                                                                            <div className="flex items-start gap-2 mb-1">
-                                                                                {ex.text && (
-                                                                                    <button onClick={() => speak(ex.text)} className="mt-0.5 text-neutral-400 hover:text-indigo-500 transition-colors shrink-0">
-                                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                    </button>
-                                                                                )}
-                                                                                <div className="text-neutral-800 dark:text-neutral-200 font-serif">"{ex.text}"</div>
+                                                            {expandedListItems[card.id!] && (
+                                                                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                    {/* メイン例文 (Legacy) - 新しい例文がある場合は常に非表示にする（重複防止） */}
+                                                                    {(!card.otherExamples || card.otherExamples.length === 0) && card.example && (
+                                                                        <div className="mb-3">
+                                                                            <div className="flex items-start gap-2">
+                                                                                <button
+                                                                                    onClick={() => speak(card.example)}
+                                                                                    className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                                                                    title="Play example"
+                                                                                >
+                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                </button>
+                                                                                <div className="text-sm text-neutral-600 dark:text-neutral-300 italic">"{card.example}"</div>
                                                                             </div>
-                                                                            <div className="text-xs text-neutral-500 font-light pl-6">{ex.translation}</div>
+                                                                            <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
                                                                         </div>
-                                                                    ))}
+                                                                    )}
+
+                                                                    {/* 追加の例文表示 (リスト表示) */}
+                                                                    {card.otherExamples && card.otherExamples.length > 0 && (
+                                                                        <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
+                                                                            {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
+                                                                                <div key={i} className="text-sm">
+                                                                                    {ex.role && (
+                                                                                        <div className="mb-1">
+                                                                                            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    <div className="flex items-start gap-2 mb-1">
+                                                                                        {ex.text && (
+                                                                                            <button onClick={() => speak(ex.text)} className="mt-0.5 text-neutral-400 hover:text-indigo-500 transition-colors shrink-0">
+                                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                            </button>
+                                                                                        )}
+                                                                                        <div className="text-neutral-800 dark:text-neutral-200 font-serif">"{ex.text}"</div>
+                                                                                    </div>
+                                                                                    <div className="text-xs text-neutral-500 font-light pl-6">{ex.translation}</div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => card.id && handleGenerateDetails(card.id)}
+                                                            className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
+                                                        >
+                                                            <span>🪄</span> 例文を生成
+                                                        </button>
                                                     )}
                                                 </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                    className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
-                                                >
-                                                    <span>🪄</span> 例文を生成
-                                                </button>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
 
-                                {/* Delete Button */}
-                                <button
-                                    onClick={() => handleDeleteWord(card.id)}
-                                    className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Remove word"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                </button>
+                                        {/* Action Buttons */}
+                                        <div className="absolute top-4 right-4 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                            {/* Edit Button */}
+                                            <button
+                                                onClick={() => handleStartEdit(card)}
+                                                className="text-neutral-300 hover:text-indigo-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-2"
+                                                title="Edit word"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                            </button>
+                                            {/* Delete Button */}
+                                            <button
+                                                onClick={() => handleDeleteWord(card.id)}
+                                                className="text-neutral-300 hover:text-red-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-2"
+                                                title="Remove word"
+                                            >
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))
                     )}

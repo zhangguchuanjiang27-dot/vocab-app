@@ -41,7 +41,7 @@ export async function DELETE(
     }
 }
 
-// 単語の更新（移動など）
+// 単語の更新（移動・内容編集）
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -56,22 +56,10 @@ export async function PATCH(
 
     try {
         const body = await req.json();
-        const { deckId } = body;
+        // deckIdは移動用、その他は編集用
+        const { deckId, word: wordText, meaning, partOfSpeech, example, example_jp } = body;
 
-        if (!deckId) {
-            return NextResponse.json({ error: "Target deckId is required" }, { status: 400 });
-        }
-
-        // 1. 移動先のデッキが自分のものか確認
-        const targetDeck = await prisma.deck.findUnique({
-            where: { id: deckId, userId: session.user.id }
-        });
-
-        if (!targetDeck) {
-            return NextResponse.json({ error: "Target deck not found or unauthorized" }, { status: 403 });
-        }
-
-        // 2. 移動元の単語が自分のものか確認
+        // 1. 移動・編集対象の単語が自分のものか確認
         const word = await prisma.wordCard.findUnique({
             where: { id },
             include: { deck: true }
@@ -85,10 +73,33 @@ export async function PATCH(
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 
+        const updateData: any = {};
+
+        // デッキ移動の場合
+        if (deckId) {
+            // 移動先のデッキが自分のものか確認
+            const targetDeck = await prisma.deck.findUnique({
+                where: { id: deckId, userId: session.user.id }
+            });
+
+            if (!targetDeck) {
+                return NextResponse.json({ error: "Target deck not found or unauthorized" }, { status: 403 });
+            }
+            updateData.deckId = deckId;
+        }
+
+        // 単語内容の編集の場合
+        if (wordText !== undefined) updateData.word = wordText;
+        if (meaning !== undefined) updateData.meaning = meaning;
+        if (partOfSpeech !== undefined) updateData.partOfSpeech = partOfSpeech;
+        if (example !== undefined) updateData.example = example;
+        if (example_jp !== undefined) updateData.example_jp = example_jp;
+
+
         // 3. 更新実行
         const updatedWord = await prisma.wordCard.update({
             where: { id },
-            data: { deckId }
+            data: updateData
         });
 
         return NextResponse.json(updatedWord);
