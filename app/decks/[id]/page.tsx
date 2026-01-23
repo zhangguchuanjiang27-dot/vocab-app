@@ -151,7 +151,7 @@ export default function DeckPage() {
                     .map((w: WordCard) => {
                         // Force string conversion for safety
                         let cleanExampleJp = String(w.example_jp || "");
-                        let isUnlocked = false;
+                        const isUnlocked = false;
 
                         // Safety: Ensure these are arrays
                         let otherExamples: any[] = Array.isArray(w.otherExamples) ? w.otherExamples : [];
@@ -287,12 +287,20 @@ export default function DeckPage() {
 
     // --- Word Edit State ---
     const [editingWordId, setEditingWordId] = useState<string | null>(null);
-    const [editFormData, setEditFormData] = useState({
+    const [editFormData, setEditFormData] = useState<{
+        word: string;
+        meaning: string;
+        partOfSpeech: string;
+        example: string;
+        example_jp: string;
+        otherExamples: { role: string; text: string; translation: string }[];
+    }>({
         word: "",
         meaning: "",
         partOfSpeech: "",
         example: "",
-        example_jp: ""
+        example_jp: "",
+        otherExamples: []
     });
 
     const handleStartEdit = (word: WordCard) => {
@@ -303,13 +311,14 @@ export default function DeckPage() {
             // partOfSpeech can be undefined in type, handle safely
             partOfSpeech: word.partOfSpeech || "",
             example: word.example,
-            example_jp: word.example_jp
+            example_jp: word.example_jp,
+            otherExamples: word.otherExamples?.map(ex => ({ ...ex })) || []
         });
     };
 
     const handleCancelEdit = () => {
         setEditingWordId(null);
-        setEditFormData({ word: "", meaning: "", partOfSpeech: "", example: "", example_jp: "" });
+        setEditFormData({ word: "", meaning: "", partOfSpeech: "", example: "", example_jp: "", otherExamples: [] });
     };
 
     const handleSaveEdit = async () => {
@@ -957,6 +966,77 @@ export default function DeckPage() {
                                                     className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* 追加の例文の編集セクション */}
+                                        <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                            <div className="flex items-center justify-between">
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase">追加の例文</label>
+                                                <button
+                                                    onClick={() => {
+                                                        const newExamples = [...editFormData.otherExamples, { role: "", text: "", translation: "" }];
+                                                        setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                    }}
+                                                    className="px-3 py-1 bg-indigo-50 dark:bg-neutral-800 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold hover:bg-indigo-100 transition"
+                                                >
+                                                    + 例文を追加
+                                                </button>
+                                            </div>
+
+                                            {editFormData.otherExamples.map((ex, i) => (
+                                                <div key={i} className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl space-y-3 relative group/ex">
+                                                    <button
+                                                        onClick={() => {
+                                                            const newExamples = editFormData.otherExamples.filter((_, idx) => idx !== i);
+                                                            setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                        }}
+                                                        className="absolute top-2 right-2 text-neutral-400 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                    </button>
+                                                    <div>
+                                                        <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">役割（例：動詞、熟語）</label>
+                                                        <input
+                                                            value={ex.role}
+                                                            placeholder="例: 動詞"
+                                                            onChange={(e) => {
+                                                                const newExamples = [...editFormData.otherExamples];
+                                                                newExamples[i].role = e.target.value;
+                                                                setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                            }}
+                                                            className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">英文</label>
+                                                            <textarea
+                                                                value={ex.text}
+                                                                onChange={(e) => {
+                                                                    const newExamples = [...editFormData.otherExamples];
+                                                                    newExamples[i].text = e.target.value;
+                                                                    setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                                }}
+                                                                rows={2}
+                                                                className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black"
+                                                            ></textarea>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">和訳</label>
+                                                            <textarea
+                                                                value={ex.translation}
+                                                                onChange={(e) => {
+                                                                    const newExamples = [...editFormData.otherExamples];
+                                                                    newExamples[i].translation = e.target.value;
+                                                                    setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                                }}
+                                                                rows={2}
+                                                                className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black"
+                                                            ></textarea>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                         <div className="flex justify-end gap-2 mt-2">
                                             <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
