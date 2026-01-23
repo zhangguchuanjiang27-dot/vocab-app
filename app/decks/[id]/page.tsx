@@ -896,14 +896,18 @@ export default function DeckPage() {
                                                                 <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
                                                                     {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
                                                                         <div key={i} className="text-sm">
-                                                                            <div className="flex items-center gap-2 mb-1">
-                                                                                <span className="text-[10px] bg-neutral-200 dark:bg-neutral-800 px-1.5 rounded text-neutral-500 font-bold">{ex.role}</span>
-                                                                                {ex.text && (
-                                                                                    <button onClick={() => speak(ex.text)} className="text-neutral-300 hover:text-indigo-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
-                                                                                )}
+                                                                            <div className="mb-1">
+                                                                                <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
                                                                             </div>
-                                                                            <div className="text-neutral-600 dark:text-neutral-400 italic mb-0.5">"{ex.text}"</div>
-                                                                            <div className="text-xs text-neutral-400 font-light">{ex.translation}</div>
+                                                                            <div className="flex items-start gap-2 mb-1">
+                                                                                {ex.text && (
+                                                                                    <button onClick={() => speak(ex.text)} className="mt-0.5 text-neutral-400 hover:text-indigo-500 transition-colors shrink-0">
+                                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                    </button>
+                                                                                )}
+                                                                                <div className="text-neutral-800 dark:text-neutral-200 font-serif">"{ex.text}"</div>
+                                                                            </div>
+                                                                            <div className="text-xs text-neutral-500 font-light pl-6">{ex.translation}</div>
                                                                         </div>
                                                                     ))}
                                                                 </div>
