@@ -36,10 +36,13 @@ export async function POST(
         Instructions:
         1. **Analyze User's Meaning**: Carefully break down the user's provided meaning ("${word.meaning}") into distinct meanings.
         2. **Generate Examples**: Create one example sentence for **EACH** distinct meaning identified from the user's input.
-           - If the user provides 3 distinct meanings, generate exactly 3 examples.
-           - If the user provides only 1 meaning, generate 1 example.
-           - **Crucial**: The sentences must be **meaningful**, **context-rich**, and clearly demonstrate how the word is used in a natural setting. Avoid short, generic, or ambiguous sentences (e.g., instead of "He ran fast", say "He ran fast enough to catch the bus just before it left").
-           - The sentence should fully illustrate the specific nuance of the meaning being targeted.
+           - **Rule**: If the user provides 3 distinct meanings (e.g., ①... ②... ③...), you MUST generate exactly 3 examples, one for each.
+           - **Rule**: If the user provides only 1 meaning, generate 1 example.
+           - **Quality Control**: 
+             - Sentences **MUST** be at least 10-15 words long.
+             - Sentences **MUST** be context-rich and clear.
+             - **BAD**: "He ran fast." (Too short, ambiguous)
+             - **GOOD**: "He ran fast enough to catch the bus just moments before it pulled away from the station." (Context-rich, clear)
            - Use your knowledge to identify parts of speech if they are implied, but prioritize the user's categorization.
         4. **Role Format**: The "role" must strictly follow the format: "Part of Speech (Specific Meaning)" (e.g., "Verb (to run)", "Noun (a run)").
 
@@ -48,7 +51,7 @@ export async function POST(
           "examples": [
             {
               "role": "Part of Speech (Specific Meaning)",
-              "text": "English example sentence",
+              "text": "English example sentence (10-15+ words)",
               "translation": "Japanese translation"
             }
           ]
