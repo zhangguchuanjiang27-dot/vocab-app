@@ -875,7 +875,8 @@ export default function DeckPage() {
                                                     {expandedListItems[card.id!] && (
                                                         <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                                                             {/* メイン例文 */}
-                                                            {card.example && (
+                                                            {/* 例文表示: otherExamples優先、なければlegacy exampleを表示 */}
+                                                            {(!card.otherExamples || card.otherExamples.length === 0) && card.example && (
                                                                 <div className="mb-3">
                                                                     <div className="flex items-start gap-2">
                                                                         <button
@@ -896,9 +897,11 @@ export default function DeckPage() {
                                                                 <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
                                                                     {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
                                                                         <div key={i} className="text-sm">
-                                                                            <div className="mb-1">
-                                                                                <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
-                                                                            </div>
+                                                                            {ex.role && (
+                                                                                <div className="mb-1">
+                                                                                    <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
+                                                                                </div>
+                                                                            )}
                                                                             <div className="flex items-start gap-2 mb-1">
                                                                                 {ex.text && (
                                                                                     <button onClick={() => speak(ex.text)} className="mt-0.5 text-neutral-400 hover:text-indigo-500 transition-colors shrink-0">
@@ -913,32 +916,30 @@ export default function DeckPage() {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <button
-                                                    onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                    className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
-                                                >
-                                                    <span>🪄</span> 例文を生成
-                                                </button>
+                                                    ) : (
+                                                    <button
+                                                        onClick={() => card.id && handleGenerateDetails(card.id)}
+                                                        className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
+                                                    >
+                                                        <span>🪄</span> 例文を生成
+                                                    </button>
                                             )}
-                                        </div>
+                                                </div>
                                     </div>
-                                </div>
+                                    </div>
 
-                                {/* Delete Button */}
-                                <button
-                                    onClick={() => handleDeleteWord(card.id)}
-                                    className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Remove word"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                </button>
-                            </div>
-                        ))
+                                    {/* Delete Button */}
+                                    <button
+                                        onClick={() => handleDeleteWord(card.id)}
+                                        className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 bg-white/50 dark:bg-black/50 sm:bg-transparent rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Remove word"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                    </button>
+                                </div>
+                                ))
                     )}
-                </div>
+                            </div>
             </main>
         </div>
     );
