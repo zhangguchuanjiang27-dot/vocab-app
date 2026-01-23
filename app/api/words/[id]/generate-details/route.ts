@@ -44,8 +44,9 @@ export async function POST(
              - **BAD**: "He ran fast." (Too short, ambiguous)
              - **GOOD**: "He ran fast enough to catch the bus just moments before it pulled away from the station." (Context-rich, clear)
            - Use your knowledge to identify parts of speech if they are implied, but prioritize the user's categorization.
-        4. **Role Format**: The "role" must strictly follow the format: "Part of Speech (Specific Meaning)" (e.g., "Verb (to run)", "Noun (a run)").
-           - **CRITICAL**: Do NOT use the word "Idiom" or "熟語" in the role. If it is an idiom, just use the meaning or a specific part of speech if applicable.
+        4. **Role Format**: The "role" must ONLY contain the part of speech or "熟語" for idioms.
+           - **Rule**: Use "Verb", "Noun", "Adjective", "Adverb", or "熟語" (for idioms/phrases).
+           - **Forbidden**: Do NOT include parentheses or specific meanings (e.g., "Verb (to run)" is ❌, "Verb" is ✓).
         
         Output JSON Format:
         {
