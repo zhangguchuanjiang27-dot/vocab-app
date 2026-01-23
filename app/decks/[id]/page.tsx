@@ -389,7 +389,7 @@ export default function DeckPage() {
 
     const handleNext = () => {
         if (!deck) return;
-        const words = isRandomMode ? shuffledWords : deck.words;
+        const words = reviewWords || (isRandomMode ? shuffledWords : deck.words);
         setIsFlipped(false);
         setShowExamples(false);
         if (currentIndex < words.length - 1) {
@@ -406,6 +406,19 @@ export default function DeckPage() {
             setTimeout(() => setCurrentIndex((prev) => prev - 1), 150);
         }
     };
+
+    const handleRetryCurrentSession = () => {
+        setIsFinished(false);
+        setCurrentIndex(0);
+        setIsFlipped(false);
+        setShowExamples(false);
+        setWritingInput("");
+        setIsAnswerChecked(false);
+        setIsCorrect(null);
+        setWrongWordIds(new Set());
+    };
+
+
 
     const handleRestart = (isReviewMistakes = false) => {
         if (isReviewMistakes && deck) {
@@ -438,6 +451,13 @@ export default function DeckPage() {
         }
 
         if (correct) {
+            if (cardId) {
+                setWrongWordIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(cardId);
+                    return next;
+                });
+            }
             speak(correctWord);
         }
     };
@@ -511,6 +531,11 @@ export default function DeckPage() {
                             {wrongWordIds.size > 0 && (
                                 <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
+                                </button>
+                            )}
+                            {reviewWords && wrongWordIds.size === 0 && (
+                                <button onClick={handleRetryCurrentSession} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto flex items-center gap-2">
+                                    <span>↺</span> もう一度学習する
                                 </button>
                             )}
                             <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
@@ -697,6 +722,11 @@ export default function DeckPage() {
                             {wrongWordIds.size > 0 && (
                                 <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
+                                </button>
+                            )}
+                            {reviewWords && wrongWordIds.size === 0 && (
+                                <button onClick={handleRetryCurrentSession} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto flex items-center gap-2">
+                                    <span>↺</span> もう一度学習する
                                 </button>
                             )}
                             <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">Back to List</button>
