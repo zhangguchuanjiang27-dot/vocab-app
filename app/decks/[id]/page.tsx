@@ -1,4 +1,4 @@
-"use client";
+kore"use client";
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -14,8 +14,8 @@ type WordCard = {
     example_jp: string;
     otherExamples?: { role: string; text: string; translation: string }[];
     synonyms?: string[];
+    synonyms?: string[];
     antonyms?: string[];
-    isUnlocked?: boolean;
     createdAt?: string;
 };
 
@@ -160,9 +160,8 @@ export default function DeckPage() {
                         let synonyms: string[] = Array.isArray(w.synonyms) ? w.synonyms.map(String) : [];
                         let antonyms: string[] = Array.isArray(w.antonyms) ? w.antonyms.map(String) : [];
 
-                        // 1. アンロックマーカーのチェック
+                        // 1. アンロックマーカーのチェック (表示上は除去するが、ロック機能は廃止)
                         if (cleanExampleJp.includes('|||UNLOCKED|||')) {
-                            isUnlocked = true;
                             cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
                         }
 
@@ -211,7 +210,6 @@ export default function DeckPage() {
                             otherExamples: safeOtherExamples,
                             synonyms: synonyms, // now strictly string[]
                             antonyms: antonyms, // now strictly string[]
-                            isUnlocked: isUnlocked
                         };
                     });
 
@@ -229,82 +227,8 @@ export default function DeckPage() {
         }
     };
 
-    const handleBulkUnlock = async () => {
-        if (!deck) return;
-        const wordsToUnlock = deck.words.filter(w => w.id && selectedWordIds.has(w.id) && !w.isUnlocked);
-
-        if (wordsToUnlock.length === 0) {
-            alert("アンロックが必要な単語が選択されていません");
-            return;
-        }
-
-        const cost = wordsToUnlock.length * 2;
-        if (!confirm(`${wordsToUnlock.length} 件の単語の例文をアンロックします。\n合計 ${cost} コインを消費しますか？`)) return;
-
-        setLoading(true);
-        try {
-            // Sequential execution to avoid overwhelming the server/DB transaction locks
-            for (const word of wordsToUnlock) {
-                if (!word.id) continue;
-
-                // データがあるかどうかでAPIを変える
-                // exampleが空なら生成(generate-details)、あるならアンロック(unlock)
-                const hasData = word.example && word.example.trim() !== "";
-                const apiEndpoint = hasData
-                    ? `/api/words/${word.id}/unlock`
-                    : `/api/words/${word.id}/generate-details`;
-
-                const res = await fetch(apiEndpoint, { method: "POST" });
-
-                if (!res.ok) {
-                    console.error(`Failed to process word ${word.word}`);
-                }
-            }
-            await fetchDeck();
-            alert("処理が完了しました！");
-        } catch (e) {
-            console.error(e);
-            alert("エラーが発生しました");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAccessExamples = async (card: WordCard) => {
-        if (!card.id) return;
-
-        // exampleが空でない = データがある
-        const hasData = card.example && card.example.trim() !== "";
-
-        if (hasData) {
-            await handleUnlock(card.id);
-        } else {
-            await handleGenerateDetails(card.id);
-        }
-    };
-
-    const handleUnlock = async (wordId: string) => {
-        if (!confirm("2コインを使って例文を表示しますか？")) return;
-
-        try {
-            const res = await fetch(`/api/words/${wordId}/unlock`, { method: "POST" });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || "Failed to unlock");
-            }
-
-            // 成功したら全データを再取得
-            await fetchDeck();
-
-        } catch (e: any) {
-            alert(e.message);
-        }
-    };
-
     const handleGenerateDetails = async (wordId: string) => {
-        // メッセージは共通化されているのでここでは確認しない
-        if (!confirm("2コインを使って例文を生成・表示しますか？")) return;
-
+        // コイン消費なしで生成
         try {
             const res = await fetch(`/api/words/${wordId}/generate-details`, { method: "POST" });
             if (!res.ok) {
@@ -314,7 +238,6 @@ export default function DeckPage() {
 
             // 成功したら全データを再取得
             await fetchDeck();
-            alert("例文を生成しました！");
 
         } catch (e: any) {
             alert(e.message);
@@ -613,7 +536,7 @@ export default function DeckPage() {
 
                                 {/* 例文セクション (トグル式) */}
                                 {!showExamples ? (
-                                    currentCard.isUnlocked ? (
+                                    currentCard.example ? (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
                                             className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
@@ -624,11 +547,11 @@ export default function DeckPage() {
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                if (currentCard.id) handleUnlock(currentCard.id);
+                                                if (currentCard.id) handleGenerateDetails(currentCard.id);
                                             }}
                                             className="px-6 py-2 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full text-sm font-bold shadow-lg transition-all flex items-center gap-2"
                                         >
-                                            <span>🔒</span> 例文をアンロック (2コイン)
+                                            <span>🪄</span> 例文を生成
                                         </button>
                                     )
                                 ) : (
@@ -906,9 +829,6 @@ export default function DeckPage() {
 
                                     {selectedWordIds.size > 0 && (
                                         <div className="flex items-center gap-2">
-                                            <button onClick={handleBulkUnlock} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1">
-                                                <span>🔓</span> 一括アンロック
-                                            </button>
                                             <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
                                                 <span>️</span> 一括削除
                                             </button>
@@ -976,8 +896,8 @@ export default function DeckPage() {
                                     <div className="flex-1">
                                         <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
                                         <div className="space-y-1">
-                                            {/* 例文セクション (ロック機能付き) */}
-                                            {card.isUnlocked ? (
+                                            {/* 例文セクション (ロック機能なし) */}
+                                            {card.example ? (
                                                 <div className="space-y-3">
                                                     <button
                                                         onClick={() => card.id && toggleExampleVisibility(card.id)}
@@ -1028,10 +948,10 @@ export default function DeckPage() {
                                                 </div>
                                             ) : (
                                                 <button
-                                                    onClick={() => card.id && handleAccessExamples(card)}
+                                                    onClick={() => card.id && handleGenerateDetails(card.id)}
                                                     className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
                                                 >
-                                                    <span>🔒</span> 例文を表示 (2コイン)
+                                                    <span>🪄</span> 例文を生成
                                                 </button>
                                             )}
                                         </div>

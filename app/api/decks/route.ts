@@ -65,12 +65,26 @@ export async function POST(req: Request) {
             // 今回の仕様変更:
             // 生成時は単語と意味のみ。例文などはアンロック時に生成・取得する。
             // よって、example, example_jp は空文字で保存する。
+            let exampleJp = w.example_jp || "";
+
+            // 拡張データを構築
+            const extData = {
+              examples: w.otherExamples || [],
+              synonyms: w.synonyms || [],
+              antonyms: w.antonyms || []
+            };
+
+            // データ詳細があれば拡張タグを追加
+            if (extData.examples.length > 0 || extData.synonyms.length > 0 || extData.antonyms.length > 0) {
+              exampleJp += `|||EXT|||${JSON.stringify(extData)}`;
+            }
+
             return {
               word: w.word,
               meaning: w.meaning,
-              partOfSpeech: w.partOfSpeech, // DBスキーマにpartOfSpeechがあるか要確認。なければ外すか、meaningに含める
-              example: "",
-              example_jp: ""
+              partOfSpeech: w.partOfSpeech,
+              example: w.example || "",
+              example_jp: exampleJp
             };
           })
         }

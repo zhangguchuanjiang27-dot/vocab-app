@@ -107,12 +107,24 @@ export async function PUT(
 
         // 単語追加のリクエストがある場合
         if (words && Array.isArray(words) && words.length > 0) {
-            // データ変換：otherExamplesをexample_jpに埋め込む（スキーマ変更回避のため）
+            // データ変換：拡張データをexample_jpに埋め込む
             const newWordsData = words.map((w: any) => {
                 let exampleJp = w.example_jp || "";
-                if (w.otherExamples && Array.isArray(w.otherExamples) && w.otherExamples.length > 0) {
+
+                // 拡張データを構築
+                const extData = {
+                    examples: w.otherExamples || [],
+                    synonyms: w.synonyms || [],
+                    antonyms: w.antonyms || []
+                };
+
+                if (extData.examples.length > 0 || extData.synonyms.length > 0 || extData.antonyms.length > 0) {
                     // 区切り文字を使ってJSONを埋め込む
-                    exampleJp += `|||EXT|||${JSON.stringify(w.otherExamples)}`;
+                    // 既存のEXTタグがあれば除去してから追記（重複防止）
+                    if (exampleJp.includes("|||EXT|||")) {
+                        exampleJp = exampleJp.split("|||EXT|||")[0];
+                    }
+                    exampleJp += `|||EXT|||${JSON.stringify(extData)}`;
                 }
 
                 return {
@@ -121,7 +133,6 @@ export async function PUT(
                     meaning: w.meaning,
                     example: w.example || "",
                     example_jp: exampleJp,
-                    // otherExamplesカラムへの保存は諦め、上記に統合
                     deckId: id
                 };
             });

@@ -53,8 +53,14 @@ export async function POST(req: Request) {
          - 単一品詞: "形容詞" / "名詞" / "動詞" など
          - 複数品詞: "名詞 / 形容詞" のようにスラッシュで区切る
       
-      4. **例文は生成しない**: 
-         - 今回は単語と意味のみを生成します。例文フィールドは空文字にします。
+      4. **詳細情報の生成**:
+         - **examples**: この単語が持つ**異なる意味やニュアンスごと**の例文を生成してください。
+           - role: 品詞または意味のニュアンス（例: "名詞", "〜として"）
+           - text: 英文
+           - translation: 和訳
+           - 必ず2〜3個生成してください。
+         - **synonyms**: 類義語（英語、配列）
+         - **antonyms**: 対義語（英語、配列）
       
       5. **入力処理**: 単語単体で入力された場合は原形に直してください。
       
@@ -62,6 +68,9 @@ export async function POST(req: Request) {
       1. word: 英単語
       2. partOfSpeech: 品詞
       3. meaning: 日本語の意味
+      4. examples: 例文リスト
+      5. synonyms: 類義語リスト
+      6. antonyms: 対義語リスト
       
       出力は以下のJSON形式のみを返してください：
       {
@@ -69,7 +78,12 @@ export async function POST(req: Request) {
           { 
             "word": "profound", 
             "partOfSpeech": "形容詞", 
-            "meaning": "【形】①深い ②奥深い ③深遠な"
+            "meaning": "【形】①深い ②奥深い ③深遠な",
+            "examples": [
+                { "role": "形容詞", "text": "This is a profound question.", "translation": "これは深遠な問いだ。" }
+            ],
+            "synonyms": ["deep"],
+            "antonyms": ["shallow"]
           }
         ]
       }
@@ -99,7 +113,21 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json();
-    const result = JSON.parse(data.choices[0].message.content || "{}");
+    const parsed = JSON.parse(data.choices[0].message.content || "{}");
+
+    // レスポンス整形: フロントエンドが期待する形式に変換
+    const result = {
+      words: (parsed.words || []).map((w: any) => ({
+        ...w,
+        // メインの例文として最初のひとつを設定
+        example: w.examples?.[0]?.text || "",
+        example_jp: w.examples?.[0]?.translation || "",
+        // 詳細データはそのまま渡す（保存時にEXTタグ等に変換される想定）
+        otherExamples: w.examples || [],
+        synonyms: w.synonyms || [],
+        antonyms: w.antonyms || []
+      }))
+    };
 
     const generatedCount = result.words ? result.words.length : 0;
 
