@@ -859,19 +859,7 @@ export default function DeckPage() {
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 leading-relaxed" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
-                                            {(() => {
-                                                // 意味の整形表示: 丸数字や【】の前で改行を入れる
-                                                const text = String(card.meaning || "");
-                                                // ①-⑳, 【 の前で分割
-                                                const parts = text.split(/(?=[①-⑳【])/g);
-                                                return parts.map((part, i) => (
-                                                    <div key={i} className={part.startsWith('【') ? 'text-xs text-neutral-500 mt-1 mb-0.5 font-bold' : ''}>
-                                                        {part}
-                                                    </div>
-                                                ));
-                                            })()}
-                                        </div>
+                                        <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
                                         <div className="space-y-1">
                                             {/* 例文セクション (ロック機能なし) */}
                                             {card.example ? (
