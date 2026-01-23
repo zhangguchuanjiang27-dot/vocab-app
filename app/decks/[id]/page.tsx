@@ -927,25 +927,7 @@ export default function DeckPage() {
                                                     className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-serif font-bold"
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">品詞</label>
-                                                <select
-                                                    value={editFormData.partOfSpeech}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, partOfSpeech: e.target.value })}
-                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black"
-                                                >
-                                                    <option value="">(未設定)</option>
-                                                    <option value="noun">名詞 (noun)</option>
-                                                    <option value="verb">動詞 (verb)</option>
-                                                    <option value="adjective">形容詞 (adjective)</option>
-                                                    <option value="adverb">副詞 (adverb)</option>
-                                                    <option value="preposition">前置詞 (preposition)</option>
-                                                    <option value="conjunction">接続詞 (conjunction)</option>
-                                                    <option value="pronoun">代名詞 (pronoun)</option>
-                                                    <option value="interjection">間投詞 (interjection)</option>
-                                                    <option value="idiom">熟語 (idiom)</option>
-                                                </select>
-                                            </div>
+
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>

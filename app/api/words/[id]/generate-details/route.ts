@@ -34,10 +34,11 @@ export async function POST(
         User's provided meaning: "${word.meaning}"
 
         Instructions:
-        1. **Identify ALL Meanings**: List every distinct meaning and part of speech you know for the word "${word.word}" (e.g., noun, verb, adjective, idioms, different nuances).
-        2. **Prioritize User's Meaning**: Ensure the user's provided meaning is included as the first item.
-        3. **Generate Examples**: Create one example sentence for **EACH** meaning identified in step 1.
-           - Do not limit the number of examples artificially. If there are 5 distinct meanings, generate 5 examples. If 10, generate 10.
+        1. **Analyze User's Meaning**: Carefully break down the user's provided meaning ("${word.meaning}") into distinct meanings.
+        2. **Generate Examples**: Create one example sentence for **EACH** distinct meaning identified from the user's input.
+           - If the user provides 3 distinct meanings, generate exactly 3 examples.
+           - If the user provides only 1 meaning, generate 1 example.
+           - Use your knowledge to identify parts of speech if they are implied, but prioritize the user's categorization.
         4. **Role Format**: The "role" must strictly follow the format: "Part of Speech (Specific Meaning)" (e.g., "Verb (to run)", "Noun (a run)").
 
         Output JSON Format:
