@@ -29,24 +29,32 @@ export async function POST(
 
         // 3. Generate content via OpenAI
         const prompt = `
-            英単語: ${word.word}
-            ユーザーの定義した意味: ${word.meaning}
+        Task: Generate vocabulary examples for the English word "${word.word}".
+        
+        User's Definition: "${word.meaning}"
 
-            以下の指示に従ってJSONを生成してください:
-            1. この単語の**異なる3つの意味・用法**を選んでください。
-               - 1つ目は必ず「ユーザーの定義した意味」にしてください。
-               - 2つ目と3つ目は、この単語の他の一般的な意味（品詞違いなど）を選んでください。
-            2. それぞれの意味について、1つずつ例文を作成してください（合計3つ）。
+        Instructions:
+        1. **Analyze the User's Definition**: It may contain multiple meanings (e.g., "run, manage"). Split them into distinct concepts.
+        2. **Select Target Meanings**: 
+           - Use the meanings from the User's Definition first.
+           - If there are fewer than 3 meanings, add other common meanings (different parts of speech like Noun/Verb/Adj) to reach a total of **3 distinct meanings**.
+           - If there are more than 3, select the top 3 most important ones.
+           - **STRICTLY LIMIT to 3 items.**
+        3. **Generate Examples**:
+           - Create EXACTLY ONE example sentence for EACH of the 3 selected meanings.
+           - Ensure the "role" field contains ONLY the specific part of speech and meaning being used in that example (e.g., "Verb (to run)" NOT "Verb (to run, to manage)").
 
-            出力形式:
+        Output JSON Format:
+        {
+          "examples": [
             {
-               "examples": [ 
-                  { "role": "品詞(具体的な意味)", "text": "英文", "translation": "和訳" },
-                  { "role": "品詞(別の意味)", "text": "英文", "translation": "和訳" },
-                  { "role": "品詞(さらに別の意味)", "text": "英文", "translation": "和訳" }
-               ]
+              "role": "Part of Speech (Specific Meaning)",
+              "text": "English example sentence covering this specific meaning",
+              "translation": "Japanese translation of the example"
             }
-            `;
+          ]
+        }
+        `;
 
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -57,9 +65,10 @@ export async function POST(
             body: JSON.stringify({
                 model: "gpt-4o-mini",
                 messages: [
-                    { role: "system", content: "You are a helpful assistant that outputs JSON." },
+                    { role: "system", content: "You are a helpful assistant that generates JSON data." },
                     { role: "user", content: prompt },
                 ],
+                temperature: 0.3,
                 response_format: { type: "json_object" },
             }),
         });
