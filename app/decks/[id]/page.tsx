@@ -81,6 +81,7 @@ export default function DeckPage() {
 
     // Selection State
     const [selectedWordIds, setSelectedWordIds] = useState<Set<string>>(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
 
     const toggleSelectWord = (id: string) => {
         const newResult = new Set(selectedWordIds);
@@ -882,27 +883,46 @@ export default function DeckPage() {
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4 flex-1">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={sortedWords.length > 0 && sortedWords.every(w => w.id && selectedWordIds.has(w.id))}
-                                    onChange={handleSelectAll}
-                                    className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                />
-                                {selectedWordIds.size > 0 && (
-                                    <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
-                                        {selectedWordIds.size} 選択中
-                                    </span>
-                                )}
-                            </div>
+                            {!isSelectionMode ? (
+                                <button
+                                    onClick={() => setIsSelectionMode(true)}
+                                    className="px-4 py-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm font-bold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition"
+                                >
+                                    選択する
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-4 animate-in fade-in slide-in-from-left-2">
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={sortedWords.length > 0 && sortedWords.every(w => w.id && selectedWordIds.has(w.id))}
+                                            onChange={handleSelectAll}
+                                            className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        />
+                                        <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
+                                            {selectedWordIds.size} 選択中
+                                        </span>
+                                    </div>
 
-                            {selectedWordIds.size > 0 && (
-                                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2">
-                                    <button onClick={handleBulkUnlock} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1">
-                                        <span>🔓</span> 一括アンロック
-                                    </button>
-                                    <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
-                                        <span>�️</span> 一括削除
+                                    {selectedWordIds.size > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <button onClick={handleBulkUnlock} className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-lg text-xs font-bold shadow-sm hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex items-center gap-1">
+                                                <span>🔓</span> 一括アンロック
+                                            </button>
+                                            <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
+                                                <span>️</span> 一括削除
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => {
+                                            setIsSelectionMode(false);
+                                            setSelectedWordIds(new Set());
+                                        }}
+                                        className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-lg text-xs font-bold hover:bg-neutral-300 dark:hover:bg-neutral-700 transition ml-2"
+                                    >
+                                        キャンセル
                                     </button>
                                 </div>
                             )}
@@ -931,14 +951,16 @@ export default function DeckPage() {
                                 key={card.id || idx}
                                 className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative select-none"
                             >
-                                <div className="pt-1.5">
-                                    <input
-                                        type="checkbox"
-                                        checked={card.id ? selectedWordIds.has(card.id) : false}
-                                        onChange={() => card.id && toggleSelectWord(card.id)}
-                                        className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                    />
-                                </div>
+                                {isSelectionMode && (
+                                    <div className="pt-1.5">
+                                        <input
+                                            type="checkbox"
+                                            checked={card.id ? selectedWordIds.has(card.id) : false}
+                                            onChange={() => card.id && toggleSelectWord(card.id)}
+                                            className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                        />
+                                    </div>
+                                )}
                                 <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
                                     <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
                                         <div className="flex items-center gap-2">
