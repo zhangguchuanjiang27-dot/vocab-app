@@ -29,28 +29,24 @@ export async function POST(
 
         // 3. Generate content via OpenAI
         const prompt = `
-        Task: Generate vocabulary examples for the English word "${word.word}".
+        Task: Comprehensive Example Generation for "${word.word}"
         
-        User's Definition: "${word.meaning}"
+        User's provided meaning: "${word.meaning}"
 
         Instructions:
-        1. **Analyze the User's Definition**: It may contain multiple meanings (e.g., "run, manage"). Split them into distinct concepts.
-        2. **Select Target Meanings**: 
-           - Use the meanings from the User's Definition first.
-           - If there are fewer than 3 meanings, add other common meanings (different parts of speech like Noun/Verb/Adj) to reach a total of **3 distinct meanings**.
-           - If there are more than 3, select the top 3 most important ones.
-           - **STRICTLY LIMIT to 3 items.**
-        3. **Generate Examples**:
-           - Create EXACTLY ONE example sentence for EACH of the 3 selected meanings.
-           - Ensure the "role" field contains ONLY the specific part of speech and meaning being used in that example (e.g., "Verb (to run)" NOT "Verb (to run, to manage)").
+        1. **Identify ALL Meanings**: List every distinct meaning and part of speech you know for the word "${word.word}" (e.g., noun, verb, adjective, idioms, different nuances).
+        2. **Prioritize User's Meaning**: Ensure the user's provided meaning is included as the first item.
+        3. **Generate Examples**: Create one example sentence for **EACH** meaning identified in step 1.
+           - Do not limit the number of examples artificially. If there are 5 distinct meanings, generate 5 examples. If 10, generate 10.
+        4. **Role Format**: The "role" must strictly follow the format: "Part of Speech (Specific Meaning)" (e.g., "Verb (to run)", "Noun (a run)").
 
         Output JSON Format:
         {
           "examples": [
             {
               "role": "Part of Speech (Specific Meaning)",
-              "text": "English example sentence covering this specific meaning",
-              "translation": "Japanese translation of the example"
+              "text": "English example sentence",
+              "translation": "Japanese translation"
             }
           ]
         }
