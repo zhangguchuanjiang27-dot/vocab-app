@@ -5,7 +5,7 @@ export default function TermsPage() {
         <div className="max-w-3xl mx-auto px-6 py-24">
             <h1 className="text-3xl font-black mb-8 dark:text-white">利用規約</h1>
             <div className="prose dark:prose-invert prose-neutral max-w-none">
-                <p>この利用規約（以下，「本規約」といいます。）は，「瞬間英単語帳」（以下，「本サービス」といいます。）の利用条件を定めるものです。登録ユーザーの皆さま（以下，「ユーザー」といいます。）には，本規約に従って，本サービスをご利用いただきます。</p>
+                <p>この利用規約（以下，「本規約」といいます。）は，「Voca」（以下，「本サービス」といいます。）の利用条件を定めるものです。登録ユーザーの皆さま（以下，「ユーザー」といいます。）には，本規約に従って，本サービスをご利用いただきます。</p>
 
                 <h3>第1条（適用）</h3>
                 <p>本規約は，ユーザーと本サービス運営者との間の本サービスの利用に関わる一切の関係に適用されるものとします。</p>

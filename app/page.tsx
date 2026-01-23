@@ -289,7 +289,7 @@ export default function Home() {
         {!session ? (
           <div className="text-center py-24 px-6 animate-in fade-in zoom-in duration-500">
             <h1 className="text-5xl sm:text-7xl font-black mb-8 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-white">
-              瞬間英単語帳
+              Voca
             </h1>
             <p className="text-xl text-neutral-500 max-w-2xl mx-auto mb-12 leading-relaxed">
               AIが生成するフラッシュカードで、試験も日常会話も完璧に。<br className="hidden sm:block" />

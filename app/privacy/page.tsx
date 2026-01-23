@@ -5,7 +5,7 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto px-6 py-24">
             <h1 className="text-3xl font-black mb-8 dark:text-white">プライバシーポリシー</h1>
             <div className="prose dark:prose-invert prose-neutral max-w-none">
-                <p>「瞬間英単語帳」（以下，「本サービス」といいます。）における，ユーザーの個人情報の取扱いについて，以下のとおりプライバシーポリシー（以下，「本ポリシー」といいます。）を定めます。</p>
+                <p>「Voca」（以下，「本サービス」といいます。）における，ユーザーの個人情報の取扱いについて，以下のとおりプライバシーポリシー（以下，「本ポリシー」といいます。）を定めます。</p>
 
                 <h3>第1条（個人情報）</h3>
                 <p>「個人情報」とは，個人情報保護法にいう「個人情報」を指すものとし，生存する個人に関する情報であって，当該情報に含まれる氏名，生年月日，住所，電話番号，連絡先その他の記述等により特定の個人を識別できる情報を指します。</p>

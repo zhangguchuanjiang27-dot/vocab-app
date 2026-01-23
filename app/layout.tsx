@@ -33,7 +33,7 @@ import Link from "next/link";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "瞬間英単語帳 - AI Flashcards",
+  title: "Voca - AI Flashcards",
   description: "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
 };
 
@@ -65,7 +65,7 @@ export default async function RootLayout({
             <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
               <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-2">
                 <span className="text-2xl">⚡️</span>
-                <span>瞬間英単語帳</span>
+                <span>Voca</span>
               </Link>
 
               <div className="flex items-center gap-6">
@@ -105,7 +105,7 @@ export default async function RootLayout({
 
           <footer className="py-8 text-center text-xs text-neutral-400 border-t border-neutral-100 dark:border-neutral-900 mt-12 bg-neutral-50 dark:bg-neutral-950">
             <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p>© 2026 瞬間英単語帳 All rights reserved.</p>
+              <p>© 2026 Voca All rights reserved.</p>
               <div className="flex gap-4">
                 <Link href="/terms" className="hover:text-neutral-600 dark:hover:text-neutral-300">利用規約</Link>
                 <Link href="/privacy" className="hover:text-neutral-600 dark:hover:text-neutral-300">プライバシーポリシー</Link>
