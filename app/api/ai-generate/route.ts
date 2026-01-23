@@ -53,26 +53,12 @@ export async function POST(req: Request) {
       3. **品詞の指定（partOfSpeech）**:
          - 単一品詞: "形容詞" / "名詞" / "動詞" など。**熟語の場合は「熟語」と指定してください。**
       
-      4. **例文の生成（必須 - 重要）**:
-         - **examples**: この単語の代表的な使い方を示す例文を**必ず**作成してください。
-           - role: **単一の品詞名のみ**を出力してください (例: "動詞", "名詞", "形容詞", "副詞", "熟語")。
-           - **重要**: 意味や補足情報は含めず、品詞名（熟語の場合は「熟語」）だけを記述してください。
-           - text: 英文
-           - translation: 和訳
-          - 1〜2個生成してください。
-           - **重要**: 複数の意味（①、②...）がある場合は、**それぞれの意味に対応する例文を必ず1つずつ作成してください**。
-           - **品質**: 短すぎる文や汎用的な文（例: "I like it"）は避け、**文脈が豊かで、単語のニュアンスが伝わる自然な例文（10語以上推奨）**にしてください。
-           - **類義語・対義語は生成しないでください。**
-           - **重要: 入力が単一の単語（例: "run"）の場合、その単語自体の意味の例文のみを作成してください。熟語（phrasal verbs等）の例文は含めないでください。**
-           - **類義語・対義語は生成しないでください。**
-      
-      5. **入力処理**: 単語単体で入力された場合は原形に直してください。
+      4. **入力処理**: 単語単体で入力された場合は原形に直してください。
       
       各項目について以下の情報を含めてください：
       1. word: 英単語
       2. partOfSpeech: 品詞
       3. meaning: 日本語の意味
-      4. examples: 例文リスト
       
       出力は以下のJSON形式のみを返してください：
       {
@@ -80,10 +66,7 @@ export async function POST(req: Request) {
           { 
             "word": "profound", 
             "partOfSpeech": "形容詞", 
-            "meaning": "【形】①深い ②奥深い ③深遠な",
-            "examples": [
-                { "role": "形容詞", "text": "This is a profound question.", "translation": "これは深遠な問いだ。" }
-            ]
+            "meaning": "【形】①深い ②奥深い ③深遠な"
           }
         ]
       }
@@ -119,11 +102,10 @@ export async function POST(req: Request) {
     const result = {
       words: (parsed.words || []).map((w: any) => ({
         ...w,
-        // メインの例文として最初のひとつを設定
-        example: w.examples?.[0]?.text || "",
-        example_jp: w.examples?.[0]?.translation || "",
-        // 詳細データはそのまま渡す
-        otherExamples: w.examples || []
+        // 例文は空で初期化
+        example: "",
+        example_jp: "",
+        otherExamples: []
       }))
     };
 

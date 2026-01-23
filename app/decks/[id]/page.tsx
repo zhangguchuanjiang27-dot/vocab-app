@@ -31,6 +31,7 @@ export default function DeckPage() {
 
     const [deck, setDeck] = useState<Deck | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
     // モード管理: 'list' (一覧) | 'flashcard' (学習) | 'writing_test' (テスト)
     const [mode, setMode] = useState<'list' | 'flashcard' | 'writing_test'>('list');
@@ -234,6 +235,34 @@ export default function DeckPage() {
 
         } catch (e: any) {
             alert(e.message);
+        }
+    };
+
+    const handleBulkGenerate = async () => {
+        if (!deck || isBulkGenerating) return;
+
+        const wordsWithoutExamples = deck.words.filter(w => !w.example && (!w.otherExamples || w.otherExamples.length === 0));
+
+        if (wordsWithoutExamples.length === 0) {
+            alert("すべての単語に例文が生成されています。");
+            return;
+        }
+
+        if (!confirm(`${wordsWithoutExamples.length}件の単語に対して例文をまとめて生成しますか？\n（時間がかかる場合があります）`)) return;
+
+        setIsBulkGenerating(true);
+        try {
+            for (const word of wordsWithoutExamples) {
+                if (!word.id) continue;
+                await fetch(`/api/words/${word.id}/generate-details`, { method: "POST" });
+            }
+            await fetchDeck();
+            alert("一括生成が完了しました！");
+        } catch (e) {
+            console.error(e);
+            alert("一部の生成に失敗しました。");
+        } finally {
+            setIsBulkGenerating(false);
         }
     };
 
@@ -839,6 +868,16 @@ export default function DeckPage() {
                                 <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">📝</span> Writingテスト
                                 </button>
+                                {deck.words.some(w => !w.example && (!w.otherExamples || w.otherExamples.length === 0)) && (
+                                    <button
+                                        onClick={handleBulkGenerate}
+                                        disabled={isBulkGenerating}
+                                        className="px-8 py-4 bg-amber-500 text-white text-lg font-bold rounded-full shadow-lg hover:bg-amber-600 hover:shadow-amber-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <span className="text-2xl">{isBulkGenerating ? "⏳" : "🪄"}</span>
+                                        {isBulkGenerating ? "一括生成中..." : "例文を一括生成"}
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}

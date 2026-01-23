@@ -52,7 +52,7 @@ export async function POST(
         {
           "examples": [
             {
-              "role": "Part of Speech (Specific Meaning)",
+              "role": "Verb",
               "text": "English example sentence (10-15+ words)",
               "translation": "Japanese translation"
             }
