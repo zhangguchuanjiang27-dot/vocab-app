@@ -419,30 +419,7 @@ export default function Home() {
                               <span className="text-neutral-600 dark:text-neutral-300 font-medium ml-auto sm:ml-0" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</span>
                             </div>
 
-                            <div className="pl-4 border-l-2 border-indigo-100 dark:border-indigo-900/30 space-y-1">
-                              {/* 例文表示 (データがある場合のみ) */}
-                              {(typeof card.example === 'string' && /[^\s\u00A0\u2000-\u200B]/.test(card.example)) ? (
-                                <>
-                                  <div className="flex items-start gap-2">
-                                    <button onClick={() => speak(card.example)} className="mt-0.5 text-neutral-300 hover:text-indigo-500"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg></button>
-                                    <p className="text-sm text-neutral-600 dark:text-neutral-400 italic font-serif">"{card.example}"</p>
-                                  </div>
-                                  <p className="text-xs text-neutral-400 font-light pl-6" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</p>
-                                </>
-                              ) : null}
 
-                              {/* 追加の例文表示 (ロック状態) */}
-                              {card.otherExamples && card.otherExamples.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-neutral-100 dark:border-neutral-800">
-                                  <button
-                                    onClick={() => alert("詳細は単語帳に保存してからアンロックできます。")}
-                                    className="text-xs font-bold text-neutral-400 hover:text-neutral-500 flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <span>🔒</span> {card.otherExamples.length} more examples (Save to unlock)
-                                  </button>
-                                </div>
-                              )}
-                            </div>
 
                             <div className="absolute top-6 right-6 text-xs text-neutral-200 font-mono select-none group-hover:text-transparent">
                               #{idx + 1}
