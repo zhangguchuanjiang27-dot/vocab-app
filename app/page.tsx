@@ -55,6 +55,9 @@ export default function Home() {
 
   // 保存・一覧用ステート
   const [deckTitle, setDeckTitle] = useState("");
+  const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
+  const [editDeckTitle, setEditDeckTitle] = useState("");
+  const [showAddToDeckModal, setShowAddToDeckModal] = useState(false);
   const [savedDecks, setSavedDecks] = useState<Deck[]>([]);
   const [showSaved, setShowSaved] = useState(false);
 
@@ -203,6 +206,29 @@ export default function Home() {
     }
   };
 
+  // デッキタイトル変更処理
+  const handleRenameDeck = async (id: string) => {
+    if (!editDeckTitle.trim()) return;
+
+    try {
+      const res = await fetch(`/api/decks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editDeckTitle }),
+      });
+
+      if (res.ok) {
+        setSavedDecks(prev => prev.map(d => d.id === id ? { ...d, title: editDeckTitle } : d));
+        setEditingDeckId(null);
+      } else {
+        alert("タイトルの変更に失敗しました");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("エラーが発生しました");
+    }
+  };
+
   // 単語帳クリック時の処理（詳細ページへ遷移）
   const handleDeckClick = (deckId: string) => {
     router.push(`/decks/${deckId}`);
@@ -258,8 +284,7 @@ export default function Home() {
     }
   };
 
-  // 既存のデッキに追加するためのステート
-  const [showAddToDeckModal, setShowAddToDeckModal] = useState(false);
+  // 既存のデッキに追加するためのステート (既に定義済み)
 
   // 既存のデッキに追加処理
   const handleAddToExistingDeck = async (deckId: string, deckTitle: string) => {
@@ -447,19 +472,65 @@ export default function Home() {
                     {savedDecks.map((deck) => (
                       <div
                         key={deck.id}
-                        onClick={() => handleDeckClick(deck.id)}
-                        className="group relative p-6 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer"
+                        className="group relative p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-xl hover:border-indigo-400 transition-all cursor-pointer"
+                        onClick={() => editingDeckId !== deck.id && handleDeckClick(deck.id)}
                       >
-                        <button
-                          onClick={(e) => handleDeleteDeck(deck.id, e)}
-                          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all z-10 opacity-40 group-hover:opacity-100"
-                          title="単語帳を削除"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
-                        </button>
-                        <h3 className="font-bold text-lg mb-2 pr-6">{deck.title}</h3>
-                        <p className="text-xs text-neutral-500 font-mono">{deck.words.length} 語</p>
-                        <p className="text-xs text-neutral-400 mt-4">{new Date(deck.createdAt).toLocaleDateString()}</p>
+                        {editingDeckId === deck.id ? (
+                          <div className="flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              autoFocus
+                              value={editDeckTitle}
+                              onChange={(e) => setEditDeckTitle(e.target.value)}
+                              className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border-2 border-indigo-500 rounded-xl focus:outline-none font-bold"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRenameDeck(deck.id);
+                                if (e.key === 'Escape') setEditingDeckId(null);
+                              }}
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleRenameDeck(deck.id)}
+                                className="flex-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700"
+                              >
+                                保存
+                              </button>
+                              <button
+                                onClick={() => setEditingDeckId(null)}
+                                className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg text-xs font-bold"
+                              >
+                                キャンセル
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="absolute top-4 right-4 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingDeckId(deck.id);
+                                  setEditDeckTitle(deck.title);
+                                }}
+                                className="p-2 text-neutral-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full transition-all"
+                                title="名前を変更"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteDeck(deck.id, e)}
+                                className="p-2 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all"
+                                title="単語帳を削除"
+                              >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                              </button>
+                            </div>
+                            <h3 className="font-bold text-lg mb-2 pr-12 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
+                            <div className="flex items-center gap-3">
+                              <p className="text-xs text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+                              <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -508,8 +579,8 @@ export default function Home() {
                             type="text"
                             value={deckTitle}
                             onChange={(e) => setDeckTitle(e.target.value)}
-                            placeholder="単語帳のタイトル..."
-                            className="flex-1 bg-transparent font-bold text-lg focus:outline-none placeholder:font-normal"
+                            placeholder="単語帳に名前をつける..."
+                            className="flex-1 bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:font-normal placeholder:text-neutral-400 transition-all border-none"
                           />
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
