@@ -3,25 +3,60 @@ import { prisma } from "@/app/lib/prisma";
 // バッジの定義データ
 const BADGE_DEFINITIONS = [
     {
-        name: "streak_master",
-        displayName: "継続の鬼",
+        name: "streak_3",
+        displayName: "三日坊主卒業",
         description: "3日連続で学習しました",
-        icon: "🏆",
+        icon: "🥉",
         condition: "Last login streak >= 3"
     },
     {
-        name: "night_owl",
-        displayName: "夜更かし",
-        description: "深夜2時〜5時の間に学習しました",
-        icon: "🦉",
-        condition: "Study between 2AM and 5AM"
+        name: "streak_7",
+        displayName: "継続の始まり",
+        description: "7日連続で学習しました",
+        icon: "🥈",
+        condition: "Last login streak >= 7"
     },
     {
-        name: "mad_scientist",
-        displayName: "実験狂",
-        description: "例文生成を50回行いました",
-        icon: "🧪",
-        condition: "Generate details count >= 50"
+        name: "streak_14",
+        displayName: "習慣化",
+        description: "14日連続で学習しました",
+        icon: "🥇",
+        condition: "Last login streak >= 14"
+    },
+    {
+        name: "streak_30",
+        displayName: "一ヶ月継続",
+        description: "30日連続で学習しました",
+        icon: "🎖️",
+        condition: "Last login streak >= 30"
+    },
+    {
+        name: "streak_60",
+        displayName: "二ヶ月継続",
+        description: "60日連続で学習しました",
+        icon: "🏵️",
+        condition: "Last login streak >= 60"
+    },
+    {
+        name: "streak_100",
+        displayName: "百日修行",
+        description: "100日連続で学習しました",
+        icon: "💯",
+        condition: "Last login streak >= 100"
+    },
+    {
+        name: "streak_200",
+        displayName: "二百日の軌跡",
+        description: "200日連続で学習しました",
+        icon: "🔥",
+        condition: "Last login streak >= 200"
+    },
+    {
+        name: "streak_365",
+        displayName: "一年継続",
+        description: "365日連続で学習しました",
+        icon: "👑",
+        condition: "Last login streak >= 365"
     },
     {
         name: "librarian",
