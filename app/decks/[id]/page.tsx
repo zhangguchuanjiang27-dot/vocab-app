@@ -918,8 +918,8 @@ export default function DeckPage() {
 
             <main className="max-w-4xl mx-auto">
                 {/* Cover / Info */}
-                <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col xl:flex-row items-start justify-between gap-8">
-                    <div className="flex-1 w-full xl:w-auto min-w-0">
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col xl:flex-row items-center justify-between gap-8">
+                    <div className="flex-1 min-w-0 w-full">
                         {isEditingTitle ? (
                             <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
                                 <input
@@ -950,13 +950,13 @@ export default function DeckPage() {
                         ) : (
 
                             <div
-                                className="group inline-flex items-center gap-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all max-w-full"
+                                className="group flex items-center gap-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all min-w-0"
                                 onClick={() => { setIsEditingTitle(true); setEditTitle(deck.title); }}
                             >
-                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight whitespace-nowrap overflow-hidden text-ellipsis pr-2">
                                     <span style={{ fontFamily: 'var(--font-merriweather), var(--font-noto-serif-jp), serif' }}>{deck.title}</span>
                                 </h1>
-                                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 shrink-0">
+                                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-all opacity-0 group-hover:opacity-100 shrink-0">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </div>
                             </div>
@@ -983,11 +983,11 @@ export default function DeckPage() {
                                     🔀 ランダム
                                 </button>
                             </div>
-                            <div className="flex flex-wrap gap-4 justify-center sm:justify-start items-center">
-                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
+                            <div className="flex flex-wrap gap-3 justify-center sm:justify-start items-center">
+                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-6 py-3.5 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">🎴</span> フラッシュカード
                                 </button>
-                                <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-6 py-3.5 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">📝</span> Writingテスト
                                 </button>
 
