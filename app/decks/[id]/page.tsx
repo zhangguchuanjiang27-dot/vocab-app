@@ -1394,81 +1394,69 @@ export default function DeckPage() {
                                                                                                 {ex.role}
                                                                                             </span>
                                                                                         </div>
-                                                                                       </div>
-                                                                         <div className="mt-4 flex justify-center">
-                                                                             <button
-                                                                                 onClick={() => card.id && handleGenerateDetails(card.id, true)}
-                                                                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200 dark:border-indigo-800"
-                                                                             >
-                                                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
-                                                                                 再生成 (🪙1)
-                                                                             </button>
-                                                                         </div>
-                                                                            )}
-                                                                            <div className="mt-6 flex justify-center">
-                                                                                <button
+                                                                                    )}
 
                                                                                     <div className="flex items-start gap-4">
-                                                                                    <button
-                                                                                        onClick={() => speak(ex.text)}
-                                                                                        className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
-                                                                                        title="Listen to example"
-                                                                                    >
-                                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                    </button>
-                                                                                    <div className="flex-1 min-w-0">
-                                                                                        <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
-                                                                                            {ex.text}
-                                                                                        </div>
-                                                                                        <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
-                                                                                            {ex.translation}
+                                                                                        <button
+                                                                                            onClick={() => speak(ex.text)}
+                                                                                            className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
+                                                                                            title="Listen to example"
+                                                                                        >
+                                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                        </button>
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
+                                                                                                {ex.text}
+                                                                                            </div>
+                                                                                            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
+                                                                                                {ex.translation}
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
-                                                                            </div>
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => card.id && handleGenerateDetails(card.id)}
+                                                            className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
+                                                        >
+                                                            <span>🪄</span> 例文を生成
+                                                        </button>
                                                     )}
                                                 </div>
-                                                ) : (
-                                                <button
-                                                    onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                    className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
-                                                >
-                                                    <span>🪄</span> 例文を生成
-                                                </button>
-                                                    )}
                                             </div>
                                         </div>
-                                    </div>
 
-                                {/* Action Buttons */}
-                                <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity">
-                                    {/* Edit Button */}
-                                    <button
-                                        onClick={() => handleStartEdit(card)}
-                                        className="text-neutral-300 hover:text-indigo-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-1.5"
-                                        title="Edit word"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                    </button>
-                                    {/* Delete Button */}
-                                    <button
-                                        onClick={() => handleDeleteWord(card.id)}
-                                        className="text-neutral-300 hover:text-red-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-1.5"
-                                        title="Remove word"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                </div>
-                ))
+                                        {/* Action Buttons */}
+                                        <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity">
+                                            {/* Edit Button */}
+                                            <button
+                                                onClick={() => handleStartEdit(card)}
+                                                className="text-neutral-300 hover:text-indigo-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-1.5"
+                                                title="Edit word"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                            </button>
+                                            {/* Delete Button */}
+                                            <button
+                                                onClick={() => handleDeleteWord(card.id)}
+                                                className="text-neutral-300 hover:text-red-500 bg-white/80 dark:bg-black/80 sm:bg-transparent rounded-full p-1.5"
+                                                title="Remove word"
+                                            >
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))
                     )}
-        </div>
+                </div>
             </main >
         </div >
     );
