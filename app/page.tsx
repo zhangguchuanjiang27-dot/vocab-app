@@ -215,10 +215,10 @@ export default function Home() {
   const handleGenerate = async () => {
     if (!input.trim()) return;
 
-    // 行数チェック（50行制限）
+    // 行数チェック（10行制限）
     const lineCount = input.split("\n").filter(line => line.trim() !== "").length;
-    if (lineCount > 50) {
-      alert(`一度に生成できる単語数は最大50個までです。\n現在の入力: ${lineCount}個\n\n品質を保つため、50個以下に分割して入力してください。`);
+    if (lineCount > 10) {
+      alert(`一度に生成できる単語数は最大10個までです。\n現在の入力: ${lineCount}個\n\n品質を保つため、10個以下に分割して入力してください。`);
       return;
     }
 
