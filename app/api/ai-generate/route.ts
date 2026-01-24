@@ -59,8 +59,8 @@ export async function POST(req: Request) {
 
     // キャッシュにあった単語データ
     // @ts-ignore
-    const foundWordsData = cachedEntries.map(entry => entry.data);
-    const foundWordsSet = new Set(cachedEntries.map(entry => entry.word));
+    const foundWordsData = cachedEntries.map((entry: any) => entry.data);
+    const foundWordsSet = new Set(cachedEntries.map((entry: any) => entry.word));
 
     // 3. キャッシュになかった単語を特定
     const missingWords = uniqueWords.filter(w => !foundWordsSet.has(w));
@@ -212,7 +212,7 @@ export async function POST(req: Request) {
             word: wordData.word.toLowerCase(),
             data: wordData
           }
-        }).catch(e => console.error("Failed to cache word:", wordData.word, e));
+        }).catch((e: any) => console.error("Failed to cache word:", wordData.word, e));
       }
     }
 
