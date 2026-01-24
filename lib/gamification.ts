@@ -213,7 +213,7 @@ export async function checkBadges(userId: string) {
 
     // --- レベル到達バッジ ---
     // @ts-ignore
-    const level = Math.floor(user.xp / 100) + 1;
+    const { level } = getLevelInfo(user.xp || 0);
 
     // 4. 🌟 新人 (Level 5)
     if (!ownedBadgeNames.has("level_5") && level >= 5) {
