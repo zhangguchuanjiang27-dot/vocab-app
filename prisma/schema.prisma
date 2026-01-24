@@ -104,3 +104,12 @@ model WordCard {
     deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
     createdAt DateTime @default(now())
 }
+
+// 生成済み単語のキャッシュ辞書
+model DictionaryEntry {
+  id        String   @id @default(cuid())
+  word      String   @unique
+  data      Json     // 生成された全データ（意味、品詞、例文など）
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
