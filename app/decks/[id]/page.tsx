@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import confetti from "canvas-confetti";
 
 type WordCard = {
     id?: string;
@@ -53,6 +54,7 @@ export default function DeckPage() {
     const [wrongWordIds, setWrongWordIds] = useState<Set<string>>(new Set());
     const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
     const [includeMastered, setIncludeMastered] = useState(false);
+    const [earnedXp, setEarnedXp] = useState(0);
 
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
@@ -546,7 +548,7 @@ export default function DeckPage() {
         if (currentIndex < words.length - 1) {
             setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
         } else {
-            setIsFinished(true);
+            finishSession(words.length);
         }
     };
 
@@ -638,10 +640,43 @@ export default function DeckPage() {
     };
 
     const handleWritingNext = () => {
-        setIsAnswerChecked(false);
-        setIsCorrect(null);
-        setWritingInput("");
-        handleNext();
+        if (!deck) return;
+        const words = reviewWords || (isRandomMode ? shuffledWords : deck.words);
+
+        if (currentIndex < words.length - 1) {
+            setWritingInput("");
+            setIsAnswerChecked(false);
+            setIsCorrect(null);
+            setShowHint(false);
+            setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
+        } else {
+            finishSession(words.length);
+        }
+    };
+
+    const finishSession = async (wordCount: number) => {
+        setIsFinished(true);
+        // Calculate XP: e.g. 5 XP per word
+        const earned = wordCount * 5;
+        setEarnedXp(earned);
+
+        // Shoot confetti
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+
+        // Save XP to server
+        try {
+            await fetch("/api/user/add-xp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: earned }),
+            });
+        } catch (e) {
+            console.error("Failed to add XP", e);
+        }
     };
 
     // シャッフル機能
@@ -701,6 +736,11 @@ export default function DeckPage() {
                         <div className="text-6xl mb-4">🎉</div>
                         <h1 className="text-3xl font-bold dark:text-white">お疲れ様でした！</h1>
                         <p className="text-neutral-500">"{deck.title}" の学習が終了しました。</p>
+                        {earnedXp > 0 && (
+                            <div className="animate-bounce mt-4 inline-block px-6 py-2 bg-yellow-400 text-yellow-900 font-black rounded-full shadow-lg transform rotate-[-2deg]">
+                                + {earnedXp} XP GET!
+                            </div>
+                        )}
                         <div className="flex flex-wrap gap-4 justify-center mt-8">
                             <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">最初から学習する</button>
                             {wrongWordIds.size > 0 && (
