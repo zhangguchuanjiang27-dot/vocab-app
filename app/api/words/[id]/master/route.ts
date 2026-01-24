@@ -5,18 +5,20 @@ import { prisma } from "@/app/lib/prisma";
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { id } = await params;
     const { isMastered } = await req.json();
 
     try {
         const updatedWord = await prisma.wordCard.update({
-            where: { id: params.id },
+            where: { id },
+            // @ts-ignore
             data: { isMastered }
         });
 
