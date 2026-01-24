@@ -796,7 +796,7 @@ export default function DeckPage() {
 
                                 {/* 例文セクション (トグル式) */}
                                 {!showExamples ? (
-                                    currentCard.example ? (
+                                    (currentCard.otherExamples && currentCard.otherExamples.length > 0) ? (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
                                             className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all"
