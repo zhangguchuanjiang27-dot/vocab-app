@@ -57,6 +57,86 @@ export default function DeckPage() {
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
 
+    // Copy/Move Feature State
+    const [showMoveModal, setShowMoveModal] = useState(false);
+    const [targetDeckId, setTargetDeckId] = useState<string>("");
+    const [moveAction, setMoveAction] = useState<'copy' | 'move'>('copy');
+    const [myDecks, setMyDecks] = useState<{ id: string, title: string }[]>([]);
+
+    useEffect(() => {
+        if (showMoveModal) {
+            // Fetch user's decks for the move modal
+            fetch("/api/decks").then(res => res.json()).then(data => {
+                if (data.decks) {
+                    setMyDecks(data.decks.filter((d: any) => d.id !== deckId)); // Exclude current deck
+                }
+            }).catch(console.error);
+        }
+    }, [showMoveModal, deckId]);
+
+    const handleMoveWords = async () => {
+        if (!targetDeckId) return;
+
+        try {
+            const selectedWordsData = deck?.words.filter(w => w.id && selectedWordIds.has(w.id));
+            if (!selectedWordsData || selectedWordsData.length === 0) return;
+
+            // 1. Add to target deck
+            // To do this cleanly, we might need a specific endpoint or just use the PUT endpoint for the target deck
+            // We pass the word objects. The API handles creating new relations or words.
+            // Note: The existing API `PUT /api/decks/[id]` accepts { words: [...] }. 
+            // We need to make sure we strip IDs if we want 'new' instances, or keep them if we enter a relation logic.
+            // For simplicity in this app's context (often creating new word entries per deck), let's send them as 'new' words to the target to ensure independence, 
+            // OR if the backend supports linking, we could link. 
+            // Given previous `handleAddToExistingDeck` logic, it sends `words` body.
+
+            // Strip IDs to ensure deep copy/new creation in target deck (safest for this app structure)
+            const wordsToTransfer = selectedWordsData.map(w => ({
+                word: w.word,
+                meaning: w.meaning,
+                example: w.example,
+                example_jp: w.example_jp,
+                otherExamples: w.otherExamples,
+            }));
+
+            const res = await fetch(`/api/decks/${targetDeckId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ words: wordsToTransfer }),
+            });
+
+            if (!res.ok) throw new Error("Failed to add words to target deck");
+
+            // 2. If 'move', remove from current deck
+            if (moveAction === 'move') {
+                // We use handleBulkDelete logic but only for the selected IDs locally first, then call API?
+                // Actually `handleBulkDelete` calls API. We should probably just call the delete endpoint here for these IDs.
+                // Re-using delete logic:
+                await Promise.all(
+                    Array.from(selectedWordIds).map(id =>
+                        fetch(`/api/words/${id}`, { method: "DELETE" })
+                    )
+                );
+
+                // Update local state
+                setDeck(prev => prev ? ({
+                    ...prev,
+                    words: prev.words.filter(w => w.id && !selectedWordIds.has(w.id))
+                }) : null);
+            }
+
+            alert(`単語を${moveAction === 'copy' ? 'コピー' : '移動'}しました！`);
+            setShowMoveModal(false);
+            setTargetDeckId("");
+            setIsSelectionMode(false);
+            setSelectedWordIds(new Set());
+
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました。");
+        }
+    };
+
     const toggleExampleVisibility = (id: string) => {
         setExpandedListItems(prev => ({
             ...prev,
@@ -1051,7 +1131,10 @@ export default function DeckPage() {
                                     {selectedWordIds.size > 0 && (
                                         <div className="flex items-center gap-2">
                                             <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
-                                                <span>️</span> 一括削除
+                                                <span>🗑️</span> 一括削除
+                                            </button>
+                                            <button onClick={() => setShowMoveModal(true)} className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1">
+                                                <span>📤</span> 移動/コピー
                                             </button>
                                         </div>
                                     )}
