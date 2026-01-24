@@ -15,7 +15,27 @@ export async function POST(
 
     const { id } = await params;
     const userId = session.user.id;
-    // 1. (Skipped credit check)
+
+    // Parse body for "force" flag (regeneration)
+    const body = await req.json().catch(() => ({}));
+    const isRegenerate = !!body.force;
+
+    // Credit Check for Regeneration
+    if (isRegenerate) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { credits: true }
+        });
+        if (!user || user.credits < 1) {
+            return NextResponse.json({ error: "Insufficient credits" }, { status: 403 });
+        }
+
+        // Deduct 1 credit
+        await prisma.user.update({
+            where: { id: userId },
+            data: { credits: { decrement: 1 } }
+        });
+    }
 
     try {
         // 2. Fetch Word
