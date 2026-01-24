@@ -662,23 +662,13 @@ export default function DeckPage() {
                                         >
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                                         </button>
-                                        <div className="mb-4 last:mb-0">
-                                            {currentCard.example && (
+                                        {currentCard.otherExamples?.filter((ex: any) => ex.text.trim() !== "").map((ex: any, i: number) => (
+                                            <div key={i} className="mb-6 last:mb-0 text-left border-l-2 border-indigo-300 dark:border-indigo-400 pl-4 py-1">
+                                                <span className="text-[10px] uppercase font-black text-indigo-200 tracking-widest mb-1 block">{ex.role}</span>
                                                 <div className="flex gap-2 items-start">
                                                     <div>
-                                                        <p className="text-lg italic font-serif text-indigo-50 leading-tight">{currentCard.example}</p>
-                                                        {currentCard.example_jp && <p className="text-sm text-indigo-200 font-light mt-1">{currentCard.example_jp}</p>}
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {currentCard.otherExamples?.filter(ex => ex.text.trim() !== "").map((ex, i) => (
-                                            <div key={i} className="mb-4 last:mb-0 border-t border-white/10 pt-4">
-                                                <span className="text-[10px] uppercase font-bold text-indigo-200 opacity-70 mb-1 block">{ex.role}</span>
-                                                <div className="flex gap-2 items-start">
-                                                    <div>
-                                                        <p className="text-base italic font-serif text-indigo-50 leading-tight">{ex.text}</p>
-                                                        {ex.translation && <p className="text-xs text-indigo-200 font-light mt-1">{ex.translation}</p>}
+                                                        <p className="text-lg italic font-serif text-white leading-tight">{ex.text}</p>
+                                                        {ex.translation && <p className="text-sm text-indigo-100 font-light mt-1">{ex.translation}</p>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -986,26 +976,7 @@ export default function DeckPage() {
                                                 className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold text-sm"
                                             ></textarea>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">例文 (EN)</label>
-                                                <textarea
-                                                    value={editFormData.example}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, example: e.target.value })}
-                                                    rows={2}
-                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
-                                                ></textarea>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">例文 (JP)</label>
-                                                <textarea
-                                                    value={editFormData.example_jp}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, example_jp: e.target.value })}
-                                                    rows={2}
-                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black text-sm"
-                                                />
-                                            </div>
-                                        </div>
+                                        {/* Primary Example fields removed for modernization */}
 
                                         {/* 追加の例文の編集セクション */}
                                         <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
@@ -1107,22 +1078,7 @@ export default function DeckPage() {
 
                                                             {expandedListItems[card.id!] && (
                                                                 <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    {/* メイン例文 (Legacy) - 新しい例文がある場合は常に非表示にする（重複防止） */}
-                                                                    {(!card.otherExamples || card.otherExamples.length === 0) && card.example && (
-                                                                        <div className="mb-3">
-                                                                            <div className="flex items-start gap-2">
-                                                                                <button
-                                                                                    onClick={() => speak(card.example)}
-                                                                                    className="mt-0.5 p-1 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-                                                                                    title="Play example"
-                                                                                >
-                                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                </button>
-                                                                                <div className="text-sm text-neutral-600 dark:text-neutral-300 italic">"{card.example}"</div>
-                                                                            </div>
-                                                                            <div className="text-xs text-neutral-400 font-light pl-7" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.example_jp}</div>
-                                                                        </div>
-                                                                    )}
+                                                                    {/* Legacy primary example display removed for modernization */}
 
                                                                     {/* 追加の例文表示 (リスト表示) */}
                                                                     {card.otherExamples && card.otherExamples.length > 0 && (

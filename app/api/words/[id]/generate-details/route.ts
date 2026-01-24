@@ -29,32 +29,24 @@ export async function POST(
 
         // 3. Generate content via OpenAI
         const prompt = `
-        Task: Comprehensive Example Generation for "${word.word}"
+        以下の単語と意味をもとに、**それぞれの意味（日本語）に対応する例文**を1つずつ作成してください。
         
-        User's provided meaning: "${word.meaning}"
+        単語: "${word.word}"
+        意味: "${word.meaning}"
 
-        Instructions:
-        1. **Analyze User's Meaning**: Carefully break down the user's provided meaning ("${word.meaning}") into distinct meanings.
-        2. **Generate Examples**: Create one example sentence for **EACH** distinct meaning identified from the user's input.
-           - **Rule**: If the user provides 3 distinct meanings (e.g., ①... ②... ③...), you MUST generate exactly 3 examples, one for each.
-           - **Rule**: If the user provides only 1 meaning, generate 1 example.
-           - **Quality Control**: 
-             - Sentences **MUST** be at least 10-15 words long.
-             - Sentences **MUST** be context-rich and clear.
-             - **BAD**: "He ran fast." (Too short, ambiguous)
-             - **GOOD**: "He ran fast enough to catch the bus just moments before it pulled away from the station." (Context-rich, clear)
-           - Use your knowledge to identify parts of speech if they are implied, but prioritize the user's categorization.
-        4. **Role Format**: The "role" must ONLY contain the part of speech or "熟語" for idioms.
-           - **Rule**: Use "Verb", "Noun", "Adjective", "Adverb", or "熟語" (for idioms/phrases).
-           - **Forbidden**: Do NOT include parentheses or specific meanings (e.g., "Verb (to run)" is ❌, "Verb" is ✓).
+        【作成ルール】
+        1. **意味ごとの生成**: 意味に含まれる各要素（例：首都、資本、大文字）に対して、個別に例文を作成。
+        2. **roleの形式**: 必ず **「品詞(意味)」** としてください。
+           例: "名詞(資本)", "名詞(首都)", "形容詞(主要な)"
+        3. **品質**: 自然で実用的な英語（10-15語以上）。
         
-        Output JSON Format:
+        【出力形式】
         {
           "examples": [
             {
-              "role": "Verb",
-              "text": "English example sentence (10-15+ words)",
-              "translation": "Japanese translation"
+              "role": "名詞(意味)",
+              "text": "English sentence...",
+              "translation": "日本語訳..."
             }
           ]
         }
