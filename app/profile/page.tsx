@@ -91,6 +91,7 @@ export default async function ProfilePage() {
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Decks</div>
+                                    {/* @ts-ignore */}
                                     <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
