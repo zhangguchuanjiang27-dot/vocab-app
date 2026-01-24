@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { signOut, useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Typewriter from 'typewriter-effect';
 
 // 型定義
 type WordCard = {
@@ -354,7 +355,10 @@ export default function Home() {
             {/* Hero Section */}
             <section className="relative pt-24 pb-12 px-6 flex flex-col items-center text-center">
               {/* Background Gradients */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[100px] rounded-full -z-10 animate-in fade-in zoom-in duration-1000"></div>
+              {/* Background Gradients (Aurora Effect) */}
+              <div className="absolute top-[-20%] left-[-10%] w-[700px] h-[700px] bg-purple-400/20 blur-[120px] rounded-full -z-10 animate-pulse delay-700"></div>
+              <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/20 blur-[120px] rounded-full -z-10 animate-pulse"></div>
+              <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-sky-400/20 blur-[100px] rounded-full -z-10 animate-pulse delay-1000"></div>
 
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4">
@@ -365,9 +369,19 @@ export default function Home() {
                 New: AI Sentence Generation
               </div>
 
-              <h1 className="text-6xl sm:text-8xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-neutral-500 dark:from-white dark:to-neutral-500 animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                Learn Words<br />
-                <span className="text-indigo-600 dark:text-indigo-400">Like Magic.</span>
+              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-neutral-900 dark:bg-white animate-in fade-in slide-in-from-bottom-8 duration-700 h-[1.2em]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                Learn Words for<br />
+                <span className="text-indigo-600 dark:text-indigo-400 inline-block">
+                  <Typewriter
+                    options={{
+                      strings: ['Business.', 'Travel.', 'Science.', 'Life.', 'Everything.'],
+                      autoStart: true,
+                      loop: true,
+                      deleteSpeed: 50,
+                      delay: 80,
+                    }}
+                  />
+                </span>
               </h1>
 
               <p className="text-xl sm:text-2xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
@@ -476,6 +490,32 @@ export default function Home() {
                     間違えた単語だけを自動でピックアップ。<br />
                     効率的な復習サイクル。
                   </p>
+                </div>
+              </div>
+            </section>
+
+            {/* How it Works / Step by Step */}
+            <section className="px-6 py-24 max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl font-bold mb-4">How it Works</h2>
+                <p className="text-neutral-500">たったの3ステップで、あなただけの単語帳が完成します。</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">1</div>
+                  <h3 className="font-bold text-lg mt-4 mb-2">単語を入力</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">覚えたい単語や文章をテキストエリアに入力するだけ。複数まとめてもOK。</p>
+                </div>
+                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">2</div>
+                  <h3 className="font-bold text-lg mt-4 mb-2">AIが瞬時に生成</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">最適な日本語訳、実用的な例文、発音データをAIが自動でセットアップします。</p>
+                </div>
+                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">3</div>
+                  <h3 className="font-bold text-lg mt-4 mb-2">学習スタート</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">フラッシュカード、穴埋めテスト、書き取りテストで確実に記憶に定着させます。</p>
                 </div>
               </div>
             </section>
