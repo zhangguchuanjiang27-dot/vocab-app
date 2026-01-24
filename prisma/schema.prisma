@@ -102,6 +102,7 @@ model WordCard {
     example_jp String
     deckId    String
     deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+    isMastered Boolean  @default(false)
     createdAt DateTime @default(now())
 }
 

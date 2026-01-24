@@ -13,6 +13,7 @@ type WordCard = {
     example: string;
     example_jp: string;
     otherExamples?: { role: string; text: string; translation: string }[];
+    isMastered?: boolean;
 
     createdAt?: string;
 };
@@ -70,6 +71,31 @@ export default function DeckPage() {
             else next.add(id);
             return next;
         });
+    };
+
+
+    const toggleMastered = async (id: string, currentStatus: boolean, e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
+
+        // Optimistic update
+        setDeck(prev => {
+            if (!prev) return null;
+            return {
+                ...prev,
+                words: prev.words.map(w => w.id === id ? { ...w, isMastered: !currentStatus } : w)
+            };
+        });
+
+        try {
+            await fetch(`/api/words/${id}/master`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isMastered: !currentStatus })
+            });
+        } catch (err) {
+            console.error("Failed to update mastered status", err);
+            // Revert on error (optional, but good practice)
+        }
     };
 
     // Title edit state
@@ -449,8 +475,25 @@ export default function DeckPage() {
         if (isReviewMistakes && deck) {
             const missed = (isRandomMode ? shuffledWords : deck.words).filter(w => w.id && wrongWordIds.has(w.id));
             setReviewWords(missed);
-        } else {
-            setReviewWords(null);
+        } else if (deck) {
+            // Filter out mastered words for new session
+            const activeWords = deck.words.filter(w => !w.isMastered);
+
+            if (activeWords.length === 0 && deck.words.length > 0) {
+                alert("全ての単語をマスターしました！\n復習したい場合はチェックを外してください。");
+                // Fallback to showing everything if everything is mastered, or just return to list?
+                // For now, let's just use all words but warn, or maybe just return to list.
+                // Ideally, we might want a "Study Anyway" option.
+                // Let's force full list if all mastered to avoid empty state.
+                setReviewWords(deck.words);
+            } else {
+                setReviewWords(null); // use standard flow
+                // If random mode, we need to reshuffle only active words
+                if (isRandomMode) {
+                    setShuffledWords(shuffleArray(activeWords));
+                }
+            }
+
             setWrongWordIds(new Set());
         }
 
@@ -573,7 +616,14 @@ export default function DeckPage() {
 
         const getSessionWords = () => {
             if (reviewWords) return reviewWords;
-            return isRandomMode ? shuffledWords : deck.words;
+            // If not reviewing mistakes, default is to use active (unmastered) words
+            // But we need to make sure we filter them from the source
+            const source = isRandomMode ? shuffledWords : (deck?.words || []);
+            const active = source.filter(w => !w.isMastered);
+            // If all mastered, handleRestart logic above might have set reviewWords to all.
+            // If we are here, it means we have some active words or we decided to show something.
+            // Let's just return active words.
+            return active.length > 0 ? active : source; // Fallback to all if active is empty (though handleRestart should catch this)
         };
 
         const displayWords = getSessionWords();
@@ -726,7 +776,9 @@ export default function DeckPage() {
 
         const getWritingWords = () => {
             if (reviewWords) return reviewWords;
-            return isRandomMode ? shuffledWords : deck.words;
+            const source = isRandomMode ? shuffledWords : (deck?.words || []);
+            const active = source.filter(w => !w.isMastered);
+            return active.length > 0 ? active : source;
         };
 
         const displayWords = getWritingWords();
@@ -964,7 +1016,7 @@ export default function DeckPage() {
                                 className="group p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative select-none"
                             >
                                 {isSelectionMode && (
-                                    <div className="pt-1.5">
+                                    <div className="pt-1.5 flex flex-col gap-2 items-center">
                                         <input
                                             type="checkbox"
                                             checked={card.id ? selectedWordIds.has(card.id) : false}
@@ -972,6 +1024,19 @@ export default function DeckPage() {
                                             className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                         />
                                     </div>
+                                )}
+
+                                {/* Mastered Checkbox */}
+                                {!isSelectionMode && (
+                                    <button
+                                        onClick={(e) => card.id && toggleMastered(card.id, !!card.isMastered, e)}
+                                        className={`pt-1.5 transition-opacity ${card.isMastered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
+                                        title={card.isMastered ? "マスター済み (学習対象から除外)" : "未マスター"}
+                                    >
+                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${card.isMastered ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300'}`}>
+                                            {card.isMastered && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        </div>
+                                    </button>
                                 )}
 
                                 {/* Editing Form */}
