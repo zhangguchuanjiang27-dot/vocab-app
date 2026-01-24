@@ -99,6 +99,16 @@ const BADGE_DEFINITIONS = [
  * バッジ定義をデータベースに初期化・同期する
  */
 export async function initBadges() {
+    // 1. 定義にないバッジを削除する（不要なバッジの掃除）
+    const definedNames = BADGE_DEFINITIONS.map(b => b.name);
+    // @ts-ignore
+    await (prisma as any).badge.deleteMany({
+        where: {
+            name: { notIn: definedNames }
+        }
+    });
+
+    // 2. 定義済みのバッジを作成・更新する
     for (const badge of BADGE_DEFINITIONS) {
         // @ts-ignore
         await (prisma as any).badge.upsert({
