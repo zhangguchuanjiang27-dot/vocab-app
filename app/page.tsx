@@ -350,20 +350,147 @@ export default function Home() {
 
       <main className="max-w-7xl mx-auto flex flex-col gap-8">
         {!session ? (
-          <div className="text-center py-24 px-6 animate-in fade-in zoom-in duration-500">
-            <h1 className="text-5xl sm:text-7xl font-black mb-8 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-neutral-900 via-neutral-600 to-neutral-900 dark:from-white dark:via-neutral-400 dark:to-white">
-              Voca
-            </h1>
-            <p className="text-xl text-neutral-500 max-w-2xl mx-auto mb-12 leading-relaxed">
-              AIが生成するフラッシュカードで、試験も日常会話も完璧に。<br className="hidden sm:block" />
-              あなたの入力から、意味・例文・音声を一瞬で作成します。
-            </p>
-            <button
-              onClick={() => signIn("google")}
-              className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/30 transition-all active:scale-95 flex items-center gap-2 mx-auto"
-            >
-              <span>✨</span> 今すぐ始める (ログイン)
-            </button>
+          <div className="flex flex-col gap-24 pb-24">
+            {/* Hero Section */}
+            <section className="relative pt-24 pb-12 px-6 flex flex-col items-center text-center">
+              {/* Background Gradients */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[100px] rounded-full -z-10 animate-in fade-in zoom-in duration-1000"></div>
+
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                New: AI Sentence Generation
+              </div>
+
+              <h1 className="text-6xl sm:text-8xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-neutral-500 dark:from-white dark:to-neutral-500 animate-in fade-in slide-in-from-bottom-8 duration-700" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                Learn Words<br />
+                <span className="text-indigo-600 dark:text-indigo-400">Like Magic.</span>
+              </h1>
+
+              <p className="text-xl sm:text-2xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                AIがあなたのためだけに単語帳を作成。<br className="hidden sm:block" />
+                意味、例文、音声、すべてが一瞬で手に入ります。
+              </p>
+
+              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                <button
+                  onClick={() => signIn("google")}
+                  className="group relative px-8 py-4 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-3 overflow-hidden"
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+                    Googleで始める
+                  </span>
+                  <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                </button>
+              </div>
+
+              {/* Floating Cards Visual */}
+              <div className="mt-20 relative w-full max-w-4xl mx-auto h-[320px] select-none pointer-events-none hidden sm:block">
+                {/* Card 1: Left */}
+                <div className="absolute top-10 left-0 xl:-left-12 w-64 p-6 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 rotate-[-6deg] animate-in slide-in-from-left-12 duration-1000 delay-300">
+                  <div className="h-2 w-24 bg-neutral-100 dark:bg-neutral-800 rounded-full mb-4"></div>
+                  <div className="text-3xl font-black mb-2 font-serif">Serendipity</div>
+                  <div className="text-sm text-neutral-500">【名】思いがけない幸運</div>
+                </div>
+                {/* Card 2: Center (Front) */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 p-8 bg-indigo-600 text-white rounded-3xl shadow-2xl shadow-indigo-500/30 rotate-[0deg] z-10 animate-in zoom-in duration-700 delay-500">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-xs font-bold uppercase tracking-widest opacity-50">New Word</span>
+                    <span>🔊</span>
+                  </div>
+                  <div className="text-4xl font-black mb-4 font-serif">Ephemeral</div>
+                  <div className="text-indigo-200 text-sm font-bold">【形】儚い、短命な</div>
+                  <div className="mt-6 pt-6 border-t border-white/20 text-sm opacity-80 italic">
+                    "Beauty is ephemeral."
+                  </div>
+                </div>
+                {/* Card 3: Right */}
+                <div className="absolute top-20 right-0 xl:-right-12 w-60 p-6 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 rotate-[6deg] animate-in slide-in-from-right-12 duration-1000 delay-700">
+                  <div className="h-2 w-12 bg-green-100 text-green-600 rounded-full mb-4 text-[10px] font-bold flex items-center justify-center">Easy</div>
+                  <div className="text-2xl font-black mb-2 font-serif">Tranquility</div>
+                </div>
+              </div>
+            </section>
+
+            {/* Bento Grid Features */}
+            <section className="px-6 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Large Feature */}
+              <div className="md:col-span-2 bg-neutral-50 dark:bg-neutral-900 p-8 sm:p-12 rounded-3xl border border-neutral-200 dark:border-neutral-800 relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
+                <div className="relative z-10">
+                  <h3 className="text-2xl font-bold mb-4">⚡ AI自動生成</h3>
+                  <p className="text-neutral-500 max-w-md leading-relaxed">
+                    単語を入力するだけ。意味、品詞、そして文脈に沿った最適な例文をAIが瞬時に生成します。
+                    辞書を引く時間はもう必要ありません。
+                  </p>
+                </div>
+                <div className="absolute top-1/2 right-[-50px] w-64 h-64 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+              </div>
+
+              {/* Tall Feature */}
+              <div className="bg-neutral-900 dark:bg-black text-white p-8 rounded-3xl border border-neutral-800 relative overflow-hidden md:row-span-2 flex flex-col justify-between group">
+                <div className="space-y-2 relative z-10">
+                  <span className="text-4xl">🔥</span>
+                  <h3 className="text-xl font-bold">Gamified</h3>
+                  <p className="text-neutral-400 text-sm">
+                    XPを稼ぎ、レベルを上げ、バッジを集める。学習がゲームのような楽しさに。
+                  </p>
+                </div>
+                <div className="mt-8 relative z-10">
+                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                    <div className="w-[70%] h-full bg-indigo-500 animate-pulse"></div>
+                  </div>
+                  <div className="flex justify-between text-xs font-mono mt-2 text-neutral-500">
+                    <span>Lvl. 5</span>
+                    <span>70%</span>
+                  </div>
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+
+              {/* Small Feature */}
+              <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col justify-center items-center text-center gap-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-default group">
+                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  ✍️
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1">Writing Test</h3>
+                  <p className="text-xs text-neutral-400">
+                    覚えた単語をタイピングして出力。<br />
+                    「使える英語」が身につきます。
+                  </p>
+                </div>
+              </div>
+
+              {/* Small Feature */}
+              <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col justify-center items-center text-center gap-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-default group">
+                <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                  🧠
+                </div>
+                <div>
+                  <h3 className="font-bold mb-1">Smart Review</h3>
+                  <p className="text-xs text-neutral-400">
+                    間違えた単語だけを自動でピックアップ。<br />
+                    効率的な復習サイクル。
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* Footer Call to Action */}
+            <section className="text-center py-24 px-6">
+              <h2 className="text-3xl font-bold mb-8">さあ、新しい学習体験へ。</h2>
+              <button
+                onClick={() => signIn("google")}
+                className="px-12 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-bold shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-105 active:scale-95"
+              >
+                無料で始める
+              </button>
+              <p className="mt-6 text-sm text-neutral-400">Googleアカウントですぐに使えます</p>
+            </section>
           </div>
         ) : (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
