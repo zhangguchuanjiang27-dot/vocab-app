@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { addXp } from "@/lib/gamification";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -155,6 +156,9 @@ export async function POST(req: Request) {
 
     // Deduct credits based on the number of words generated
     if (generatedCount > 0) {
+      // XP付与 (1単語につき10XP)
+      await addXp(session.user.id, generatedCount * 10);
+
       await prisma.user.update({
         where: { id: session.user.id },
         data: { credits: { decrement: generatedCount } }

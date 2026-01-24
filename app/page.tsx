@@ -74,6 +74,8 @@ export default function Home() {
   };
 
   const [credits, setCredits] = useState<number | null>(null);
+  const [xp, setXp] = useState<number>(0);
+  const [badges, setBadges] = useState<any[]>([]);
 
   const fetchCredits = async () => {
     try {
@@ -81,6 +83,8 @@ export default function Home() {
       if (res.ok) {
         const data = await res.json();
         setCredits(data.credits);
+        setXp(data.xp || 0);
+        setBadges(data.badges || []);
       }
     } catch (e) {
       console.error("Failed to fetch credits", e);
@@ -304,7 +308,39 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          <div className="flex justify-end pt-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
+
+            {/* Gamification Stats */}
+            <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">🔥</span>
+                <div>
+                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {Math.floor(xp / 100) + 1}</p>
+                  <p className="font-bold text-neutral-900 dark:text-neutral-100">{xp} XP</p>
+                </div>
+              </div>
+              <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800"></div>
+              <div className="flex items-center gap-2">
+                <span className="text-xl">💎</span>
+                <div>
+                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
+                  <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
+                </div>
+              </div>
+              {badges.length > 0 && (
+                <>
+                  <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800"></div>
+                  <div className="flex items-center gap-1">
+                    {badges.map((b: any) => (
+                      <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
+                        {b.badge.icon}
+                      </span>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               onClick={() => setShowSaved(!showSaved)}
               className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300'}`}

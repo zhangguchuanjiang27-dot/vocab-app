@@ -46,6 +46,33 @@ model User {
   sessions      Session[]
   decks         Deck[]
   credits       Int       @default(100)
+  xp            Int       @default(0)  // 総獲得経験値
+  weeklyXp      Int       @default(0)  // 週間経験値（ランキング用）
+  badges        UserBadge[]
+}
+
+// バッジの定義
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique // バッジ名（コード用ID）
+  displayName String   // 表示名
+  description String   // 説明文
+  icon        String   // 絵文字など
+  condition   String   // 獲得条件のメモ
+  createdAt   DateTime @default(now())
+  users       UserBadge[]
+}
+
+// ユーザーが獲得したバッジ
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  obtainedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId]) // 同じバッジは1つまで
 }
 
 model VerificationToken {

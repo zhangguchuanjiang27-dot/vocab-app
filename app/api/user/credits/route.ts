@@ -12,8 +12,19 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { credits: true },
+        select: {
+            credits: true,
+            xp: true,
+            // @ts-ignore: Prisma client might be outdated
+            badges: {
+                include: { badge: true }
+            }
+        },
     });
 
-    return NextResponse.json({ credits: user?.credits ?? 0 });
+    return NextResponse.json({
+        credits: user?.credits ?? 0,
+        xp: user?.xp ?? 0,
+        badges: user?.badges ?? []
+    });
 }

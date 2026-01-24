@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { addXp } from "@/lib/gamification";
 
 export async function POST(
     req: Request,
@@ -93,6 +94,9 @@ export async function POST(
             where: { id },
             data: { example_jp: newExampleJp }
         });
+
+        // XP付与
+        await addXp(userId, 5);
 
         // Return result
         return NextResponse.json({
