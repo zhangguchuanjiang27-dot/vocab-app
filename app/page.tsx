@@ -23,6 +23,25 @@ type Deck = {
   words: WordCard[];
 };
 
+// --- Leveling Helpers ---
+// Level L needs L*100 XP to reach L+1.
+// Level 1: 0-99 XP
+// Level 2: 100-299 XP
+// Level 3: 300-599 XP
+const getLevelInfo = (totalXp: number) => {
+  let level = 1;
+  let xpInCurrentLevel = totalXp;
+  let xpRequiredForNext = 100;
+
+  while (xpInCurrentLevel >= xpRequiredForNext) {
+    xpInCurrentLevel -= xpRequiredForNext;
+    level++;
+    xpRequiredForNext = level * 100;
+  }
+
+  return { level, xpInCurrentLevel, xpRequiredForNext, progress: (xpInCurrentLevel / xpRequiredForNext) * 100 };
+};
+
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -76,15 +95,27 @@ export default function Home() {
   const [credits, setCredits] = useState<number | null>(null);
   const [xp, setXp] = useState<number>(0);
   const [badges, setBadges] = useState<any[]>([]);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [prevLevel, setPrevLevel] = useState<number | null>(null);
 
   const fetchCredits = async () => {
     try {
       const res = await fetch("/api/user/credits");
       if (res.ok) {
         const data = await res.json();
+        const newXp = data.xp || 0;
+        const { level: newLevel } = getLevelInfo(newXp);
+
+        // レベルアップ判定
+        if (prevLevel !== null && newLevel > prevLevel) {
+          setShowLevelUp(true);
+          setTimeout(() => setShowLevelUp(false), 4000);
+        }
+
         setCredits(data.credits);
-        setXp(data.xp || 0);
+        setXp(newXp);
         setBadges(data.badges || []);
+        setPrevLevel(newLevel);
       }
     } catch (e) {
       console.error("Failed to fetch credits", e);
@@ -197,6 +228,9 @@ export default function Home() {
         // 既存のリストに追加（追記モード）
         setWords((prev) => [...prev, ...data.words]);
         setInput("");
+
+        // クレジットとXPを再取得
+        fetchCredits();
       } else {
         throw new Error("Invalid response format");
       }
@@ -257,6 +291,20 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300">
 
+      {/* Level Up Animation Overlay */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+          <div className="bg-indigo-600 text-white px-12 py-8 rounded-3xl shadow-2xl animate-in zoom-in fade-in duration-500 flex flex-col items-center gap-4 border-4 border-white/20">
+            <span className="text-6xl animate-bounce">🎊</span>
+            <div className="text-center">
+              <h2 className="text-4xl font-black italic tracking-tighter uppercase">Level Up!</h2>
+              <p className="text-indigo-100 font-bold mt-2">Level {prevLevel} → {prevLevel! + 1}</p>
+            </div>
+            <div className="text-2xl">✨✨✨</div>
+          </div>
+        </div>
+      )}
+
       {/* Add To Deck Modal */}
       {showAddToDeckModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -311,34 +359,53 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
 
             {/* Gamification Stats */}
-            <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">🔥</span>
-                <div>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {Math.floor(xp / 100) + 1}</p>
-                  <p className="font-bold text-neutral-900 dark:text-neutral-100">{xp} XP</p>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800"></div>
-              <div className="flex items-center gap-2">
-                <span className="text-xl">💎</span>
-                <div>
-                  <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
-                  <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
-                </div>
-              </div>
-              {badges.length > 0 && (
-                <>
-                  <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800"></div>
-                  <div className="flex items-center gap-1">
-                    {badges.map((b: any) => (
-                      <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
-                        {b.badge.icon}
-                      </span>
-                    ))}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <span className="text-2xl">🔥</span>
+                    <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
+                      {getLevelInfo(xp).level}
+                    </div>
                   </div>
-                </>
-              )}
+                  <div className="flex flex-col min-w-[100px]">
+                    <div className="flex justify-between items-end mb-1">
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {getLevelInfo(xp).level}</p>
+                      <p className="text-[10px] text-indigo-500 font-bold leading-none">{getLevelInfo(xp).xpInCurrentLevel} / {getLevelInfo(xp).xpRequiredForNext} XP</p>
+                    </div>
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
+                        style={{ width: `${getLevelInfo(xp).progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">💎</span>
+                  <div>
+                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
+                    <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
+                  </div>
+                </div>
+
+                {badges.length > 0 && (
+                  <>
+                    <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+                    <div className="flex items-center gap-1">
+                      {badges.map((b: any) => (
+                        <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
+                          {b.badge.icon}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
             <button
