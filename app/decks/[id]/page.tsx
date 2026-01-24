@@ -331,10 +331,18 @@ export default function DeckPage() {
         }
     };
 
-    const handleGenerateDetails = async (wordId: string) => {
-        // コイン消費なしで生成
+    const handleGenerateDetails = async (wordId: string, isRegenerate: boolean = false) => {
+        if (isRegenerate) {
+            if (!confirm("例文を再生成しますか？\nコインを1枚消費します。")) return;
+        }
+
         try {
-            const res = await fetch(`/api/words/${wordId}/generate-details`, { method: "POST" });
+            const res = await fetch(`/api/words/${wordId}/generate-details`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ force: isRegenerate })
+            });
+
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || "Failed to generate");
@@ -342,6 +350,9 @@ export default function DeckPage() {
 
             // 成功したら全データを再取得
             await fetchDeck();
+            if (isRegenerate) {
+                alert("例文を再生成しました！ (コイン -1)");
+            }
 
         } catch (e: any) {
             alert(e.message);
@@ -1384,6 +1395,15 @@ export default function DeckPage() {
                                                                                             </span>
                                                                                         </div>
                                                                                     )}
+                                                                                    <div className="mt-6 flex justify-center">
+                                                                                        <button
+                                                                                            onClick={() => card.id && handleGenerateDetails(card.id, true)}
+                                                                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full text-xs font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200 dark:border-indigo-800"
+                                                                                        >
+                                                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
+                                                                                            例文を再生成 (🪙1)
+                                                                                        </button>
+                                                                                    </div>
                                                                                     <div className="flex items-start gap-4">
                                                                                         <button
                                                                                             onClick={() => speak(ex.text)}
