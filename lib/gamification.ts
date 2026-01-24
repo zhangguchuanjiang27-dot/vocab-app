@@ -37,6 +37,27 @@ const BADGE_DEFINITIONS = [
         icon: "💎",
         condition: "Credits >= 1000"
     },
+    {
+        name: "level_5",
+        displayName: "新人",
+        description: "レベル5に到達しました",
+        icon: "🌟",
+        condition: "Level >= 5"
+    },
+    {
+        name: "level_20",
+        displayName: "中堅",
+        description: "レベル20に到達しました",
+        icon: "🌠",
+        condition: "Level >= 20"
+    },
+    {
+        name: "level_50",
+        displayName: "伝説",
+        description: "レベル50に到達しました",
+        icon: "🌌",
+        condition: "Level >= 50"
+    },
 ];
 
 /**
@@ -140,6 +161,24 @@ export async function checkBadges(userId: string) {
         if (jstHour >= 2 && jstHour < 5) {
             newBadges.push("night_owl");
         }
+    }
+
+    // --- レベル到達バッジ ---
+    const level = Math.floor(user.xp / 100) + 1;
+
+    // 4. 🌟 新人 (Level 5)
+    if (!ownedBadgeNames.has("level_5") && level >= 5) {
+        newBadges.push("level_5");
+    }
+
+    // 5. 🌠 中堅 (Level 20)
+    if (!ownedBadgeNames.has("level_20") && level >= 20) {
+        newBadges.push("level_20");
+    }
+
+    // 6. 🌌 伝説 (Level 50)
+    if (!ownedBadgeNames.has("level_50") && level >= 50) {
+        newBadges.push("level_50");
     }
 
     // TODO: 他のバッジ条件（継続日数、生成回数など）はDBに詳細ログがないため、
