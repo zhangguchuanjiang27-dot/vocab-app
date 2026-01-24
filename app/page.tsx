@@ -535,13 +535,13 @@ export default function Home() {
               <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center relative z-10">
                 <div className="space-y-2">
                   <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
-                    <CountUp end={15000} duration={2.5} separator="," suffix="+" />
+                    <CountUp end={50000} duration={2.5} separator="," suffix="+" />
                   </div>
                   <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">Generated Words</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-indigo-400 to-indigo-200">
-                    <CountUp end={85} duration={3} suffix="%" />
+                    <CountUp end={95} duration={3} suffix="%" />
                   </div>
                   <div className="text-sm font-bold tracking-widest uppercase text-indigo-200">Retention Rate</div>
                 </div>
@@ -566,24 +566,7 @@ export default function Home() {
               <p className="mt-6 text-sm text-neutral-400">Googleアカウントですぐに使えます</p>
             </section>
 
-            {/* Footer */}
-            <footer className="border-t border-neutral-200 dark:border-neutral-800 pt-16 pb-12 px-6">
-              <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-                <div className="flex flex-col items-center md:items-start gap-2">
-                  <span className="text-2xl font-black tracking-tighter" style={{ fontFamily: 'var(--font-merriweather)' }}>Voca</span>
-                  <p className="text-sm text-neutral-500">AI-powered vocabulary learning for everyone.</p>
-                </div>
-                <div className="flex gap-8 text-sm font-bold text-neutral-500">
-                  <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
-                  <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
-                  <a href="#" className="hover:text-indigo-600 transition-colors">Twitter</a>
-                  <a href="https://github.com/zhangguchuanjiang27-dot/vocab-app" target="_blank" className="hover:text-indigo-600 transition-colors">GitHub</a>
-                </div>
-              </div>
-              <div className="max-w-7xl mx-auto mt-12 text-center text-xs text-neutral-400">
-                &copy; {new Date().getFullYear()} Voca App. All rights reserved.
-              </div>
-            </footer>
+            {/* Footer Removed as requested */}
           </div>
         ) : (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
