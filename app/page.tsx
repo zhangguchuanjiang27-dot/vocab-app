@@ -376,9 +376,9 @@ export default function Home() {
                 New: AI Sentence Generation
               </div>
 
-              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-8 bg-clip-text text-transparent bg-neutral-900 dark:bg-white animate-in fade-in slide-in-from-bottom-8 duration-700 h-[1.2em]" style={{ fontFamily: 'var(--font-merriweather)' }}>
+              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-16 bg-clip-text text-transparent bg-neutral-900 dark:bg-white animate-in fade-in slide-in-from-bottom-8 duration-700 leading-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>
                 Learn Words for<br />
-                <span className="text-indigo-600 dark:text-indigo-400 inline-block">
+                <span className="text-indigo-600 dark:text-indigo-400 inline-block min-h-[1.2em]">
                   <Typewriter
                     options={{
                       strings: ['Business.', 'Travel.', 'Science.', 'Life.', 'Everything.'],
