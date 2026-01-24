@@ -123,12 +123,17 @@ export default async function ProfilePage() {
                                         {badge.icon}
                                     </div>
                                     <div className="text-center">
-                                        <h3 className={`font-bold text-sm mb-1 ${isUnlocked ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-400"}`}>
+                                        <h3 className={`font-bold text-sm mb-1 ${isUnlocked ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-500"}`}>
                                             {badge.displayName}
                                         </h3>
                                         <p className="text-[10px] text-neutral-400 leading-tight">
-                                            {isUnlocked ? badge.description : "???"}
+                                            {badge.description}
                                         </p>
+                                        {!isUnlocked && (
+                                            <div className="mt-2 text-[10px] font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-center gap-1">
+                                                <span>🔒</span> Locked
+                                            </div>
+                                        )}
                                     </div>
                                     {isUnlocked && (
                                         <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
