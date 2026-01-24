@@ -52,6 +52,7 @@ export default function DeckPage() {
     const [shuffledWords, setShuffledWords] = useState<WordCard[]>([]);
     const [wrongWordIds, setWrongWordIds] = useState<Set<string>>(new Set());
     const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
+    const [includeMastered, setIncludeMastered] = useState(false);
 
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
@@ -476,16 +477,21 @@ export default function DeckPage() {
             const missed = (isRandomMode ? shuffledWords : deck.words).filter(w => w.id && wrongWordIds.has(w.id));
             setReviewWords(missed);
         } else if (deck) {
-            // Filter out mastered words for new session
-            const activeWords = deck.words.filter(w => !w.isMastered);
+            // Filter out mastered words for new session UNLESS includeMastered is true
+            const activeWords = includeMastered ? deck.words : deck.words.filter(w => !w.isMastered);
 
             if (activeWords.length === 0 && deck.words.length > 0) {
-                alert("全ての単語をマスターしました！\n復習したい場合はチェックを外してください。");
-                // Fallback to showing everything if everything is mastered, or just return to list?
-                // For now, let's just use all words but warn, or maybe just return to list.
-                // Ideally, we might want a "Study Anyway" option.
-                // Let's force full list if all mastered to avoid empty state.
-                setReviewWords(deck.words);
+                // All words are mastered and includeMastered is false
+                alert("全ての単語をマスター済みです！\n復習のために「マスター済みも含める」をオンにして開始します。");
+                setIncludeMastered(true);
+                setReviewWords(null); // Just run with full deck (since we set includedMastered to true, next render/effect or logic flow needs to handle it - actually here we need to force it for this run)
+                // BUT state update is async, so for this run we need to use full list explicitly if we want immediate start.
+                // Better pattern: just use shuffled/active words directly in getSessionWords, but handleRestart sets up state.
+                // Simplest fix: Just allow it to happen, but since we are setting state, let's just use deck.words for the shuffle if random.
+
+                if (isRandomMode) {
+                    setShuffledWords(shuffleArray(deck.words));
+                }
             } else {
                 setReviewWords(null); // use standard flow
                 // If random mode, we need to reshuffle only active words
@@ -616,14 +622,16 @@ export default function DeckPage() {
 
         const getSessionWords = () => {
             if (reviewWords) return reviewWords;
-            // If not reviewing mistakes, default is to use active (unmastered) words
-            // But we need to make sure we filter them from the source
+
             const source = isRandomMode ? shuffledWords : (deck?.words || []);
-            const active = source.filter(w => !w.isMastered);
-            // If all mastered, handleRestart logic above might have set reviewWords to all.
-            // If we are here, it means we have some active words or we decided to show something.
-            // Let's just return active words.
-            return active.length > 0 ? active : source; // Fallback to all if active is empty (though handleRestart should catch this)
+            const active = includeMastered ? source : source.filter(w => !w.isMastered);
+
+            // If active is empty but source is not, it means all remaining are mastered.
+            // If includeMastered is false, we should have probably alerted in handleRestart, 
+            // but if we are just rendering, safe fallback is show nothing or show all? 
+            // Logic in handleRestart attempts to handle empty active words.
+
+            return active.length > 0 ? active : source;
         };
 
         const displayWords = getSessionWords();
@@ -777,7 +785,7 @@ export default function DeckPage() {
         const getWritingWords = () => {
             if (reviewWords) return reviewWords;
             const source = isRandomMode ? shuffledWords : (deck?.words || []);
-            const active = source.filter(w => !w.isMastered);
+            const active = includeMastered ? source : source.filter(w => !w.isMastered);
             return active.length > 0 ? active : source;
         };
 
@@ -924,21 +932,34 @@ export default function DeckPage() {
                                     🔀 ランダム
                                 </button>
                             </div>
-                            <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+                            <div className="flex flex-wrap gap-4 justify-center sm:justify-start items-center">
                                 <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-8 py-4 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">🎴</span> フラッシュカード
                                 </button>
                                 <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-8 py-4 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">📝</span> Writingテスト
                                 </button>
+
+                                <div className="flex items-center gap-2 ml-2">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition">
+                                        <input
+                                            type="checkbox"
+                                            checked={includeMastered}
+                                            onChange={(e) => setIncludeMastered(e.target.checked)}
+                                            className="w-4 h-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-xs font-bold text-neutral-500">マスター済みも含める</span>
+                                    </label>
+                                </div>
+
                                 {deck.words.some(w => !w.example && (!w.otherExamples || w.otherExamples.length === 0)) && (
                                     <button
                                         onClick={handleBulkGenerate}
                                         disabled={isBulkGenerating}
-                                        className="px-8 py-4 bg-amber-500 text-white text-lg font-bold rounded-full shadow-lg hover:bg-amber-600 hover:shadow-amber-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="ml-auto px-6 py-3 bg-amber-500 text-white text-sm font-bold rounded-full shadow-lg hover:bg-amber-600 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                                     >
-                                        <span className="text-2xl">{isBulkGenerating ? "⏳" : "🪄"}</span>
-                                        {isBulkGenerating ? "一括生成中..." : "例文を一括生成"}
+                                        <span className="text-xl">{isBulkGenerating ? "⏳" : "🪄"}</span>
+                                        {isBulkGenerating ? "生成中..." : "例文生成"}
                                     </button>
                                 )}
                             </div>
@@ -948,6 +969,11 @@ export default function DeckPage() {
 
                 {/* Word List */}
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+                    {/* Encouragement Message */}
+                    <div className="bg-indigo-50 dark:bg-indigo-900/20 px-6 py-2 text-center border-b border-indigo-100 dark:border-indigo-800">
+                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-300">💡 覚えた単語には <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 text-white rounded-full text-[8px] mx-1">✓</span> を付けよう！テストに出なくなります。</p>
+                    </div>
+
                     <div className="p-6 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4 flex-1">
                             {!isSelectionMode ? (
