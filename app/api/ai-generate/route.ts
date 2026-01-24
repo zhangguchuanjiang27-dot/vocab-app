@@ -102,12 +102,87 @@ export async function POST(req: Request) {
     const result = {
       words: (parsed.words || []).map((w: any) => ({
         ...w,
-        // 例文は空で初期化
         example: "",
         example_jp: "",
         otherExamples: []
       }))
     };
+
+    // Step 2: Generate examples for each word based on its meanings
+    if (result.words.length > 0) {
+      try {
+        const examplesPrompt = `
+          あなたは英語学習のエキスパートです。
+          先ほど生成された英単語と意味のリストをもとに、**それぞれの意味に対応する例文**を作成してください。
+
+          【入力データ】
+          ${JSON.stringify(result.words, null, 2)}
+
+          【重要：例文作成ルール】
+          1. **意味ごとの生成**: 各単語について、"meaning" フィールドに含まれる**すべての異なる意味**に対して、それぞれ1つずつ例文を作ってください。
+             - 例: "capital" の意味が "①首都 ②資本 ③主要な" の場合、3つの例文（首都用、資本用、主要な用）を作成。
+             - 番号などがなく意味が1つの場合は例文を1つ作成。
+          2. **品質**:
+             - 文脈が明確で、その意味で使われていることがわかる自然な英語の文（10-15単語程度）。
+             - 簡素すぎる文（"This is a pen."など）は不可。
+          3. **データ構造**:
+             - 各単語の "otherExamples" 配列に格納してください。
+             - 各例文は { "role": "品詞", "text": "英文", "translation": "日本語訳" } の形式。
+             - role はその意味に対応する品詞（Noun, Verb, Adjective, 熟語 等）。
+
+          出力は以下のJSON形式のみを返してください。入力の "word" をキーにして照合できるようにしてください。
+          {
+            "details": [
+              {
+                "word": "capital",
+                "otherExamples": [
+                  { "role": "Noun", "text": "Tokyo is the capital of Japan.", "translation": "東京は日本の首都です。" },
+                  { "role": "Noun", "text": "You need capital to start a business.", "translation": "ビジネスを始めるには資本が必要です。" },
+                  { "role": "Adjective", "text": "It was a capital error.", "translation": "それは主要な（致命的な）誤りだった。" }
+                ]
+              }
+            ]
+          }
+        `;
+
+        const response2 = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: "You are a helpful assistant that adds examples to JSON data." },
+              { role: "user", content: examplesPrompt },
+            ],
+            response_format: { type: "json_object" },
+          }),
+        });
+
+        if (response2.ok) {
+          const data2 = await response2.json();
+          const parsed2 = JSON.parse(data2.choices[0].message.content || "{}");
+
+          // Merge examples into the result
+          if (parsed2.details && Array.isArray(parsed2.details)) {
+            const examplesMap = new Map(parsed2.details.map((d: any) => [d.word, d.otherExamples]));
+
+            result.words = result.words.map((w: any) => {
+              const examples = examplesMap.get(w.word) || [];
+              return {
+                ...w,
+                otherExamples: examples
+              };
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Step 2 (Examples) Error:", error);
+        // If step 2 fails, we still return the words from step 1, just without examples matches
+      }
+    }
 
     const generatedCount = result.words ? result.words.length : 0;
 
