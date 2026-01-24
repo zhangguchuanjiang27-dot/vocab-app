@@ -360,52 +360,54 @@ export default function Home() {
 
             {/* Gamification Stats */}
             <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <span className="text-2xl">🔥</span>
-                    <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
-                      {getLevelInfo(xp).level}
+              <Link href="/profile" className="block group">
+                <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <span className="text-2xl">🔥</span>
+                      <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
+                        {getLevelInfo(xp).level}
+                      </div>
+                    </div>
+                    <div className="flex flex-col min-w-[100px]">
+                      <div className="flex justify-between items-end mb-1">
+                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {getLevelInfo(xp).level}</p>
+                        <p className="text-[10px] text-indigo-500 font-bold leading-none">{getLevelInfo(xp).xpInCurrentLevel} / {getLevelInfo(xp).xpRequiredForNext} XP</p>
+                      </div>
+                      {/* Progress Bar */}
+                      <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
+                          style={{ width: `${getLevelInfo(xp).progress}%` }}
+                        ></div>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-col min-w-[100px]">
-                    <div className="flex justify-between items-end mb-1">
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {getLevelInfo(xp).level}</p>
-                      <p className="text-[10px] text-indigo-500 font-bold leading-none">{getLevelInfo(xp).xpInCurrentLevel} / {getLevelInfo(xp).xpRequiredForNext} XP</p>
-                    </div>
-                    {/* Progress Bar */}
-                    <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
-                        style={{ width: `${getLevelInfo(xp).progress}%` }}
-                      ></div>
+
+                  <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">💎</span>
+                    <div>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
+                      <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
                     </div>
                   </div>
+
+                  {badges.length > 0 && (
+                    <>
+                      <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+                      <div className="flex items-center gap-1">
+                        {badges.map((b: any) => (
+                          <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
+                            {b.badge.icon}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
-
-                <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">💎</span>
-                  <div>
-                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
-                    <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
-                  </div>
-                </div>
-
-                {badges.length > 0 && (
-                  <>
-                    <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
-                    <div className="flex items-center gap-1">
-                      {badges.map((b: any) => (
-                        <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
-                          {b.badge.icon}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
+              </Link>
             </div>
 
             <button

@@ -198,3 +198,18 @@ export async function checkBadges(userId: string) {
         }
     }
 }
+
+// Leveling Logic
+export const getLevelInfo = (totalXp: number) => {
+    let level = 1;
+    let xpInCurrentLevel = totalXp;
+    let xpRequiredForNext = 100;
+
+    while (xpInCurrentLevel >= xpRequiredForNext) {
+        xpInCurrentLevel -= xpRequiredForNext;
+        level++;
+        xpRequiredForNext = level * 100;
+    }
+
+    return { level, xpInCurrentLevel, xpRequiredForNext, progress: (xpInCurrentLevel / xpRequiredForNext) * 100 };
+};
