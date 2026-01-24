@@ -1119,7 +1119,7 @@ export default function DeckPage() {
                                             onChange={(e) => setIncludeMastered(e.target.checked)}
                                             className="w-4 h-4 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500"
                                         />
-                                        <span className="text-xs font-bold text-neutral-500">マスター済みも含める</span>
+                                        <span className="text-xs font-bold text-neutral-500">✓ 済みも含める</span>
                                     </label>
                                 </div>
 
