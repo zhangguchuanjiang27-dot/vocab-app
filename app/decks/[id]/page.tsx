@@ -1385,37 +1385,48 @@ export default function DeckPage() {
 
                                                                     {/* 追加の例文表示 (リスト表示) */}
                                                                     {card.otherExamples && card.otherExamples.length > 0 && (
-                                                                        <div className="mt-4 space-y-6">
-                                                                            {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
-                                                                                <div key={i} className="relative pl-4 border-l-2 border-indigo-400 dark:border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                                                                                    {ex.role && (
-                                                                                        <div className="mb-2">
-                                                                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-900/50">
-                                                                                                {ex.role}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    )}
-
-                                                                                    <div className="flex items-start gap-4">
-                                                                                        <button
-                                                                                            onClick={() => speak(ex.text)}
-                                                                                            className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
-                                                                                            title="Listen to example"
-                                                                                        >
-                                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                        </button>
-                                                                                        <div className="flex-1 min-w-0">
-                                                                                            <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
-                                                                                                {ex.text}
+                                                                        <>
+                                                                            <div className="mb-4 flex justify-end">
+                                                                                <button
+                                                                                    onClick={() => card.id && handleGenerateDetails(card.id, true)}
+                                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200 dark:border-indigo-800"
+                                                                                >
+                                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
+                                                                                    再生成 (🪙1)
+                                                                                </button>
+                                                                            </div>
+                                                                            <div className="mt-4 space-y-6">
+                                                                                {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
+                                                                                    <div key={i} className="relative pl-4 border-l-2 border-indigo-400 dark:border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                                                                                        {ex.role && (
+                                                                                            <div className="mb-2">
+                                                                                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+                                                                                                    {ex.role}
+                                                                                                </span>
                                                                                             </div>
-                                                                                            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
-                                                                                                {ex.translation}
+                                                                                        )}
+
+                                                                                        <div className="flex items-start gap-4">
+                                                                                            <button
+                                                                                                onClick={() => speak(ex.text)}
+                                                                                                className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
+                                                                                                title="Listen to example"
+                                                                                            >
+                                                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                            </button>
+                                                                                            <div className="flex-1 min-w-0">
+                                                                                                <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
+                                                                                                    {ex.text}
+                                                                                                </div>
+                                                                                                <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
+                                                                                                    {ex.translation}
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </>
                                                                     )}
                                                                 </div>
                                                             )}
