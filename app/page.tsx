@@ -369,13 +369,18 @@ export default function Home() {
                         {getLevelInfo(xp).level}
                       </div>
                     </div>
-                    <div className="flex flex-col min-w-[100px]">
-                      <div className="flex justify-between items-end mb-1">
-                        <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Level {getLevelInfo(xp).level}</p>
-                        <p className="text-[10px] text-indigo-500 font-bold leading-none">{getLevelInfo(xp).xpInCurrentLevel} / {getLevelInfo(xp).xpRequiredForNext} XP</p>
+                    <div className="flex flex-col min-w-[140px]">
+                      <div className="flex justify-between items-end mb-1.5">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">Lv.</span>
+                          <span className="text-sm font-black text-neutral-900 dark:text-white leading-none">{getLevelInfo(xp).level}</span>
+                        </div>
+                        <p className="text-[10px] text-indigo-500 font-bold leading-none tracking-tight">
+                          {getLevelInfo(xp).xpInCurrentLevel} <span className="text-neutral-300 dark:text-neutral-600 font-normal mx-0.5">/</span> {getLevelInfo(xp).xpRequiredForNext} <span className="text-[8px] opacity-70">XP</span>
+                        </p>
                       </div>
                       {/* Progress Bar */}
-                      <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-inner">
                         <div
                           className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
                           style={{ width: `${getLevelInfo(xp).progress}%` }}
