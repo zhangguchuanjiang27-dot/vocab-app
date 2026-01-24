@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { signOut, useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+
 import Typewriter from 'typewriter-effect';
+import CountUp from 'react-countup';
 
 // 型定義
 type WordCard = {
@@ -527,6 +529,31 @@ export default function Home() {
               </div>
             </section>
 
+            {/* Stats Section */}
+            <section className="py-24 bg-neutral-900 text-white rounded-[3rem] mx-4 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay"></div>
+              <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 text-center relative z-10">
+                <div className="space-y-2">
+                  <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
+                    <CountUp end={15000} duration={2.5} separator="," suffix="+" />
+                  </div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">Generated Words</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-indigo-400 to-indigo-200">
+                    <CountUp end={85} duration={3} suffix="%" />
+                  </div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-indigo-200">Retention Rate</div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
+                    <CountUp end={5000} duration={2.5} separator="," suffix="+" />
+                  </div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">Study Sessions</div>
+                </div>
+              </div>
+            </section>
+
             {/* Footer Call to Action */}
             <section className="text-center py-24 px-6">
               <h2 className="text-3xl font-bold mb-8">さあ、新しい学習体験へ。</h2>
@@ -538,6 +565,25 @@ export default function Home() {
               </button>
               <p className="mt-6 text-sm text-neutral-400">Googleアカウントですぐに使えます</p>
             </section>
+
+            {/* Footer */}
+            <footer className="border-t border-neutral-200 dark:border-neutral-800 pt-16 pb-12 px-6">
+              <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                <div className="flex flex-col items-center md:items-start gap-2">
+                  <span className="text-2xl font-black tracking-tighter" style={{ fontFamily: 'var(--font-merriweather)' }}>Voca</span>
+                  <p className="text-sm text-neutral-500">AI-powered vocabulary learning for everyone.</p>
+                </div>
+                <div className="flex gap-8 text-sm font-bold text-neutral-500">
+                  <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
+                  <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
+                  <a href="#" className="hover:text-indigo-600 transition-colors">Twitter</a>
+                  <a href="https://github.com/zhangguchuanjiang27-dot/vocab-app" target="_blank" className="hover:text-indigo-600 transition-colors">GitHub</a>
+                </div>
+              </div>
+              <div className="max-w-7xl mx-auto mt-12 text-center text-xs text-neutral-400">
+                &copy; {new Date().getFullYear()} Voca App. All rights reserved.
+              </div>
+            </footer>
           </div>
         ) : (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
@@ -613,143 +659,148 @@ export default function Home() {
               {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
             </button>
           </div>
-        )}
+        )
+        }
 
-        {session && (
-          <>
-            {showSaved ? (
-              <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-4">
-                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                  保存した単語帳
-                </h2>
-                {savedDecks.length === 0 ? (
-                  <div className="text-center py-12 text-neutral-400">
-                    <p>保存された単語帳はありません。</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {savedDecks.map((deck) => (
-                      <div
-                        key={deck.id}
-                        className="group relative p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-xl hover:border-indigo-400 transition-all cursor-pointer"
-                        onClick={() => handleDeckClick(deck.id)}
-                      >
-                        <h3 className="font-bold text-lg mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
-                        <div className="flex items-center gap-3">
-                          <p className="text-xs text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
-                          <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="grid lg:grid-cols-[320px_1fr] gap-8 items-start">
-                {/* Left: Input */}
-                <div className="flex flex-col gap-4 sticky top-8">
-                  <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-                    <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
-                      単語を入力
-                    </label>
-                    <textarea
-                      className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
-                      placeholder={`例：\napple\nrun\ntake off`}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                    />
-                    <button
-                      onClick={handleGenerate}
-                      disabled={loading || !input.trim()}
-                      className={`w-full py-3 rounded-lg font-bold text-sm transition-all
-                          ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
-                        `}
-                    >
-                      {loading ? "生成中..." : "リストを生成"}
-                    </button>
-                    {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
-                  </div>
-                </div>
-
-                {/* Right: Output List */}
-                <div className="min-h-[500px]">
-                  {words.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 p-12">
-                      <p>左のフォームに単語を入力して生成してください</p>
+        {
+          session && (
+            <>
+              {showSaved ? (
+                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-4">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                    保存した単語帳
+                  </h2>
+                  {savedDecks.length === 0 ? (
+                    <div className="text-center py-12 text-neutral-400">
+                      <p>保存された単語帳はありません。</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-6">
-                      {/* Toolbar */}
-                      <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
-                        <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
-                          <button onClick={handleClearList} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">クリア</button>
-                          <input
-                            type="text"
-                            value={deckTitle}
-                            onChange={(e) => setDeckTitle(e.target.value)}
-                            placeholder="単語帳に名前をつける..."
-                            className="flex-1 bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:font-normal placeholder:text-neutral-400 transition-all border-none"
-                          />
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                          <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors">
-                            + 既存に追加
-                          </button>
-                          <button onClick={handleSaveDeck} className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                            新規保存
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Words List */}
-                      <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
-                        {words.map((card, idx) => (
-                          <div key={idx} className="group relative p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50/50 transition-colors">
-                            <button onClick={() => handleRemoveWord(idx)} className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
-
-                            <div className="flex items-baseline gap-4 mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
-                                <button
-                                  onClick={() => speak(card.word)}
-                                  className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
-                                  title="Play word"
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                </button>
-                              </div>
-
-                              <span className="text-neutral-600 dark:text-neutral-300 font-medium ml-auto sm:ml-0" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</span>
-                            </div>
-
-
-
-                            <div className="absolute top-6 right-6 text-xs text-neutral-200 font-mono select-none group-hover:text-transparent">
-                              #{idx + 1}
-                            </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {savedDecks.map((deck) => (
+                        <div
+                          key={deck.id}
+                          className="group relative p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-xl hover:border-indigo-400 transition-all cursor-pointer"
+                          onClick={() => handleDeckClick(deck.id)}
+                        >
+                          <h3 className="font-bold text-lg mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
+                          <div className="flex items-center gap-3">
+                            <p className="text-xs text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+                            <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+              ) : (
+                <div className="grid lg:grid-cols-[320px_1fr] gap-8 items-start">
+                  {/* Left: Input */}
+                  <div className="flex flex-col gap-4 sticky top-8">
+                    <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                      <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
+                        単語を入力
+                      </label>
+                      <textarea
+                        className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
+                        placeholder={`例：\napple\nrun\ntake off`}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                      />
+                      <button
+                        onClick={handleGenerate}
+                        disabled={loading || !input.trim()}
+                        className={`w-full py-3 rounded-lg font-bold text-sm transition-all
+                          ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
+                        `}
+                      >
+                        {loading ? "生成中..." : "リストを生成"}
+                      </button>
+                      {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
+                    </div>
+                  </div>
+
+                  {/* Right: Output List */}
+                  <div className="min-h-[500px]">
+                    {words.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 p-12">
+                        <p>左のフォームに単語を入力して生成してください</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-6">
+                        {/* Toolbar */}
+                        <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
+                          <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
+                            <button onClick={handleClearList} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">クリア</button>
+                            <input
+                              type="text"
+                              value={deckTitle}
+                              onChange={(e) => setDeckTitle(e.target.value)}
+                              placeholder="単語帳に名前をつける..."
+                              className="flex-1 bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:font-normal placeholder:text-neutral-400 transition-all border-none"
+                            />
+                          </div>
+                          <div className="flex gap-2 w-full sm:w-auto">
+                            <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors">
+                              + 既存に追加
+                            </button>
+                            <button onClick={handleSaveDeck} className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
+                              新規保存
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Words List */}
+                        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+                          {words.map((card, idx) => (
+                            <div key={idx} className="group relative p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                              <button onClick={() => handleRemoveWord(idx)} className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+
+                              <div className="flex items-baseline gap-4 mb-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                  <button
+                                    onClick={() => speak(card.word)}
+                                    className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                    title="Play word"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                  </button>
+                                </div>
+
+                                <span className="text-neutral-600 dark:text-neutral-300 font-medium ml-auto sm:ml-0" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</span>
+                              </div>
+
+
+
+                              <div className="absolute top-6 right-6 text-xs text-neutral-200 font-mono select-none group-hover:text-transparent">
+                                #{idx + 1}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )
+        }
+      </main >
 
       {/* Hidden Admin Link */}
-      {session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
-        <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
-          <Link
-            href="/admin"
-            className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors"
-          >
-            ⚙️ System Admin
-          </Link>
-        </div>
-      )}
-    </div>
+      {
+        session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
+          <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
+            <Link
+              href="/admin"
+              className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors"
+            >
+              ⚙️ System Admin
+            </Link>
+          </div>
+        )
+      }
+    </div >
   );
 }
