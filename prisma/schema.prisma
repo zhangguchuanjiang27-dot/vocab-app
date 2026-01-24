@@ -114,3 +114,14 @@ model DictionaryEntry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  email     String
+  type      String   // "bug", "feature", "other"
+  message   String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?
+}

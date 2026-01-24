@@ -141,6 +141,35 @@ export default function Home() {
     }
   };
 
+  // Contact Form State
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactType, setContactType] = useState("other");
+  const [isSendingContact, setIsSendingContact] = useState(false);
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSendingContact(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: contactEmail, message: contactMessage, type: contactType })
+      });
+      if (res.ok) {
+        alert("送信しました！貴重なご意見ありがとうございます。");
+        setContactMessage("");
+        setContactType("other");
+      } else {
+        alert("送信に失敗しました。時間をおいて再試行してください。");
+      }
+    } catch (err) {
+      alert("エラーが発生しました。");
+    } finally {
+      setIsSendingContact(false);
+    }
+  };
+
   // 支払い成功後の処理
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -564,6 +593,59 @@ export default function Home() {
                 無料で始める
               </button>
               <p className="mt-6 text-sm text-neutral-400">Googleアカウントですぐに使えます</p>
+            </section>
+
+            {/* Contact Form Section */}
+            <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="max-w-xl mx-auto">
+                <div className="text-center mb-10">
+                  <h2 className="text-2xl font-bold mb-2">お問い合わせ</h2>
+                  <p className="text-sm text-neutral-500">不具合の報告や、機能のリクエストはこちらから。</p>
+                </div>
+                <form onSubmit={handleContactSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">メールアドレス</label>
+                    <input
+                      type="email"
+                      required
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">種類</label>
+                    <select
+                      value={contactType}
+                      onChange={(e) => setContactType(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                    >
+                      <option value="bug">不具合報告 (Bug)</option>
+                      <option value="feature">機能リクエスト (Feature Request)</option>
+                      <option value="other">その他 (Other)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">内容</label>
+                    <textarea
+                      required
+                      value={contactMessage}
+                      onChange={(e) => setContactMessage(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                      placeholder="詳細をご記入ください..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSendingContact}
+                    className="w-full py-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {isSendingContact ? "送信中..." : "送信する"}
+                  </button>
+                </form>
+              </div>
             </section>
 
             {/* Footer Removed as requested */}
