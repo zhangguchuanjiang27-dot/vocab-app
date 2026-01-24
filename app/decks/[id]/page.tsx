@@ -1095,7 +1095,7 @@ export default function DeckPage() {
                                                 <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
                                                 <div className="space-y-1">
                                                     {/* 例文セクション (ロック機能なし) */}
-                                                    {card.example ? (
+                                                    {(card.example || (card.otherExamples && card.otherExamples.length > 0)) ? (
                                                         <div className="space-y-3">
                                                             <button
                                                                 onClick={() => card.id && toggleExampleVisibility(card.id)}
