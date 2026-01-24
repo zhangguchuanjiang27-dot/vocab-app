@@ -339,6 +339,26 @@ export default function DeckPage() {
         }
     };
 
+    const handleDeleteDeck = async () => {
+        if (!deck) return;
+        if (!confirm(`本当に単語帳「${deck.title}」を削除しますか？\nこの操作は取り消せません。`)) return;
+
+        try {
+            const res = await fetch(`/api/decks/${deckId}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                router.push("/");
+            } else {
+                alert("削除に失敗しました");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("エラーが発生しました");
+        }
+    };
+
 
 
 
@@ -887,6 +907,13 @@ export default function DeckPage() {
         <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
                 <Link href="/" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-colors">← ホームに戻る</Link>
+                <button
+                    onClick={handleDeleteDeck}
+                    className="px-4 py-2 text-xs font-bold text-red-400 hover:text-red-600 hover:bg-neutral-200 dark:hover:bg-neutral-800 rounded-lg transition-all flex items-center gap-2"
+                >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    単語帳を削除
+                </button>
             </header>
 
             <main className="max-w-4xl mx-auto">

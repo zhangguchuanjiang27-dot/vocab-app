@@ -452,9 +452,10 @@ export default function Home() {
                       >
                         <button
                           onClick={(e) => handleDeleteDeck(deck.id, e)}
-                          className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 transition-colors z-10 opacity-0 group-hover:opacity-100"
+                          className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all z-10 opacity-40 group-hover:opacity-100"
+                          title="単語帳を削除"
                         >
-                          ✕
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                         <h3 className="font-bold text-lg mb-2 pr-6">{deck.title}</h3>
                         <p className="text-xs text-neutral-500 font-mono">{deck.words.length} 語</p>

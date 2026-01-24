@@ -100,7 +100,8 @@ const BADGE_DEFINITIONS = [
  */
 export async function initBadges() {
     for (const badge of BADGE_DEFINITIONS) {
-        await prisma.badge.upsert({
+        // @ts-ignore
+        await (prisma as any).badge.upsert({
             where: { name: badge.name },
             update: {
                 displayName: badge.displayName,
@@ -127,9 +128,10 @@ export async function addXp(userId: string, amount: number) {
     const user = await prisma.user.update({
         where: { id: userId },
         data: {
+            // @ts-ignore
             xp: { increment: amount },
             weeklyXp: { increment: amount },
-        },
+        } as any,
     });
 
     // バッジ獲得チェック（非同期で実行）
@@ -151,7 +153,7 @@ export async function checkBadges(userId: string) {
             badges: {
                 select: { badgeId: true }
             }
-        }
+        } as any
     });
 
     if (!user) return;
@@ -162,15 +164,15 @@ export async function checkBadges(userId: string) {
     // しかし prisma.badge.findMany で name から ID を引く方が楽かも
 
     // バッジ定義を取得
-    const badges = await prisma.badge.findMany();
-    const badgeMap = new Map(badges.map(b => [b.name, b]));
+    const badges = await (prisma as any).badge.findMany();
+    const badgeMap = new Map(badges.map((b: any) => [b.name, b]));
 
     // ユーザーが既に持っているバッジを確認
-    const userBadges = await prisma.userBadge.findMany({
+    const userBadges = await (prisma as any).userBadge.findMany({
         where: { userId },
         include: { badge: true }
     });
-    const ownedBadgeNames = new Set(userBadges.map(ub => ub.badge.name));
+    const ownedBadgeNames = new Set(userBadges.map((ub: any) => ub.badge.name));
 
     const newBadges = [];
 
@@ -223,10 +225,9 @@ export async function checkBadges(userId: string) {
 
     // --- バッジ付与処理 ---
     for (const badgeName of newBadges) {
-        const badge = badgeMap.get(badgeName);
+        const badge: any = badgeMap.get(badgeName);
         if (badge) {
-            // @ts-ignore
-            await prisma.userBadge.create({
+            await (prisma as any).userBadge.create({
                 data: {
                     userId,
                     badgeId: badge.id
