@@ -948,14 +948,15 @@ export default function DeckPage() {
                                 </div>
                             </div>
                         ) : (
+
                             <div
-                                className="group inline-flex items-center gap-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all"
+                                className="group inline-flex items-center gap-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all max-w-full"
                                 onClick={() => { setIsEditingTitle(true); setEditTitle(deck.title); }}
                             >
-                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight">
-                                    <span style={{ fontFamily: 'var(--font-merriweather)' }}>{deck.title}</span>
+                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                                    <span style={{ fontFamily: 'var(--font-merriweather), var(--font-noto-serif-jp), serif' }}>{deck.title}</span>
                                 </h1>
-                                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
+                                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 shrink-0">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </div>
                             </div>
