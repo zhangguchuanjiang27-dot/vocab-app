@@ -33,9 +33,9 @@ const BADGE_DEFINITIONS = [
     {
         name: "millionaire",
         displayName: "富豪",
-        description: "クレジットを1000枚以上保有しています",
+        description: "コインを1000枚以上保有しています",
         icon: "💎",
-        condition: "Credits >= 1000"
+        condition: "Coins >= 1000"
     },
     {
         name: "level_5",

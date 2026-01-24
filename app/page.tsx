@@ -387,9 +387,9 @@ export default function Home() {
                   <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">💎</span>
+                    <span className="text-xl">🪙</span>
                     <div>
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Credits</p>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Coins</p>
                       <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
                     </div>
                   </div>

@@ -86,7 +86,7 @@ export default async function ProfilePage() {
                                     <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Credits</div>
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Coins</div>
                                     <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toLocaleString()}</div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
