@@ -127,8 +127,9 @@ export async function POST(req: Request) {
              - 簡素すぎる文（"This is a pen."など）は不可。
           3. **データ構造**:
              - 各単語の "otherExamples" 配列に格納してください。
-             - 各例文は { "role": "品詞", "text": "英文", "translation": "日本語訳" } の形式。
-             - role はその意味に対応する品詞（Noun, Verb, Adjective, 熟語 等）。
+             - 各例文は { "role": "品詞(意味)", "text": "英文", "translation": "日本語訳" } の形式。
+             - role はその例文が表す具体的な意味がわかるように、**「品詞(意味)」** という形式にしてください（例: "Noun (資本)", "Noun (首都)", "Adjective (重要な)"）。
+             - 熟語の場合は "熟語(意味)" としてください。
 
           出力は以下のJSON形式のみを返してください。入力の "word" をキーにして照合できるようにしてください。
           {

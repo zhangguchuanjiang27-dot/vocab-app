@@ -1126,23 +1126,33 @@ export default function DeckPage() {
 
                                                                     {/* 追加の例文表示 (リスト表示) */}
                                                                     {card.otherExamples && card.otherExamples.length > 0 && (
-                                                                        <div className="pl-2 border-l-2 border-indigo-100 dark:border-neutral-800 space-y-3">
+                                                                        <div className="mt-4 space-y-6">
                                                                             {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
-                                                                                <div key={i} className="text-sm">
+                                                                                <div key={i} className="relative pl-4 border-l-2 border-indigo-400 dark:border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
                                                                                     {ex.role && (
-                                                                                        <div className="mb-1">
-                                                                                            <span className="text-xs font-bold text-neutral-600 dark:text-neutral-300">{ex.role}</span>
+                                                                                        <div className="mb-2">
+                                                                                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+                                                                                                {ex.role}
+                                                                                            </span>
                                                                                         </div>
                                                                                     )}
-                                                                                    <div className="flex items-start gap-2 mb-1">
-                                                                                        {ex.text && (
-                                                                                            <button onClick={() => speak(ex.text)} className="mt-0.5 text-neutral-400 hover:text-indigo-500 transition-colors shrink-0">
-                                                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                            </button>
-                                                                                        )}
-                                                                                        <div className="text-neutral-800 dark:text-neutral-200 font-serif">"{ex.text}"</div>
+                                                                                    <div className="flex items-start gap-4">
+                                                                                        <button
+                                                                                            onClick={() => speak(ex.text)}
+                                                                                            className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
+                                                                                            title="Listen to example"
+                                                                                        >
+                                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                        </button>
+                                                                                        <div className="flex-1 min-w-0">
+                                                                                            <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
+                                                                                                {ex.text}
+                                                                                            </div>
+                                                                                            <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
+                                                                                                {ex.translation}
+                                                                                            </div>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <div className="text-xs text-neutral-500 font-light pl-6">{ex.translation}</div>
                                                                                 </div>
                                                                             ))}
                                                                         </div>
