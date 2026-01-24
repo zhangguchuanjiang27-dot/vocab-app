@@ -360,8 +360,15 @@ export default function Home() {
               <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/20 blur-[120px] rounded-full -z-10 animate-pulse"></div>
               <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-sky-400/20 blur-[100px] rounded-full -z-10 animate-pulse delay-1000"></div>
 
+              {/* Voca Brand Header */}
+              <div className="mb-6 animate-in fade-in slide-in-from-top-8 duration-1000">
+                <h2 className="text-4xl sm:text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                  Voca
+                </h2>
+              </div>
+
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4 delay-100">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
@@ -389,7 +396,7 @@ export default function Home() {
                 意味、例文、音声、すべてが一瞬で手に入ります。
               </p>
 
-              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+              <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 z-10 relative">
                 <button
                   onClick={() => signIn("google")}
                   className="group relative px-8 py-4 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-3 overflow-hidden"
@@ -403,7 +410,7 @@ export default function Home() {
               </div>
 
               {/* Floating Cards Visual */}
-              <div className="mt-20 relative w-full max-w-4xl mx-auto h-[320px] select-none pointer-events-none hidden sm:block">
+              <div className="mt-32 relative w-full max-w-4xl mx-auto h-[400px] select-none pointer-events-none hidden sm:block">
                 {/* Card 1: Left */}
                 <div className="absolute top-10 left-0 xl:-left-12 w-64 p-6 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 rotate-[-6deg] animate-in slide-in-from-left-12 duration-1000 delay-300">
                   <div className="h-2 w-24 bg-neutral-100 dark:bg-neutral-800 rounded-full mb-4"></div>
