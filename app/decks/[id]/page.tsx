@@ -40,6 +40,7 @@ export default function DeckPage() {
     const [writingInput, setWritingInput] = useState("");
     const [isAnswerChecked, setIsAnswerChecked] = useState(false);
     const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+    const [showHint, setShowHint] = useState(false);
 
     // Flashcard state
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -437,8 +438,9 @@ export default function DeckPage() {
         setShowExamples(false);
         setWritingInput("");
         setIsAnswerChecked(false);
+        setIsAnswerChecked(false);
         setIsCorrect(null);
-        setWrongWordIds(new Set());
+        setShowHint(false);
     };
 
 
@@ -459,6 +461,7 @@ export default function DeckPage() {
         setWritingInput("");
         setIsAnswerChecked(false);
         setIsCorrect(null);
+        setShowHint(false);
     };
 
     const handleCheckAnswer = (cardId: string | undefined, correctWord: string) => {
@@ -746,6 +749,24 @@ export default function DeckPage() {
                     <div className="w-full bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-12 border border-neutral-200 dark:border-neutral-800 flex flex-col items-center">
                         <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6 border-b border-neutral-100 dark:border-neutral-800 pb-1">この意味を持つ単語は？</span>
                         <h3 className="text-3xl sm:text-4xl font-bold mb-12 text-center" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
+
+                        {/* Hint Display */}
+                        <div className="mb-6 h-8 flex items-center justify-center">
+                            {showHint ? (
+                                <p className="text-xl font-bold text-indigo-500 animate-in fade-in">
+                                    Hint: <span className="font-mono text-2xl">{currentCard.word.charAt(0)}...</span>
+                                </p>
+                            ) : (
+                                !isAnswerChecked && (
+                                    <button
+                                        onClick={() => setShowHint(true)}
+                                        className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1"
+                                    >
+                                        <span>💡</span> ヒントを見る
+                                    </button>
+                                )
+                            )}
+                        </div>
 
                         <div className="w-full max-w-md space-y-6">
                             <input
