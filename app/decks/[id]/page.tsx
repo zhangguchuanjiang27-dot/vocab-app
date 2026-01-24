@@ -918,8 +918,8 @@ export default function DeckPage() {
 
             <main className="max-w-4xl mx-auto">
                 {/* Cover / Info */}
-                <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col lg:flex-row items-start justify-between gap-8">
-                    <div className="flex-1 w-full lg:w-auto min-w-0">
+                <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col xl:flex-row items-start justify-between gap-8">
+                    <div className="flex-1 w-full xl:w-auto min-w-0">
                         {isEditingTitle ? (
                             <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
                                 <input
@@ -965,7 +965,7 @@ export default function DeckPage() {
                     </div>
 
                     {deck.words.length > 0 && (
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-4 w-full xl:w-auto shrink-0">
                             <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl w-fit self-center sm:self-start mb-2">
                                 <button
                                     onClick={() => setIsRandomMode(false)}
