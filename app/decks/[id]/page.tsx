@@ -921,21 +921,49 @@ export default function DeckPage() {
                 <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="flex-1">
                         {isEditingTitle ? (
-                            <div className="flex gap-2 mb-2 justify-center sm:justify-start">
-                                <input
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    className="text-3xl sm:text-4xl font-black bg-neutral-100 dark:bg-neutral-800 border-2 border-indigo-500 rounded-lg px-2 py-1 w-full max-w-md focus:outline-none"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
-                                />
-                                <button onClick={handleUpdateTitle} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg text-sm shrink-0">保存</button>
-                                <button onClick={() => setIsEditingTitle(false)} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 font-bold rounded-lg text-sm shrink-0">キャンセル</button>
+                            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300 items-center sm:items-start w-full">
+                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+                                    <span>✏️</span> タイトルを編集
+                                </label>
+                                <div className="flex items-center gap-2 w-full max-w-xl">
+                                    <input
+                                        autoFocus
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                        className="text-2xl sm:text-3xl font-bold bg-neutral-50 dark:bg-neutral-800 border-2 border-indigo-500 rounded-2xl px-4 py-2 w-full focus:outline-none shadow-lg shadow-indigo-500/10 transition-all"
+                                        placeholder="新しいタイトルを入力..."
+                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
+                                    />
+                                    <div className="flex flex-col sm:flex-row gap-1">
+                                        <button
+                                            onClick={handleUpdateTitle}
+                                            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-90"
+                                            title="保存"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditingTitle(false)}
+                                            className="p-3 bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all active:scale-90"
+                                            title="キャンセル"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <h1 className="text-3xl sm:text-4xl font-black mb-2 group cursor-pointer flex items-center gap-3 justify-center sm:justify-start" onClick={() => setIsEditingTitle(true)}>
-                                <span style={{ fontFamily: 'var(--font-merriweather)' }}>{deck.title}</span>
-                                <span className="opacity-0 group-hover:opacity-100 text-neutral-400 text-sm">✎</span>
-                            </h1>
+                            <div
+                                className="group inline-flex items-center gap-4 cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all"
+                                onClick={() => { setIsEditingTitle(true); setEditTitle(deck.title); }}
+                            >
+                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight">
+                                    <span style={{ fontFamily: 'var(--font-merriweather)' }}>{deck.title}</span>
+                                </h1>
+                                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-400 group-hover:text-indigo-500 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/30 transition-all opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </div>
+                            </div>
                         )}
                         <p className="text-neutral-500 font-mono">{deck.words.length} 語</p>
                     </div>
