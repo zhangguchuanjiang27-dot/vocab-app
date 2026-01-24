@@ -921,35 +921,30 @@ export default function DeckPage() {
                 <div className="bg-white dark:bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-200 dark:border-neutral-800 mb-8 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-6">
                     <div className="flex-1">
                         {isEditingTitle ? (
-                            <div className="flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300 items-center sm:items-start w-full">
-                                <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-2">
-                                    <span>✏️</span> タイトルを編集
-                                </label>
-                                <div className="flex items-center gap-2 w-full max-w-xl">
-                                    <input
-                                        autoFocus
-                                        value={editTitle}
-                                        onChange={(e) => setEditTitle(e.target.value)}
-                                        className="text-2xl sm:text-3xl font-bold bg-neutral-50 dark:bg-neutral-800 border-2 border-indigo-500 rounded-2xl px-4 py-2 w-full focus:outline-none shadow-lg shadow-indigo-500/10 transition-all"
-                                        placeholder="新しいタイトルを入力..."
-                                        onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
-                                    />
-                                    <div className="flex flex-col sm:flex-row gap-1">
-                                        <button
-                                            onClick={handleUpdateTitle}
-                                            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-90"
-                                            title="保存"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                        </button>
-                                        <button
-                                            onClick={() => setIsEditingTitle(false)}
-                                            className="p-3 bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-all active:scale-90"
-                                            title="キャンセル"
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                        </button>
-                                    </div>
+                            <div className="flex items-center gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                                <input
+                                    autoFocus
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    className="flex-1 min-w-[200px] text-3xl sm:text-4xl font-black bg-transparent border-b-4 border-indigo-500 px-1 py-1 focus:outline-none text-neutral-900 dark:text-neutral-100 placeholder-neutral-300"
+                                    placeholder="タイトルを入力"
+                                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
+                                />
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button
+                                        onClick={handleUpdateTitle}
+                                        className="p-3 bg-indigo-600 text-white rounded-xl shadow-lg hover:bg-indigo-700 hover:scale-105 transition-all active:scale-95"
+                                        title="保存"
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    </button>
+                                    <button
+                                        onClick={() => setIsEditingTitle(false)}
+                                        className="p-3 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-700 transition-all active:scale-95"
+                                        title="キャンセル"
+                                    >
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
                                 </div>
                             </div>
                         ) : (
