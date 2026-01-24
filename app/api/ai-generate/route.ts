@@ -221,17 +221,16 @@ export async function POST(req: Request) {
       words: [...foundWordsData, ...newWordsData]
     };
 
-    const newGeneratedCount = newWordsData.length;
-    // const usageMessage = `Used cache for ${foundWordsData.length} words. Generated ${newGeneratedCount} new words.`;
+    const totalGeneratedCount = foundWordsData.length + newWordsData.length;
 
-    // Deduct credits based on the number of *NEW* words generated
-    if (newGeneratedCount > 0) {
-      // XP付与 (生成した単語分のみ +10XP)
-      await addXp(session.user.id, newGeneratedCount * 10);
+    // Deduct credits based on the TOTAL number of words (cached or new)
+    if (totalGeneratedCount > 0) {
+      // XP付与 (総単語数 x 10XP)
+      await addXp(session.user.id, totalGeneratedCount * 10);
 
       await prisma.user.update({
         where: { id: session.user.id },
-        data: { credits: { decrement: newGeneratedCount } }
+        data: { credits: { decrement: totalGeneratedCount } }
       });
     }
 
