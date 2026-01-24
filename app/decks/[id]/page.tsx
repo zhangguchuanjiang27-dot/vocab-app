@@ -1298,7 +1298,7 @@ export default function DeckPage() {
                                         </div>
 
                                         {/* Action Buttons */}
-                                        <div className="absolute top-4 right-4 flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                        <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity">
                                             {/* Edit Button */}
                                             <button
                                                 onClick={() => handleStartEdit(card)}
