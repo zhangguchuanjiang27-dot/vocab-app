@@ -58,7 +58,7 @@ export async function PATCH(
 
         const body = await req.json();
         // deckIdは移動用、その他は編集用
-        const { deckId, word: wordText, meaning, partOfSpeech, example, example_jp, otherExamples } = body;
+        const { deckId, word: wordText, meaning, partOfSpeech, example, example_jp, otherExamples, synonyms, derivatives } = body;
 
         // 1. 移動・編集対象の単語が自分のものか確認
         const word = await prisma.wordCard.findUnique({
@@ -94,6 +94,8 @@ export async function PATCH(
         if (meaning !== undefined) updateData.meaning = meaning;
         if (partOfSpeech !== undefined) updateData.partOfSpeech = partOfSpeech;
         if (example !== undefined) updateData.example = example;
+        if (synonyms !== undefined) updateData.synonyms = synonyms;
+        if (derivatives !== undefined) updateData.derivatives = derivatives;
 
         // example_jp と otherExamples の処理
         let baseExampleJp = example_jp;

@@ -17,6 +17,8 @@ type WordCard = {
     isMastered?: boolean;
 
     createdAt?: string;
+    synonyms?: { word: string; partOfSpeech: string; meaning: string }[];
+    derivatives?: { word: string; partOfSpeech: string; meaning: string }[];
 };
 
 type Deck = {
@@ -314,6 +316,8 @@ export default function DeckPage() {
                             example_jp: cleanExampleJp,
                             otherExamples: safeOtherExamples,
 
+                            synonyms: Array.isArray(w.synonyms) ? w.synonyms : undefined,
+                            derivatives: Array.isArray(w.derivatives) ? w.derivatives : undefined,
                         };
                     });
 
@@ -353,6 +357,33 @@ export default function DeckPage() {
             if (isRegenerate) {
                 alert("例文を再生成しました！ (コイン -1)");
             }
+
+        } catch (e: any) {
+            alert(e.message);
+        }
+    };
+
+    const handleGenerateExtras = async (wordId: string, type: 'all' | 'synonyms') => {
+        const cost = 1;
+        const actionName = type === 'all' ? '類義語・派生語の生成' : '類義語の再生成';
+
+        if (!confirm(`${actionName}を行いますか？\nコインを${cost}枚消費します。`)) return;
+
+        try {
+            const res = await fetch(`/api/words/${wordId}/generate-extras`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ type })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Failed to generate");
+            }
+
+            // Refresh deck
+            await fetchDeck();
+            alert(`${actionName}が完了しました！ (コイン -1)`);
 
         } catch (e: any) {
             alert(e.message);
@@ -464,13 +495,17 @@ export default function DeckPage() {
         example: string;
         example_jp: string;
         otherExamples: { role: string; text: string; translation: string }[];
+        synonyms: { word: string; partOfSpeech: string; meaning: string }[];
+        derivatives: { word: string; partOfSpeech: string; meaning: string }[];
     }>({
         word: "",
         meaning: "",
         partOfSpeech: "",
         example: "",
         example_jp: "",
-        otherExamples: []
+        otherExamples: [],
+        synonyms: [],
+        derivatives: []
     });
 
     const handleStartEdit = (word: WordCard) => {
@@ -482,13 +517,15 @@ export default function DeckPage() {
             partOfSpeech: word.partOfSpeech || "",
             example: word.example,
             example_jp: word.example_jp,
-            otherExamples: word.otherExamples?.map(ex => ({ ...ex })) || []
+            otherExamples: word.otherExamples?.map(ex => ({ ...ex })) || [],
+            synonyms: word.synonyms?.map(s => ({ ...s })) || [],
+            derivatives: word.derivatives?.map(d => ({ ...d })) || []
         });
     };
 
     const handleCancelEdit = () => {
         setEditingWordId(null);
-        setEditFormData({ word: "", meaning: "", partOfSpeech: "", example: "", example_jp: "", otherExamples: [] });
+        setEditFormData({ word: "", meaning: "", partOfSpeech: "", example: "", example_jp: "", otherExamples: [], synonyms: [], derivatives: [] });
     };
 
     const handleSaveEdit = async () => {
@@ -514,7 +551,10 @@ export default function DeckPage() {
                                 ...w,
                                 ...updatedWord,
                                 // ensure consistency with WordCard type
-                                otherExamples: w.otherExamples
+                                // ensure consistency with WordCard type
+                                otherExamples: w.otherExamples,
+                                synonyms: w.synonyms,
+                                derivatives: w.derivatives
                             };
                         }
                         return w;
@@ -1345,6 +1385,50 @@ export default function DeckPage() {
                                                 </div>
                                             ))}
                                         </div>
+
+                                        {/* Synonyms Edit */}
+                                        <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">類義語 (Synonyms)</label>
+                                            {editFormData.synonyms.map((s, i) => (
+                                                <div key={i} className="flex gap-2 mb-2 items-center">
+                                                    <input value={s.word} onChange={e => {
+                                                        const n = [...editFormData.synonyms]; n[i].word = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                    }} className="w-1/3 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Word" />
+                                                    <input value={s.partOfSpeech} onChange={e => {
+                                                        const n = [...editFormData.synonyms]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                    }} className="w-1/4 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="POS" />
+                                                    <input value={s.meaning} onChange={e => {
+                                                        const n = [...editFormData.synonyms]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                    }} className="flex-1 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Meaning" />
+                                                    <button onClick={() => {
+                                                        const n = editFormData.synonyms.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, synonyms: n });
+                                                    }} className="text-red-400 hover:text-red-600">×</button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => setEditFormData({ ...editFormData, synonyms: [...editFormData.synonyms, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
+                                        </div>
+
+                                        {/* Derivatives Edit */}
+                                        <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">派生語 (Derivatives)</label>
+                                            {editFormData.derivatives.map((d, i) => (
+                                                <div key={i} className="flex gap-2 mb-2 items-center">
+                                                    <input value={d.word} onChange={e => {
+                                                        const n = [...editFormData.derivatives]; n[i].word = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                    }} className="w-1/3 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Word" />
+                                                    <input value={d.partOfSpeech} onChange={e => {
+                                                        const n = [...editFormData.derivatives]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                    }} className="w-1/4 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="POS" />
+                                                    <input value={d.meaning} onChange={e => {
+                                                        const n = [...editFormData.derivatives]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                    }} className="flex-1 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Meaning" />
+                                                    <button onClick={() => {
+                                                        const n = editFormData.derivatives.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, derivatives: n });
+                                                    }} className="text-red-400 hover:text-red-600">×</button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => setEditFormData({ ...editFormData, derivatives: [...editFormData.derivatives, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
+                                        </div>
                                         <div className="flex justify-end gap-2 mt-2">
                                             <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
                                             <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold text-sm">保存</button>
@@ -1438,6 +1522,76 @@ export default function DeckPage() {
                                                         >
                                                             <span>🪄</span> 例文を生成
                                                         </button>
+                                                    )}
+
+                                                    {/* Synonyms & Derivatives Section */}
+                                                    {expandedListItems[card.id!] && (
+                                                        <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2">
+
+                                                            {/* Generate Button if missing */}
+                                                            {(!card.synonyms && !card.derivatives) && (
+                                                                <button
+                                                                    onClick={() => card.id && handleGenerateExtras(card.id, 'all')}
+                                                                    className="w-full py-2 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 transition-all flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800/50"
+                                                                >
+                                                                    <span>✨</span> 類義語・派生語を生成 (1コイン)
+                                                                </button>
+                                                            )}
+
+                                                            {/* Lists */}
+                                                            {(card.synonyms || card.derivatives) && (
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                                    {/* Synonyms */}
+                                                                    <div>
+                                                                        <div className="flex items-center justify-between mb-3">
+                                                                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">類義語 (Synonyms)</h4>
+                                                                            {card.synonyms && card.synonyms.length > 0 && (
+                                                                                <button onClick={() => card.id && handleGenerateExtras(card.id, 'synonyms')} className="text-[10px] text-indigo-500 hover:underline">
+                                                                                    ↻ 再生成 (🪙1)
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {!card.synonyms || card.synonyms.length === 0 ? (
+                                                                            <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                        ) : (
+                                                                            <ul className="space-y-2">
+                                                                                {card.synonyms.map((s, i) => (
+                                                                                    <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
+                                                                                        <div className="font-bold text-indigo-600 dark:text-indigo-400">{s.word}</div>
+                                                                                        <div className="text-xs text-neutral-500 flex gap-2">
+                                                                                            <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{s.partOfSpeech}</span>
+                                                                                            <span>{s.meaning}</span>
+                                                                                        </div>
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        )}
+                                                                    </div>
+
+                                                                    {/* Derivatives */}
+                                                                    <div>
+                                                                        <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">派生語 (Derivatives)</h4>
+
+                                                                        {!card.derivatives || card.derivatives.length === 0 ? (
+                                                                            <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                        ) : (
+                                                                            <ul className="space-y-2">
+                                                                                {card.derivatives.map((d, i) => (
+                                                                                    <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
+                                                                                        <div className="font-bold text-purple-600 dark:text-purple-400">{d.word}</div>
+                                                                                        <div className="text-xs text-neutral-500 flex gap-2">
+                                                                                            <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{d.partOfSpeech}</span>
+                                                                                            <span>{d.meaning}</span>
+                                                                                        </div>
+                                                                                    </li>
+                                                                                ))}
+                                                                            </ul>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>

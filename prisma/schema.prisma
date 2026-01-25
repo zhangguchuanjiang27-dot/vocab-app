@@ -104,6 +104,9 @@ model WordCard {
     deck      Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
     isMastered Boolean  @default(false)
     createdAt DateTime @default(now())
+
+    synonyms    Json?  // 類義語: [{word, partOfSpeech, meaning}]
+    derivatives Json?  // 派生語: [{word, partOfSpeech, meaning}]
 }
 
 // 生成済み単語のキャッシュ辞書
