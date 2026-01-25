@@ -66,6 +66,13 @@ export default function DeckPage() {
     const [targetDeckId, setTargetDeckId] = useState<string>("");
     const [moveAction, setMoveAction] = useState<'copy' | 'move'>('copy');
     const [myDecks, setMyDecks] = useState<{ id: string, title: string }[]>([]);
+    const [credits, setCredits] = useState(0);
+
+    useEffect(() => {
+        if (session?.user) {
+            fetch("/api/user/credits").then(r => r.json()).then(d => setCredits(d.credits || 0));
+        }
+    }, [session]);
 
     useEffect(() => {
         if (showMoveModal) {
@@ -78,29 +85,51 @@ export default function DeckPage() {
         }
     }, [showMoveModal, deckId]);
 
-    const handleMoveWords = async () => {
+    const handleMoveWords = async (action: 'copy' | 'move') => {
         if (!targetDeckId) return;
+        const count = selectedWordIds.size;
+
+        if (action === 'copy') {
+            // 1 coin per word
+            if (credits < count) {
+                alert(`コインが足りません。\n必要: ${count}枚\n所持: ${credits}枚`);
+                return;
+            }
+            if (!confirm(`${count}単語をコピーしますか？\nコインを${count}枚消費します。`)) return;
+        } else {
+            if (!confirm(`${count}単語を移動しますか？`)) return;
+        }
+
+        setLoading(true);
 
         try {
+            // Check cost for copy first
+            if (action === 'copy') {
+                const creditRes = await fetch("/api/user/credits/consume", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount: count })
+                });
+                if (!creditRes.ok) {
+                    throw new Error("コインの消費に失敗しました");
+                }
+                const creditData = await creditRes.json();
+                setCredits(creditData.credits);
+            }
+
             const selectedWordsData = deck?.words.filter(w => w.id && selectedWordIds.has(w.id));
             if (!selectedWordsData || selectedWordsData.length === 0) return;
 
             // 1. Add to target deck
-            // To do this cleanly, we might need a specific endpoint or just use the PUT endpoint for the target deck
-            // We pass the word objects. The API handles creating new relations or words.
-            // Note: The existing API `PUT /api/decks/[id]` accepts { words: [...] }. 
-            // We need to make sure we strip IDs if we want 'new' instances, or keep them if we enter a relation logic.
-            // For simplicity in this app's context (often creating new word entries per deck), let's send them as 'new' words to the target to ensure independence, 
-            // OR if the backend supports linking, we could link. 
-            // Given previous `handleAddToExistingDeck` logic, it sends `words` body.
-
-            // Strip IDs to ensure deep copy/new creation in target deck (safest for this app structure)
             const wordsToTransfer = selectedWordsData.map(w => ({
                 word: w.word,
                 meaning: w.meaning,
                 example: w.example,
                 example_jp: w.example_jp,
                 otherExamples: w.otherExamples,
+                synonyms: w.synonyms, // Include synonyms
+                derivatives: w.derivatives, // Include derivatives
+                partOfSpeech: w.partOfSpeech
             }));
 
             const res = await fetch(`/api/decks/${targetDeckId}`, {
@@ -112,10 +141,7 @@ export default function DeckPage() {
             if (!res.ok) throw new Error("Failed to add words to target deck");
 
             // 2. If 'move', remove from current deck
-            if (moveAction === 'move') {
-                // We use handleBulkDelete logic but only for the selected IDs locally first, then call API?
-                // Actually `handleBulkDelete` calls API. We should probably just call the delete endpoint here for these IDs.
-                // Re-using delete logic:
+            if (action === 'move') {
                 await Promise.all(
                     Array.from(selectedWordIds).map(id =>
                         fetch(`/api/words/${id}`, { method: "DELETE" })
@@ -129,15 +155,17 @@ export default function DeckPage() {
                 }) : null);
             }
 
-            alert(`単語を${moveAction === 'copy' ? 'コピー' : '移動'}しました！`);
+            alert(`単語を${action === 'copy' ? 'コピー' : '移動'}しました！\n${action === 'copy' ? `(コイン -${count})` : ''}`);
             setShowMoveModal(false);
             setTargetDeckId("");
             setIsSelectionMode(false);
             setSelectedWordIds(new Set());
 
-        } catch (e) {
+        } catch (e: any) {
             console.error(e);
-            alert("エラーが発生しました。");
+            alert(`エラーが発生しました: ${e.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -1623,6 +1651,67 @@ export default function DeckPage() {
                     )}
                 </div>
             </main >
+
+            {/* Move/Copy Modal */}
+            {showMoveModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 scale-100 flex flex-col gap-6">
+                        <div>
+                            <h3 className="text-2xl font-black mb-2 flex items-center gap-2">
+                                <span>📤</span> 移動 / コピー
+                            </h3>
+                            <p className="text-neutral-500 text-sm">
+                                選択した <span className="font-bold text-neutral-900 dark:text-white">{selectedWordIds.size}</span> 件の単語を操作します。
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">移動先の単語帳</label>
+                                <select
+                                    value={targetDeckId}
+                                    onChange={(e) => setTargetDeckId(e.target.value)}
+                                    className="w-full p-4 rounded-xl bg-neutral-100 dark:bg-neutral-800 border-none font-bold text-neutral-700 dark:text-neutral-200 focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    <option value="">選択してください...</option>
+                                    {myDecks.map(d => (
+                                        <option key={d.id} value={d.id}>{d.title}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="flex flex-col gap-3 pt-2">
+                                <button
+                                    disabled={!targetDeckId}
+                                    onClick={() => handleMoveWords('move')}
+                                    className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                                >
+                                    <span>➡️ 単語を移動する</span>
+                                </button>
+
+                                <button
+                                    disabled={!targetDeckId}
+                                    onClick={() => handleMoveWords('copy')}
+                                    className="w-full py-4 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white border-2 border-neutral-200 dark:border-neutral-700 rounded-xl font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                                >
+                                    <span>📋 コピーする</span>
+                                    <span className="text-xs font-normal px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full border border-yellow-200 dark:border-yellow-800">
+                                        🪙 -{selectedWordIds.size}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setShowMoveModal(false)}
+                            className="mt-2 text-neutral-400 font-bold text-sm hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
+                        >
+                            キャンセル
+                        </button>
+                    </div>
+                </div>
+            )}
+
         </div >
     );
 }
