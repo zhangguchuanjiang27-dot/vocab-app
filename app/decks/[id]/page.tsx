@@ -71,8 +71,8 @@ export default function DeckPage() {
         if (showMoveModal) {
             // Fetch user's decks for the move modal
             fetch("/api/decks").then(res => res.json()).then(data => {
-                if (data.decks) {
-                    setMyDecks(data.decks.filter((d: any) => d.id !== deckId)); // Exclude current deck
+                if (Array.isArray(data)) {
+                    setMyDecks(data.filter((d: any) => d.id !== deckId)); // Exclude current deck
                 }
             }).catch(console.error);
         }
