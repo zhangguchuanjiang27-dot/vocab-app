@@ -48,8 +48,8 @@ model User {
   credits       Int       @default(100)
   xp            Int       @default(0)  // 総獲得経験値
   weeklyXp      Int       @default(0)  // 週間経験値（ランキング用）
-  // lastLoginAt   DateTime? // 最終ログイン日時
-  // loginStreak   Int       @default(0)  // 連続ログイン日数
+  lastLoginAt   DateTime? // 最終ログイン日時
+  loginStreak   Int       @default(0)  // 連続ログイン日数
   badges        UserBadge[]
 }
 
