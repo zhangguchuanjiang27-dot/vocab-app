@@ -88,14 +88,41 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">Profile Image URL</label>
-                                        <input
-                                            type="text"
-                                            value={image}
-                                            onChange={(e) => setImage(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-xs font-mono"
-                                            placeholder="画像URLを入力"
-                                        />
+                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">Profile Image</label>
+                                        <div className="flex flex-col gap-2">
+                                            <input
+                                                type="text"
+                                                value={image}
+                                                onChange={(e) => setImage(e.target.value)}
+                                                className="w-full px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-xs font-mono mb-2"
+                                                placeholder="Or enter image URL..."
+                                            />
+                                            <div className="flex items-center gap-2">
+                                                <label className="cursor-pointer px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300 transition-colors flex items-center gap-2">
+                                                    <span>📁 Choose File</span>
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        className="hidden"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                if (file.size > 2 * 1024 * 1024) {
+                                                                    alert("画像サイズは2MB以下にしてください");
+                                                                    return;
+                                                                }
+                                                                const reader = new FileReader();
+                                                                reader.onloadend = () => {
+                                                                    setImage(reader.result as string);
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            }
+                                                        }}
+                                                    />
+                                                </label>
+                                                <span className="text-[10px] text-neutral-400">Max 2MB</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <button
