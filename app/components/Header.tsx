@@ -45,7 +45,10 @@ export default function Header({ initialCredits, session }: HeaderProps) {
                         {streak !== null && (
                             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
                                 <span className={streakUpdated ? "animate-bounce" : ""}>🔥</span>
-                                <span>{streak}</span>
+                                <span>
+                                    {streak}
+                                    <span className="ml-1 text-[10px] uppercase opacity-80">Day{streak !== 1 ? 's' : ''}</span>
+                                </span>
                             </div>
                         )}
 
