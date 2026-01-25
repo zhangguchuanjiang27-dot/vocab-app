@@ -31,6 +31,7 @@ import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
 import Link from "next/link";
 import { Providers } from "./providers";
+import Header from "./components/Header"; // Adjust import path
 
 export const metadata: Metadata = {
   title: "Voca - AI Flashcards",
@@ -55,48 +56,37 @@ export default async function RootLayout({
       select: { credits: true }
     });
     credits = user?.credits ?? 0;
+    credits = user?.credits ?? 0;
   }
+
+  // クライアントサイドでのストリーク取得用のコンポーネントを差し込むか、
+  // ヘッダー全体をClient Componentにするのが理想的。
+  // ここではサーバーサイドで初期値を取らず、Headerコンポーネントをクライアントコンポーネントとして分離するリファクタリングをするのが本来だが、
+  // 既存構造を維持しつつ、単純にクライアントコンポーネント (StreakCounter) を埋め込む形にする。
+  // まだStreakCounterがないため、直接は書けない。
+  // なので、Providersの中にクライアントロジックを持つヘッダー内パーツを作成して配置するのが良い。
+
+  // しかし、今回は `app/layout.tsx` が Server Component であるため、
+  // ヘッダー部分を Client Component `Header.tsx` に切り出すのがベストプラクティス。
+  // 時間短縮のため、ヘッダー内の動的パーツ (クレジット、ユーザーアイコンなど) を含む部分を
+  // `app/components/Header.tsx` に切り出して、そこでストリーク取得を行う。
+
 
   return (
     <html lang="ja">
       <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col`}>
         <Providers>
+          {/* Server Component から呼び出す Client Component として Header を実装 */}
+          {/* Client Componentを作成していないため、一旦 layout.tsx 内で完結しているこのナビゲーションバーを
+                そのまま使うが、ストリークを表示するために、
+                StreakDisplay という小さな Client Component を作ってここに埋め込むのが一番手軽。
+            */}
           <nav className="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-50">
-            <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-              <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-2">
-                <span className="text-2xl">⚡️</span>
-                <span>Voca</span>
-              </Link>
-
-              <div className="flex items-center gap-6">
-                {session ? (
-                  <>
-                    {/* ダッシュボード機能がまだ実装されていない場合はリンクを隠すか、Homeを兼ねる */}
-                    {/* <Link href="/dashboard" className="text-sm font-bold text-neutral-500 hover:text-black dark:hover:text-white transition-colors">単語帳一覧</Link> */}
-
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800">
-                      <span className="text-lg">🪙</span>
-                      <span className="font-bold font-mono text-sm">{credits}</span>
-                      <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1">
-                        追加
-                      </Link>
-                    </div>
-                    <div className="flex items-center gap-3 pl-3 border-l border-neutral-200 dark:border-neutral-800">
-                      {session.user?.image && (
-                        <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-200 dark:border-neutral-800" />
-                      )}
-                      <Link href="/api/auth/signout" className="text-xs font-bold text-neutral-500 hover:text-black dark:hover:text-white">
-                        ログアウト
-                      </Link>
-                    </div>
-                  </>
-                ) : (
-                  <Link href="/api/auth/signin" className="text-sm font-bold bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full hover:opacity-80 transition-opacity">
-                    ログイン
-                  </Link>
-                )}
-              </div>
-            </div>
+            {/* ... nav content ... */}
+            {/* 実際の実装: 既存のlayoutのnavをcomponents/Header.tsxに移設するよう指示し、それをインポート配置する。*/}
+            {/* しかしファイル数が増えるので、簡易的に StreakBadge コンポーネントを作って配置する。 */}
+            {/* ここで直接インポートできないため、一旦ファイルを書き換えて別ファイル (Header.tsx) を作成し、layout.tsxからはそれを呼ぶ形にするのが最もクリーン。 */}
+            <Header initialCredits={credits} session={session} />
           </nav>
 
           <main className="flex-1">
