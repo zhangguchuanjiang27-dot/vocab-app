@@ -68,8 +68,9 @@ export default async function ProfilePage() {
                                     👤
                                 </div>
                             )}
-                            <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full border-2 border-white dark:border-neutral-800">
-                                LV.{level}
+                            <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full border-2 border-white dark:border-neutral-800 flex items-center gap-1">
+                                <span>⭐</span>
+                                <span>{level}</span>
                             </div>
                         </div>
 
