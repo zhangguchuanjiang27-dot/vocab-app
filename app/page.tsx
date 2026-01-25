@@ -208,6 +208,7 @@ export default function Home() {
 
       const newDeck = await res.json();
       setDeckTitle("");
+      setWords([]); // 保存後にリストをクリア
       alert(`"${newDeck.title}" を保存しました！`);
 
       // リスト更新
