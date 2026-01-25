@@ -659,7 +659,7 @@ export default function Home() {
                 <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <span className="text-2xl">🔥</span>
+                      <span className="text-2xl">⭐</span>
                       <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
                         {getLevelInfo(xp).level}
                       </div>
@@ -763,7 +763,7 @@ export default function Home() {
                   <div className="flex flex-col gap-4 sticky top-8">
                     <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
                       <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
-                        単語を入力
+                        単語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(Max 10 words)</span>
                       </label>
                       <textarea
                         className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
