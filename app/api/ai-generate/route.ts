@@ -151,6 +151,9 @@ export async function POST(req: Request) {
                   2. **roleの形式**: 必ず **「品詞(意味)」** としてください。
                      例: "名詞(資本)", "名詞(首都)", "形容詞(主要な)"
                   3. **品質**: 自然で実用的な英語（10-15語以上）。
+                  4. **和訳の制約**: 和訳には **絶対に英単語やカタカナ英語を含めないでください**。完全に日本語（漢字・ひらがな・カタカナ）のみで記述してください。
+                     ダメな例: "彼はcapitalを持っていなかった" / "キャピタルゲインを得た"
+                     良い例: "彼は資本を持っていなかった" / "投資による利益を得た"
                   
                   【出力形式】
                   {
@@ -158,8 +161,8 @@ export async function POST(req: Request) {
                       {
                         "word": "capital",
                         "otherExamples": [
-                          { "role": "名詞(首都)", "text": "...", "translation": "..." },
-                          { "role": "名詞(資本)", "text": "...", "translation": "..." }
+                          { "role": "名詞(首都)", "text": "Tokyo is the capital of Japan.", "translation": "東京は日本の首都です。" },
+                          { "role": "名詞(資本)", "text": "They need more capital to start the business.", "translation": "彼らはビジネスを始めるためにより多くの資本を必要としています。" }
                         ]
                       }
                     ]
