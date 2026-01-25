@@ -56,7 +56,6 @@ export default async function RootLayout({
       select: { credits: true }
     });
     credits = user?.credits ?? 0;
-    credits = user?.credits ?? 0;
   }
 
   // クライアントサイドでのストリーク取得用のコンポーネントを差し込むか、
