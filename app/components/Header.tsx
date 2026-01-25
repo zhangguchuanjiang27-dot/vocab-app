@@ -14,6 +14,7 @@ export default function Header({ initialCredits, session }: HeaderProps) {
     const [streakUpdated, setStreakUpdated] = useState(false);
 
     useEffect(() => {
+        /*
         if (session?.user) {
             fetch("/api/user/streak")
                 .then(res => res.json())
@@ -29,6 +30,7 @@ export default function Header({ initialCredits, session }: HeaderProps) {
                 })
                 .catch(console.error);
         }
+        */
     }, [session]);
 
     return (
