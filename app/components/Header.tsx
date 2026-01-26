@@ -40,10 +40,12 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                     <span>Voca</span>
                 </Link>
 
-                <Link href="/ranking" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
-                    <span className="group-hover:scale-110 transition-transform">👑</span>
-                    <span>Ranking</span>
-                </Link>
+                {session && (
+                    <Link href="/ranking" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
+                        <span className="group-hover:scale-110 transition-transform">👑</span>
+                        <span>Ranking</span>
+                    </Link>
+                )}
             </div>
 
             <div className="flex items-center gap-6">

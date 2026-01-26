@@ -14,12 +14,17 @@ type RankingUser = {
 type Period = 'lifetime' | 'yearly' | 'monthly' | 'weekly';
 
 export default function RankingPage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [period, setPeriod] = useState<Period>('lifetime');
     const [rankings, setRankings] = useState<RankingUser[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (status === 'unauthenticated') {
+            setLoading(false);
+            return;
+        }
+
         const fetchRanking = async () => {
             setLoading(true);
             try {
@@ -34,8 +39,29 @@ export default function RankingPage() {
                 setLoading(false);
             }
         };
-        fetchRanking();
-    }, [period]);
+        if (status === 'authenticated') {
+            fetchRanking();
+        }
+    }, [period, status]);
+
+    if (status === 'loading') {
+        return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    }
+
+    if (status === 'unauthenticated') {
+        return (
+            <div className="min-h-screen bg-neutral-50 dark:bg-black p-6 flex flex-col items-center justify-center text-center font-sans">
+                <h1 className="text-3xl font-black mb-4">👑 Word Master Ranking</h1>
+                <p className="text-neutral-500 mb-8">ランキングを見るにはログインが必要です。</p>
+                <Link href="/api/auth/signin" className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
+                    ログインしてランキングを見る
+                </Link>
+                <Link href="/" className="mt-8 text-sm text-neutral-400 hover:text-neutral-600">
+                    トップに戻る
+                </Link>
+            </div>
+        );
+    }
 
     const getPeriodLabel = (p: Period) => {
         switch (p) {
