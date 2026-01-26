@@ -41,15 +41,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
+        // 型定義エラー回避のためのキャスト
+        const dbUser = user as any;
+
         // 既に有効なサブスクリプションを持っている場合はポータルへ誘導
-        // (簡易判定: stripeCustomerIdがあり、subscriptionStatusがactiveの場合)
-        // ※ 本来はstripe上でステータスを確認するのが確実だが、ここではDB情報のキャッシュを信じる
-        const hasActiveSubscription = user.stripeCustomerId && user.subscriptionStatus === 'active';
+        const hasActiveSubscription = dbUser.stripeCustomerId && dbUser.subscriptionStatus === 'active';
 
         if (hasActiveSubscription) {
-            console.log("Redirecting to billing portal for existing customer:", user.stripeCustomerId);
+            console.log("Redirecting to billing portal for existing customer:", dbUser.stripeCustomerId);
             const portalSession = await stripe.billingPortal.sessions.create({
-                customer: user.stripeCustomerId!,
+                customer: dbUser.stripeCustomerId,
                 return_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/`,
             });
             return NextResponse.json({ url: portalSession.url });
@@ -82,8 +83,8 @@ export async function POST(req: Request) {
         };
 
         // 既存のCustomer IDがある場合は再利用（新規作成しない）
-        if (user.stripeCustomerId) {
-            checkoutSessionParams.customer = user.stripeCustomerId;
+        if (dbUser.stripeCustomerId) {
+            checkoutSessionParams.customer = dbUser.stripeCustomerId;
         } else {
             checkoutSessionParams.customer_email = session.user.email || undefined;
         }
