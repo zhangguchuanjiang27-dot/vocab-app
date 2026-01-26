@@ -46,7 +46,7 @@ export async function POST(req: Request) {
                 console.log(`Processing subscription for UserID: ${userId}, Plan: ${plan}`);
 
                 // Stripeからサブスクリプション詳細を取得して期間終了情報を得る
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+                const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
 
                 try {
                     // ユーザー情報を更新（Basicプランなら500クレジット付与などもここで行うか、別途invoiceイベントで行う）
