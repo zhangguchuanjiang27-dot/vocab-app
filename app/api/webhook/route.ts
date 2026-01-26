@@ -100,51 +100,29 @@ export async function POST(req: Request) {
         }
     }
 
-    // --- 請求書支払い成功（サブスク更新・初回含む） ---
-    // これが最も確実に届くイベント。ここで期間更新とコイン付与を行うのがベストプラクティス。
-    else if (event.type === "invoice.payment_succeeded") {
-        const invoice = event.data.object as any;
-        const subscriptionId = invoice.subscription as string;
-        const customerId = invoice.customer as string;
+    // --- 請求書支払い成功 または サブスクリプション更新（アップグレード・ダウングレード） ---
+    else if (event.type === "invoice.payment_succeeded" || event.type === "customer.subscription.updated") {
+        const object = event.data.object as any;
+        const subscriptionId = (object.subscription as string) || (object.id as string);
+        const customerId = object.customer as string;
 
         if (subscriptionId) {
-            console.log(`Processing invoice payment for subscription: ${subscriptionId}`);
+            console.log(`Processing ${event.type} for subscription: ${subscriptionId}`);
 
-            // ユーザーをStripe Customer IDから特定する
-            // ※注意: PrismaスキーマのUserモデルで stripeCustomerId に @unique が付いている必要がある
-            // 現在は付いていないかもしれないので、userIdをメタデータから探すか、検索する必要がある。
-            // しかしInvoiceにはmetadataが含まれないことが多い（Subscriptionから継承されない設定の場合）。
-            // 確実なのは "stripeCustomerId" でユーザーを検索すること。
-
-            // 1. Stripe Customer IDでユーザー検索
             let user = await prisma.user.findFirst({
                 where: { stripeCustomerId: customerId } as any
             }) as any;
 
-            // 見つからない場合、メールアドレスで検索 (初回決済時のズレ対策)
-            if (!user && invoice.customer_email) {
-                console.log(`User not found by Stripe ID. Trying email: ${invoice.customer_email}`);
+            if (!user && object.customer_email) {
                 user = await prisma.user.findUnique({
-                    where: { email: invoice.customer_email }
+                    where: { email: object.customer_email }
                 });
-
-                // メールで見つかったら、今後のためにStripe IDを保存しておく
-                if (user) {
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: { stripeCustomerId: customerId } as any
-                    });
-                }
             }
 
             if (user) {
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
 
-                // プランの特定
-                // 1. Subscriptionのメタデータを最優先
                 let planName = subscription.metadata?.plan;
-
-                // 2. なければPrice IDから判別（環境変数のIDと比較）
                 if (!planName) {
                     const priceId = subscription.items.data[0]?.price.id;
                     if (priceId === process.env.STRIPE_PRICE_ID_BASIC) {
@@ -152,9 +130,6 @@ export async function POST(req: Request) {
                     } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
                         planName = 'pro';
                     } else {
-                        // ユーザーが登録時のプランを保持していた場合、それを維持
-                        // または、もしメタデータもPriceIDも特定できなければ、
-                        // "basic" としてフォールバックさせる（※開発時の柔軟性のため）
                         planName = user.subscriptionPlan;
                     }
                 }
@@ -163,7 +138,6 @@ export async function POST(req: Request) {
                     subscriptionStatus: subscription.status,
                 };
 
-                // 日付の安全な変換
                 if (subscription.current_period_end) {
                     const periodEnd = new Date(subscription.current_period_end * 1000);
                     if (!isNaN(periodEnd.getTime())) {
@@ -173,9 +147,7 @@ export async function POST(req: Request) {
 
                 if (planName) {
                     updateData.subscriptionPlan = planName;
-                    // 更新ごとに500枚にリセット（または加算したい場合は increment: 500）
-                    // 仕様: 「毎月500枚付与」＝「500枚になる」なのか「+500」なのか。
-                    // 今回は「500枚セット」で実装（繰り越しなしの場合）。
+                    // プラン変更時や更新時、そのプランに応じたクレジットをセット（ProはUnlimitedなので実質無視されますが整合性のためにセット）
                     if (planName === 'basic' || planName === 'pro') {
                         updateData.credits = 500;
                     }
@@ -185,9 +157,7 @@ export async function POST(req: Request) {
                     where: { id: user.id },
                     data: updateData
                 });
-                console.log(`Successfully renewed subscription for user ${user.id}`);
-            } else {
-                console.error(`User not found for Stripe Customer ID: ${customerId}`);
+                console.log(`Successfully sync subscription for user ${user.id} (Plan: ${planName})`);
             }
         }
     }

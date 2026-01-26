@@ -194,6 +194,14 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         </button>
                                     </div>
                                     <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">{user.email}</p>
+                                    {user.stripeCustomerId && (
+                                        <button
+                                            onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'pro' : 'basic')}
+                                            className="text-xs font-bold text-indigo-500 hover:text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-lg mb-4 flex items-center gap-2 transition-all"
+                                        >
+                                            <span>⚙️</span> Manage Plan / Upgrade
+                                        </button>
+                                    )}
                                 </>
                             )}
 
