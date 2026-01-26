@@ -76,7 +76,7 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800">
                             <span className="text-lg">🪙</span>
                             <span className="font-bold font-mono text-sm">
-                                {plan === 'pro' ? "Unlimited" : initialCredits}
+                                {plan === 'pro' ? "無制限" : initialCredits}
                             </span>
                             <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1">
                                 追加
