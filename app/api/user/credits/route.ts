@@ -10,18 +10,17 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
+    const user = (await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
             credits: true,
             xp: true,
             subscriptionPlan: true,
-            // @ts-ignore
             badges: {
                 include: { badge: true }
             }
-        },
-    });
+        } as any,
+    })) as any;
 
     return NextResponse.json({
         credits: user?.credits ?? 0,

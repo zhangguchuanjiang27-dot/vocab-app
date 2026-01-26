@@ -17,13 +17,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
+        const user = (await prisma.user.findUnique({
             where: { id: session.user.id },
-            select: { credits: true }
-        });
+            select: {
+                credits: true,
+                subscriptionPlan: true,
+                subscriptionStatus: true
+            } as any
+        })) as any;
 
-        if (!user || user.credits < cost) {
+        const isUnlimited = user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
+
+        if (!user || (!isUnlimited && user.credits < cost)) {
             return NextResponse.json({ error: "Insufficient credits", currentCredits: user?.credits }, { status: 403 });
+        }
+
+        // Proプランならクレジットを減らさずに成功を返す
+        if (isUnlimited) {
+            return NextResponse.json({ success: true, credits: user.credits });
         }
 
         const updatedUser = await prisma.user.update({
