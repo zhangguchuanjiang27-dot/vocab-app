@@ -785,7 +785,7 @@ export default function Home() {
                       <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">Coins</p>
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-neutral-900 dark:text-neutral-100">
-                          {userPlan === 'pro' ? "Unlimited" : (credits ?? "...")}
+                          {userPlan === 'pro' ? "無制限" : (credits ?? "...")}
                         </p>
                       </div>
                     </div>
