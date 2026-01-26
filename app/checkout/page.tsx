@@ -127,8 +127,8 @@ export default function CheckoutPage() {
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-indigo-500/20 dark:bg-indigo-100 text-indigo-300 dark:text-indigo-600 flex items-center justify-center shrink-0 text-xs font-bold">✓</div>
                 <div>
-                  <p className="font-bold text-sm">無制限に使い放題</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">クレジットを気にせず、好きなだけ生成。</p>
+                  <p className="font-bold text-sm">毎月 2,000 クレジット</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">約2,000回分の生成が可能。ヘビーユーザー向け。</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
