@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { prisma } from "@/app/lib/prisma";
+import { checkBadges } from "@/lib/gamification";
 
 // POSTで受け取るデータの型を定義
 interface WordInput {
@@ -90,11 +91,16 @@ export async function POST(req: Request) {
       include: { words: true }
     });
 
+    // バッジ獲得チェック（非同期で実行）
+    if (userId) {
+      checkBadges(userId).catch(console.error);
+    }
+
     return NextResponse.json(deck);
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
     return NextResponse.json({
-      error: `Failed to create deck: ${err instanceof Error ? err.message : String(err)}`
+      error: `Failed to create deck: ${err.message}`
     }, { status: 500 });
   }
 }

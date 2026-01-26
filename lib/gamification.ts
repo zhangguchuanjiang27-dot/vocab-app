@@ -66,11 +66,18 @@ const BADGE_DEFINITIONS = [
         condition: "Deck count >= 10"
     },
     {
-        name: "millionaire",
-        displayName: "富豪",
-        description: "コインを1000枚以上保有しています",
-        icon: "💎",
-        condition: "Coins >= 1000"
+        name: "deck_collector",
+        displayName: "コレクター",
+        description: "リストを100個以上作成しました",
+        icon: "🏅",
+        condition: "Deck count >= 100"
+    },
+    {
+        name: "night_owl",
+        displayName: "夜更かし",
+        description: "深夜（2時〜5時）に学習しました",
+        icon: "🦉",
+        condition: "Active between 2am and 5am"
     },
     {
         name: "level_5",
@@ -168,11 +175,6 @@ export async function checkBadges(userId: string) {
 
     if (!user) return;
 
-    // 既に持っているバッジのIDリスト
-    const ownedBadgeIds = new Set();
-    // Note: user.badges は UserBadge[] なので、そこから badgeId を引くために少しロジックが必要
-    // しかし prisma.badge.findMany で name から ID を引く方が楽かも
-
     // バッジ定義を取得
     const badges = await (prisma as any).badge.findMany();
     const badgeMap = new Map(badges.map((b: any) => [b.name, b]));
@@ -188,15 +190,16 @@ export async function checkBadges(userId: string) {
 
     // --- 各バッジの条件判定 ---
 
-    // 1. 💎 富豪 (credits >= 1000)
-    if (!ownedBadgeNames.has("millionaire") && user.credits >= 1000) {
-        newBadges.push("millionaire");
-    }
-
-    // 2. 📚 図書館長 (decks >= 10)
+    // 1. 📚 図書館長 (decks >= 10)
     // @ts-ignore
     if (!ownedBadgeNames.has("librarian") && user._count.decks >= 10) {
         newBadges.push("librarian");
+    }
+
+    // 2. 🏅 コレクター (decks >= 100)
+    // @ts-ignore
+    if (!ownedBadgeNames.has("deck_collector") && user._count.decks >= 100) {
+        newBadges.push("deck_collector");
     }
 
     // 3. 🦉 夜更かし (現在時刻が 02:00 - 05:00)
