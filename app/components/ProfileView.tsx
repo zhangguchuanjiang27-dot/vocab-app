@@ -166,14 +166,31 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex items-center justify-center sm:justify-start gap-4 mb-1">
+                                    <div className="flex items-center justify-center sm:justify-start gap-4 mb-2">
                                         <h1 className="text-3xl font-black text-neutral-900 dark:text-white truncate">{user.name}</h1>
+
+                                        {/* Plan Badge */}
+                                        <div className={`
+                                            px-3 py-1 rounded-full border text-xs font-black tracking-widest uppercase
+                                            ${user.subscriptionPlan === 'pro'
+                                                ? 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                                                : user.subscriptionPlan === 'basic'
+                                                    ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                                                    : 'bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                                            }
+                                        `}>
+                                            {user.subscriptionPlan || 'FREE'}
+                                        </div>
+
                                         <button
                                             onClick={() => setIsEditing(true)}
-                                            className="text-indigo-600 hover:text-indigo-500 text-sm font-bold flex items-center gap-1"
+                                            className="text-neutral-400 hover:text-indigo-500 transition-colors"
+                                            title="Edit Profile"
                                         >
-                                            <span>✏️</span>
-                                            <span>Edit</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                                                <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" />
+                                                <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z" />
+                                            </svg>
                                         </button>
                                     </div>
                                     <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">{user.email}</p>

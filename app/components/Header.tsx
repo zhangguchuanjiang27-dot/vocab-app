@@ -60,6 +60,19 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                             </div>
                         )}
 
+                        {/* Plan Badge */}
+                        <div className={`
+                            hidden sm:flex items-center px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase
+                            ${plan === 'pro'
+                                ? 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                                : plan === 'basic'
+                                    ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                                    : 'bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                            }
+                        `}>
+                            {plan || 'FREE'}
+                        </div>
+
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800">
                             <span className="text-lg">🪙</span>
                             <span className="font-bold font-mono text-sm">
