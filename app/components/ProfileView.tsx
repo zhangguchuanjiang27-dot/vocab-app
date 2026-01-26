@@ -196,7 +196,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">{user.email}</p>
                                     {user.stripeCustomerId && (
                                         <button
-                                            onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'pro' : 'basic')}
+                                            onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'basic' : 'pro')}
                                             className="text-xs font-bold text-indigo-500 hover:text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-lg mb-4 flex items-center gap-2 transition-all"
                                         >
                                             <span>⚙️</span> Manage Plan / Upgrade
@@ -214,7 +214,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Coins</div>
                                     <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                                        {user.subscriptionPlan === 'pro' ? "無制限" : user.credits.toLocaleString()}
+                                        {user.subscriptionPlan === 'unlimited' ? "無制限" : user.credits.toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">

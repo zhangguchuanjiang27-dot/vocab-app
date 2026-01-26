@@ -69,8 +69,10 @@ export async function POST(req: Request) {
                 if (plan) {
                     updateData.subscriptionPlan = plan;
                     // 初回のみここで付与（更新時はinvoiceイベントで）
-                    if (plan === 'basic' || plan === 'pro') {
+                    if (plan === 'basic') {
                         updateData.credits = 500;
+                    } else if (plan === 'pro') {
+                        updateData.credits = 2000;
                     }
                 }
 
@@ -131,8 +133,14 @@ export async function POST(req: Request) {
                 const updateData: any = {
                     subscriptionStatus: subscription.status,
                     subscriptionPlan: planName,
-                    credits: 500, // 支払い成功時にのみ500枚を付与・リセット
                 };
+
+                // 支払い成功時にプランに応じたクレジットを付与・リセット
+                if (planName === 'basic') {
+                    updateData.credits = 500;
+                } else if (planName === 'pro') {
+                    updateData.credits = 2000;
+                }
 
                 if (subscription.current_period_end) {
                     updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);

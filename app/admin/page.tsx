@@ -98,11 +98,17 @@ export default function AdminPage() {
                                     <select
                                         value={user.subscriptionPlan || ""}
                                         onChange={(e) => updateUser(user.id, { subscriptionPlan: e.target.value || null })}
-                                        className={`text-xs font-bold px-2 py-1 rounded ${user.subscriptionPlan === 'pro' ? 'bg-indigo-100 text-indigo-600' : user.subscriptionPlan === 'basic' ? 'bg-emerald-100 text-emerald-600' : 'bg-neutral-100 text-neutral-400'}`}
+                                        className={`text-xs font-bold px-2 py-1 rounded 
+                                            ${user.subscriptionPlan === 'unlimited' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400'
+                                                : user.subscriptionPlan === 'pro' ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400'
+                                                    : user.subscriptionPlan === 'basic' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400'
+                                                        : 'bg-neutral-100 text-neutral-400 dark:bg-neutral-800'}`
+                                        }
                                     >
                                         <option value="">FREE</option>
                                         <option value="basic">BASIC</option>
                                         <option value="pro">PRO</option>
+                                        <option value="unlimited">UNLIMITED</option>
                                     </select>
                                 </td>
                                 <td className="px-6 py-4">

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
   const userCredits = user?.credits ?? 0;
   // @ts-ignore
-  const isUnlimited = user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
+  const isUnlimited = user?.subscriptionPlan === "unlimited" && user?.subscriptionStatus === "active";
 
   // 無制限プランでない場合のみクレジット残高チェック
   if (!user || (!isUnlimited && userCredits <= 0)) {
