@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     // --- サブスクリプション更新（解約予約・アップグレードなど） ---
     // ここではコインはいじらず、状態（ステータスや期限）だけを同期する
     else if (event.type === "customer.subscription.updated") {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
 
         console.log(`Processing subscription update: ${subscription.id} (Status: ${subscription.status})`);
@@ -174,7 +174,7 @@ export async function POST(req: Request) {
     }
     // --- 契約期間終了（完全な解約） ---
     else if (event.type === "customer.subscription.deleted") {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
 
         console.log(`Processing subscription expiration/deletion: ${subscription.id}`);
