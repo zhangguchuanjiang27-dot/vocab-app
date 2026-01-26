@@ -186,9 +186,18 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total XP</div>
                                     <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Coins</div>
-                                    <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toLocaleString()}</div>
+                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl flex flex-col justify-center min-w-[100px]">
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">Coins</div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toLocaleString()}</div>
+                                        <button
+                                            onClick={() => document.getElementById('subscription-section')?.scrollIntoView({ behavior: 'smooth' })}
+                                            className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
+                                            title="Add Credits / Upgrade Plan"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Decks</div>
@@ -199,7 +208,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                     </div>
 
                     {/* Subscription Section */}
-                    <div className="mt-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
+                    <div id="subscription-section" className="mt-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
                         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
                             <div>
                                 <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
