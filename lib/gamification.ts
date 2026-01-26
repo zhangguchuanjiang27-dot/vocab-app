@@ -108,6 +108,20 @@ const BADGE_DEFINITIONS = [
 export async function initBadges() {
     // 1. 定義にないバッジを削除する（不要なバッジの掃除）
     const definedNames = BADGE_DEFINITIONS.map(b => b.name);
+
+    // まず、削除対象のバッジを持っているユーザーのデータを消す (外部キー制約回避)
+    const badgesToDelete = await (prisma as any).badge.findMany({
+        where: { name: { notIn: definedNames } }
+    });
+    const badgeIdsToDelete = badgesToDelete.map((b: any) => b.id);
+
+    if (badgeIdsToDelete.length > 0) {
+        await (prisma as any).userBadge.deleteMany({
+            where: { badgeId: { in: badgeIdsToDelete } }
+        });
+    }
+
+    // その後、バッジ定義自体を削除
     // @ts-ignore
     await (prisma as any).badge.deleteMany({
         where: {
