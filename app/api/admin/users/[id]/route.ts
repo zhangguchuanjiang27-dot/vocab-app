@@ -6,11 +6,11 @@ import { prisma } from "@/app/lib/prisma";
 // ユーザー情報更新API (管理者がプランなどを手動変更)
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const session = await getServerSession(authOptions);
-        const { id } = params;
+        const { id } = await params;
 
         // 管理者チェック
         const currentUser = await prisma.user.findUnique({
