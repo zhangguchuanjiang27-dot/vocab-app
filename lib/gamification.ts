@@ -61,15 +61,8 @@ const BADGE_DEFINITIONS = [
     {
         name: "librarian",
         displayName: "図書館長",
-        description: "デッキを10個以上作成しました",
+        description: "デッキを100個以上作成しました",
         icon: "📚",
-        condition: "Deck count >= 10"
-    },
-    {
-        name: "deck_collector",
-        displayName: "コレクター",
-        description: "リストを100個以上作成しました",
-        icon: "🏅",
         condition: "Deck count >= 100"
     },
     {
@@ -204,19 +197,13 @@ export async function checkBadges(userId: string) {
 
     // --- 各バッジの条件判定 ---
 
-    // 1. 📚 図書館長 (decks >= 10)
+    // 1. 📚 図書館長 (decks >= 100)
     // @ts-ignore
-    if (!ownedBadgeNames.has("librarian") && user._count.decks >= 10) {
+    if (!ownedBadgeNames.has("librarian") && user._count.decks >= 100) {
         newBadges.push("librarian");
     }
 
-    // 2. 🏅 コレクター (decks >= 100)
-    // @ts-ignore
-    if (!ownedBadgeNames.has("deck_collector") && user._count.decks >= 100) {
-        newBadges.push("deck_collector");
-    }
-
-    // 3. 🦉 夜更かし (現在時刻が 02:00 - 05:00)
+    // 2. 🦉 夜更かし (現在時刻が 02:00 - 05:00)
     // 日本時間(JST)を想定
     if (!ownedBadgeNames.has("night_owl")) {
         // サーバー時間の考慮が必要だが、簡易的にDateを使う
