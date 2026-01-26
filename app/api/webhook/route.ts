@@ -4,12 +4,14 @@ import Stripe from "stripe";
 import { prisma } from "@/app/lib/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: "2025-12-15.clover",
+    // apiVersion: "2025-12-15.clover", // STARTUP ERROR FIX: Use default SDK version
+    typescript: true,
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
+    console.log("🔔 Webhook received at /api/webhook");
     const body = await req.text();
     const headersList = await headers();
     const sig = headersList.get("stripe-signature") as string;
