@@ -50,13 +50,21 @@ export async function POST(req: Request) {
                 console.log(`Processing subscription checkout for UserID: ${userId}, Plan: ${plan}`);
 
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
+                console.log(`Retrieved subscription status: ${subscription.status}`);
 
                 const updateData: any = {
                     stripeCustomerId: customerId,
                     subscriptionId: subscriptionId,
                     subscriptionStatus: subscription.status,
-                    subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
                 };
+
+                // 日付の安全な変換
+                if (subscription.current_period_end) {
+                    const periodEnd = new Date(subscription.current_period_end * 1000);
+                    if (!isNaN(periodEnd.getTime())) {
+                        updateData.subscriptionPeriodEnd = periodEnd;
+                    }
+                }
 
                 if (plan) {
                     updateData.subscriptionPlan = plan;
@@ -153,8 +161,15 @@ export async function POST(req: Request) {
 
                 const updateData: any = {
                     subscriptionStatus: subscription.status,
-                    subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
                 };
+
+                // 日付の安全な変換
+                if (subscription.current_period_end) {
+                    const periodEnd = new Date(subscription.current_period_end * 1000);
+                    if (!isNaN(periodEnd.getTime())) {
+                        updateData.subscriptionPeriodEnd = periodEnd;
+                    }
+                }
 
                 if (planName) {
                     updateData.subscriptionPlan = planName;
