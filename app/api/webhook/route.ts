@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         }
     }
 
-    // --- 請求書支払い成功 または サブスクリプション更新（アップグレード・ダウングレード） ---
+    // --- 請求書支払い成功 または サブスクリプション更新（アップグレード・解約予約） ---
     else if (event.type === "invoice.payment_succeeded" || event.type === "customer.subscription.updated") {
         const object = event.data.object as any;
         const subscriptionId = (object.subscription as string) || (object.id as string);
@@ -145,9 +145,11 @@ export async function POST(req: Request) {
                     }
                 }
 
-                if (planName) {
+                // 解約された場合、あるいはステータスが不活性な場合はプランをnullにする
+                if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+                    updateData.subscriptionPlan = null;
+                } else if (planName) {
                     updateData.subscriptionPlan = planName;
-                    // プラン変更時や更新時、そのプランに応じたクレジットをセット（ProはUnlimitedなので実質無視されますが整合性のためにセット）
                     if (planName === 'basic' || planName === 'pro') {
                         updateData.credits = 500;
                     }
@@ -157,9 +159,24 @@ export async function POST(req: Request) {
                     where: { id: user.id },
                     data: updateData
                 });
-                console.log(`Successfully sync subscription for user ${user.id} (Plan: ${planName})`);
+                console.log(`Successfully sync subscription for user ${user.id} (Status: ${subscription.status})`);
             }
         }
+    }
+    // --- 完全な解約（即時終了） ---
+    else if (event.type === "customer.subscription.deleted") {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        console.log(`Processing subscription deletion: ${subscription.id}`);
+
+        await prisma.user.updateMany({
+            where: { stripeCustomerId: customerId },
+            data: {
+                subscriptionPlan: null,
+                subscriptionStatus: 'canceled',
+            }
+        });
     }
 
     return NextResponse.json({ received: true });
