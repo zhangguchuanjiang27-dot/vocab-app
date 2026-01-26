@@ -24,14 +24,23 @@ export async function PATCH(
         const body = await req.json();
         const { subscriptionPlan, credits, role } = body;
 
+        const updateData: any = {
+            subscriptionPlan,
+            role,
+            subscriptionStatus: subscriptionPlan ? "active" : null,
+        };
+
+        // creditsが明示的に指定されている場合はそれを使用、
+        // そうでない場合で且つプランがbasic/proに変更されたなら500にセット
+        if (credits !== undefined) {
+            updateData.credits = credits;
+        } else if (subscriptionPlan === 'basic' || subscriptionPlan === 'pro') {
+            updateData.credits = 500;
+        }
+
         const updatedUser = await prisma.user.update({
             where: { id },
-            data: {
-                subscriptionPlan,
-                credits,
-                role,
-                subscriptionStatus: subscriptionPlan ? "active" : null,
-            } as any,
+            data: updateData,
         });
 
         return NextResponse.json(updatedUser);

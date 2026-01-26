@@ -7,9 +7,10 @@ import { Session } from "next-auth"; // Should import Type not value? Actually S
 type HeaderProps = {
     initialCredits: number;
     session: Session | null;
+    plan?: string | null;
 };
 
-export default function Header({ initialCredits, session }: HeaderProps) {
+export default function Header({ initialCredits, session, plan }: HeaderProps) {
     const [streak, setStreak] = useState<number | null>(null);
     const [streakUpdated, setStreakUpdated] = useState(false);
 
@@ -61,7 +62,9 @@ export default function Header({ initialCredits, session }: HeaderProps) {
 
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800">
                             <span className="text-lg">🪙</span>
-                            <span className="font-bold font-mono text-sm">{initialCredits}</span>
+                            <span className="font-bold font-mono text-sm">
+                                {plan === 'pro' ? "Unlimited" : initialCredits}
+                            </span>
                             <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1">
                                 追加
                             </Link>

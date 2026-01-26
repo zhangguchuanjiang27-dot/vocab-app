@@ -98,6 +98,7 @@ export default function Home() {
   };
 
   const [credits, setCredits] = useState<number | null>(null);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
   const [xp, setXp] = useState<number>(0);
   const [badges, setBadges] = useState<any[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -120,6 +121,7 @@ export default function Home() {
         }
 
         setCredits(data.credits);
+        setUserPlan(data.subscriptionPlan);
         setXp(newXp);
         setBadges(data.badges || []);
         setPrevLevel(newLevel);
@@ -782,7 +784,9 @@ export default function Home() {
                     <div>
                       <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">Coins</p>
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
+                        <p className="font-bold text-neutral-900 dark:text-neutral-100">
+                          {userPlan === 'pro' ? "Unlimited" : (credits ?? "...")}
+                        </p>
                       </div>
                     </div>
                   </div>

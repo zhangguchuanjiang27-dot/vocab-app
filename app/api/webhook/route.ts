@@ -61,9 +61,9 @@ export async function POST(req: Request) {
                         subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
                     };
 
-                    // Basicプランの場合、初期クレジット付与（毎月500回）
-                    if (plan === 'basic') {
-                        updateData.credits = { increment: 500 };
+                    // Basic または Pro プランの場合、初期クレジット付与
+                    if (plan === 'basic' || plan === 'pro') {
+                        updateData.credits = 500;
                     }
 
                     await prisma.user.update({

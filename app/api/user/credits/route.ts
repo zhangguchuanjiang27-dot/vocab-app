@@ -15,7 +15,8 @@ export async function GET() {
         select: {
             credits: true,
             xp: true,
-            // @ts-ignore: Prisma client might be outdated
+            subscriptionPlan: true,
+            // @ts-ignore
             badges: {
                 include: { badge: true }
             }
@@ -25,6 +26,7 @@ export async function GET() {
     return NextResponse.json({
         credits: user?.credits ?? 0,
         xp: user?.xp ?? 0,
+        subscriptionPlan: user?.subscriptionPlan,
         badges: user?.badges ?? []
     });
 }
