@@ -186,61 +186,15 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total XP</div>
                                     <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl flex flex-col justify-center min-w-[100px]">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-1">Coins</div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toLocaleString()}</div>
-                                        <button
-                                            onClick={() => document.getElementById('subscription-section')?.scrollIntoView({ behavior: 'smooth' })}
-                                            className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
-                                            title="Add Credits / Upgrade Plan"
-                                        >
-                                            +
-                                        </button>
-                                    </div>
+                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Coins</div>
+                                    <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">{user.credits.toLocaleString()}</div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Decks</div>
                                     <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Subscription Section */}
-                    <div id="subscription-section" className="mt-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                            <div>
-                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                                    <span>💎</span> Subscription Plan
-                                </h3>
-                                <p className="text-sm text-neutral-500 mt-1">
-                                    Current Plan: <span className="font-bold text-indigo-600">{user.subscriptionPlan ? user.subscriptionPlan.toUpperCase() : "FREE"}</span>
-                                </p>
-                            </div>
-
-                            {!user.subscriptionPlan ? (
-                                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                                    <button
-                                        onClick={() => handleSubscription('basic')}
-                                        className="flex-1 sm:flex-none px-6 py-3 bg-white dark:bg-neutral-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
-                                    >
-                                        <div className="text-xs uppercase tracking-wider mb-0.5">Basic Plan</div>
-                                        <div className="text-lg leading-none">¥300<span className="text-xs font-normal opacity-70">/mo</span></div>
-                                    </button>
-                                    <button
-                                        onClick={() => handleSubscription('pro')}
-                                        className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
-                                    >
-                                        <div className="text-xs uppercase tracking-wider mb-0.5 text-indigo-100">Pro Plan</div>
-                                        <div className="text-lg leading-none">¥980<span className="text-xs font-normal opacity-70">/mo</span></div>
-                                    </button>
-                                </div>
-                            ) : (
-                                <div className="px-6 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-sm font-bold text-neutral-500">
-                                    Plan Active
-                                </div>
-                            )}
                         </div>
                     </div>
                 </header>

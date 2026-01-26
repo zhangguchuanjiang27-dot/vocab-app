@@ -102,6 +102,8 @@ export default function Home() {
   const [badges, setBadges] = useState<any[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [prevLevel, setPrevLevel] = useState<number | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
   const fetchCredits = async () => {
     try {
@@ -127,17 +129,30 @@ export default function Home() {
     }
   };
 
-  const handlePurchase = async () => {
+  const handleSubscription = async (plan: 'basic' | 'pro') => {
+    setSubscriptionLoading(true);
     try {
-      const res = await fetch("/api/checkout", { method: "POST" });
-      if (!res.ok) throw new Error("Checkout failed");
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        alert(error.error || "エラーが発生しました");
+        setSubscriptionLoading(false);
+        return;
+      }
+
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       }
-    } catch (e) {
-      console.error("Purchase error:", e);
-      alert("決済ページへの移動に失敗しました");
+    } catch (error) {
+      console.error(error);
+      alert("通信エラーが発生しました");
+      setSubscriptionLoading(false);
     }
   };
 
@@ -376,6 +391,81 @@ export default function Home() {
               className="w-full py-3 rounded-xl bg-neutral-200 dark:bg-neutral-800 font-bold text-sm hover:opacity-80 transition-opacity"
             >
               キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Subscription Modal */}
+      {showSubscriptionModal && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200 backdrop-blur-sm">
+          <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+
+            <div className="relative z-10 text-center mb-8">
+              <h3 className="text-3xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Upgrade Plan</h3>
+              <p className="text-neutral-500 dark:text-neutral-400">
+                AI単語生成をもっと自由に。プランを選んでアップグレード。
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4 relative z-10 mb-8">
+              {/* Basic Plan */}
+              <div className="p-6 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-900/10 hover:border-emerald-500 transition-colors flex flex-col">
+                <div className="mb-4">
+                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Basic Plan</div>
+                  <div className="text-3xl font-black text-neutral-900 dark:text-white">¥300<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+                </div>
+                <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-500">✓</span> 毎月 500 クレジット
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-500">✓</span> 広告なし
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleSubscription('basic')}
+                  disabled={subscriptionLoading}
+                  className="w-full py-3 bg-white dark:bg-neutral-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+                >
+                  {subscriptionLoading ? "処理中..." : "Basicを選択"}
+                </button>
+              </div>
+
+              {/* Pro Plan */}
+              <div className="p-6 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/50 dark:bg-indigo-900/10 hover:border-indigo-500 transition-all scale-105 shadow-lg flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">POPULAR</div>
+                <div className="mb-4">
+                  <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Pro Plan</div>
+                  <div className="text-3xl font-black text-neutral-900 dark:text-white">¥980<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+                </div>
+                <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
+                  <li className="flex items-center gap-2 font-bold">
+                    <span className="text-indigo-500">✓</span> 無制限に使い放題
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-indigo-500">✓</span> 全機能へのアクセス
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-indigo-500">✓</span> 優先サポート
+                  </li>
+                </ul>
+                <button
+                  onClick={() => handleSubscription('pro')}
+                  disabled={subscriptionLoading}
+                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50"
+                >
+                  {subscriptionLoading ? "処理中..." : "Proを選択"}
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowSubscriptionModal(false)}
+              className="w-full py-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-bold transition-colors text-sm"
+            >
+              閉じる
             </button>
           </div>
         </div>
@@ -690,8 +780,17 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🪙</span>
                     <div>
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none">Coins</p>
-                      <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">Coins</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
+                        <button
+                          onClick={() => setShowSubscriptionModal(true)}
+                          className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
+                          title="Add Credits / Upgrade Plan"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
 
