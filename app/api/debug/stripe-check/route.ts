@@ -44,6 +44,10 @@ export async function GET(req: Request) {
         diagnosis: !dbUser ? "User not found in DB" :
             !stripeCustomer ? "Customer not found in Stripe" :
                 dbUser.stripeCustomerId !== stripeCustomer.id ? "MISMATCH: DB customerId !== Stripe customerId" :
-                    "IDs match."
+                    "IDs match.",
+        envCheck: {
+            STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ? "Set (Starts with " + process.env.STRIPE_SECRET_KEY.substring(0, 4) + ")" : "MISSING",
+            STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ? "Set (Starts with " + process.env.STRIPE_WEBHOOK_SECRET.substring(0, 4) + ")" : "MISSING"
+        }
     });
 }
