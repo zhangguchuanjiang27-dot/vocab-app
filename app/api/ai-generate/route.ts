@@ -43,18 +43,26 @@ export async function POST(req: Request) {
     // 動詞の活用形、複数形などをすべて原形に直し、重複を排除する
     const normalizationPrompt = `
       あなたは言語学のエキスパートです。
-      以下のテキストに含まれる英単語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
+      以下のテキストに含まれる英単語や熟語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
       
       【変換ルール】
-      1. 動詞の過去形・進行形・三人称単数などは、すべて「現在形の原形」にする (例: played -> play, swimming -> swim, goes -> go)
-      2. 名詞の複数形は「単数形」にする (例: apples -> apple)
-      3. 完全に重複する単語は1つにまとめる
-      4. 固有名詞や特殊な単語はそのままで良い
-      5. 明らかなゴミデータ（記号のみなど）は除外する
+      1. **熟語・複合語の保持**: 2語以上でひとつの意味を成す言葉（熟語、専門用語、複合名詞）は、**絶対に分割せず**に1つのフレーズとして抽出すること。
+         ✅ 正しい例: "refresher training" -> "refresher training", "climate change" -> "climate change", "give up" -> "give up"
+         ❌ 悪い例: "refresher training" -> "refresher", "training" (分割してはいけない)
+
+      2. **動詞の正規化**: 過去形・進行形・三人称単数などは、すべて「現在形の原形」にする。
+         例: played -> play, swimming -> swim, goes -> go
+
+      3. **名詞の正規化**: 複数形は「単数形」にする。
+         例: apples -> apple
+
+      4. **重複排除**: 完全に重複する単語は1つにまとめる。
+
+      5. **クレンジング**: 明らかなゴミデータ（記号のみなど）は除外する。
 
       【出力形式】
       {
-        "lemmas": ["apple", "play", "study", ...]
+        "lemmas": ["refresher training", "apple", "play", "study", ...]
       }
 
       テキスト:
