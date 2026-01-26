@@ -15,30 +15,48 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // チケット購入セッションの作成
+        const body = await req.json();
+        const { plan } = body; // 'basic' or 'pro'
+
+        if (!plan || !['basic', 'pro'].includes(plan)) {
+            return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+        }
+
+        const priceId = plan === 'basic'
+            ? process.env.STRIPE_PRICE_ID_BASIC
+            : process.env.STRIPE_PRICE_ID_PRO;
+
+        if (!priceId) {
+            console.error(`Price ID not found for plan: ${plan}`);
+            return NextResponse.json({ error: "Price configuration missing" }, { status: 500 });
+        }
+
+        // 既存のサブスクリプションを確認（二重契約防止）などのロジックも将来的には必要だが、
+        // まずはStripe Checkoutへ誘導
+
         const checkoutSession = await stripe.checkout.sessions.create({
             payment_method_types: ["card"],
             line_items: [
                 {
-                    price_data: {
-                        currency: "jpy",
-                        product_data: {
-                            name: "AI生成チケット (100回分)",
-                            description: "AIによる単語帳生成機能を100回利用できます。",
-                        },
-                        unit_amount: 300, // 300円
-                    },
+                    price: priceId,
                     quantity: 1,
                 },
             ],
-            mode: "payment",
-            success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?success=true`,
-            cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?canceled=true`,
+            mode: "subscription",
+            success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/profile?success=true&plan=${plan}`,
+            cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/profile?canceled=true`,
+            customer_email: session.user.email || undefined, // Emailをプレフィル
             metadata: {
                 userId: session.user.id,
-                type: "credit_purchase",
-                credits: "100",
+                type: "subscription_create",
+                plan: plan,
             },
+            subscription_data: {
+                metadata: {
+                    userId: session.user.id,
+                    plan: plan
+                }
+            }
         });
 
         return NextResponse.json({ url: checkoutSession.url });

@@ -10,15 +10,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check credits
+  // Check credits & Subscription
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { credits: true }
+    select: {
+      credits: true,
+      // @ts-ignore: New fields might not be in generated client yet
+      subscriptionPlan: true,
+      // @ts-ignore
+      subscriptionStatus: true
+    }
   });
 
   const userCredits = user?.credits ?? 0;
+  // @ts-ignore
+  const isUnlimited = user?.subscriptionPlan === "pro" && user?.subscriptionStatus === "active";
 
-  if (!user || userCredits <= 0) {
+  // 無制限プランでない場合のみクレジット残高チェック
+  if (!user || (!isUnlimited && userCredits <= 0)) {
     return NextResponse.json(
       { error: "Insufficient credits", type: "credit_limit" },
       { status: 403 }
@@ -73,8 +82,8 @@ export async function POST(req: Request) {
     // 4. 足りない単語があればAPI生成
     if (missingWords.length > 0) {
 
-      // クレジット足りてるか再確認 (足りない分だけで計算)
-      if (userCredits < missingWords.length) {
+      // クレジット足りてるか再確認 (足りない分だけで計算。無制限プランなら無視)
+      if (!isUnlimited && userCredits < missingWords.length) {
         return NextResponse.json(
           { error: `Insufficient credits. You need ${missingWords.length} credits but have ${userCredits}.`, type: "credit_limit" },
           { status: 403 }
@@ -233,10 +242,13 @@ export async function POST(req: Request) {
       // XP付与 (総単語数 x 10XP)
       await addXp(session.user.id, totalGeneratedCount * 10);
 
-      await prisma.user.update({
-        where: { id: session.user.id },
-        data: { credits: { decrement: totalGeneratedCount } }
-      });
+      // Proプランかつ有効ならクレジット消費なし
+      if (!isUnlimited) {
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { credits: { decrement: totalGeneratedCount } }
+        });
+      }
     }
 
     return NextResponse.json(finalResult);

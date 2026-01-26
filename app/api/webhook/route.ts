@@ -34,41 +34,75 @@ export async function POST(req: Request) {
 
     if (event.type === "checkout.session.completed") {
         const checkoutSession = event.data.object as Stripe.Checkout.Session;
-
-        // metadataからユーザーIDと追加クレジット数を取得
         const userId = checkoutSession.metadata?.userId;
-        const creditsStr = checkoutSession.metadata?.credits;
 
-        if (userId && creditsStr) {
-            const creditsToAdd = parseInt(creditsStr, 10);
-            
-            // creditsToAddが有効な数字か確認
-            if (isNaN(creditsToAdd) || creditsToAdd <= 0) {
-                console.error("Invalid credits value", { creditsStr, parsed: creditsToAdd });
-                return NextResponse.json({ received: true }); // Stripeに成功を返す（リトライ防止）
-            }
+        // --- サブスクリプション購入の場合 ---
+        if (checkoutSession.mode === "subscription") {
+            const subscriptionId = checkoutSession.subscription as string;
+            const customerId = checkoutSession.customer as string;
+            const plan = checkoutSession.metadata?.plan;
 
-            console.log(`Processing webhook for UserID: ${userId}, Credits: ${creditsToAdd}`);
+            if (userId && subscriptionId && plan) {
+                console.log(`Processing subscription for UserID: ${userId}, Plan: ${plan}`);
 
-            try {
-                const updatedUser = await prisma.user.update({
-                    where: { id: userId },
-                    data: {
-                        credits: {
-                            increment: creditsToAdd
-                        }
+                // Stripeからサブスクリプション詳細を取得して期間終了情報を得る
+                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+                try {
+                    // ユーザー情報を更新（Basicプランなら500クレジット付与などもここで行うか、別途invoiceイベントで行う）
+                    // 今回は初回登録時として、Basicなら500クレジットをセット（上書きor加算）する方針で。
+                    // 毎月の更新は invoice.payment_succeeded でやるのが正しいが、まずは初回を通す。
+
+                    const updateData: any = {
+                        stripeCustomerId: customerId,
+                        subscriptionId: subscriptionId,
+                        subscriptionStatus: subscription.status,
+                        subscriptionPlan: plan,
+                        subscriptionPeriodEnd: new Date(subscription.current_period_end * 1000),
+                    };
+
+                    // Basicプランの場合、初期クレジット付与（毎月500回）
+                    if (plan === 'basic') {
+                        updateData.credits = { increment: 500 };
                     }
-                });
-                console.log(`Successfully added credits. New balance: ${updatedUser.credits}`);
-            } catch (error) {
-                console.error('Database update failed:', error);
-                // ユーザーIDが存在しない場合などのエラー詳細を出力
-                if (error instanceof Error && error.message.includes('unique constraint')) {
-                    console.error('User not found or constraint error');
+
+                    await prisma.user.update({
+                        where: { id: userId },
+                        data: updateData
+                    });
+
+                    console.log(`Successfully activated subscription for user ${userId}`);
+                } catch (error) {
+                    console.error('Database update failed for subscription:', error);
                 }
             }
-        } else {
-            console.error("Missing metadata in webhook session", { userId, creditsStr });
+        }
+        // --- 都度課金（クレジット購入）の場合 ---
+        else if (checkoutSession.metadata?.type === "credit_purchase") {
+            const creditsStr = checkoutSession.metadata?.credits;
+
+            if (userId && creditsStr) {
+                const creditsToAdd = parseInt(creditsStr, 10);
+
+                if (isNaN(creditsToAdd) || creditsToAdd <= 0) {
+                    console.error("Invalid credits value", { creditsStr, parsed: creditsToAdd });
+                    return NextResponse.json({ received: true });
+                }
+
+                try {
+                    const updatedUser = await prisma.user.update({
+                        where: { id: userId },
+                        data: {
+                            credits: {
+                                increment: creditsToAdd
+                            }
+                        }
+                    });
+                    console.log(`Successfully added credits. New balance: ${updatedUser.credits}`);
+                } catch (error) {
+                    console.error('Database update failed:', error);
+                }
+            }
         }
     }
 

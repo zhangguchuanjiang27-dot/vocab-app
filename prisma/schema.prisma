@@ -52,6 +52,13 @@ model User {
   loginStreak   Int       @default(0)  // 連続ログイン日数
   isOnboarded   Boolean   @default(false)
   badges        UserBadge[]
+
+  // Stripe Subscription
+  stripeCustomerId       String?   @unique
+  subscriptionId         String?   @unique
+  subscriptionStatus     String?   // active, past_due, canceled, etc.
+  subscriptionPlan       String?   // basic, pro
+  subscriptionPeriodEnd  DateTime?
 }
 
 // バッジの定義

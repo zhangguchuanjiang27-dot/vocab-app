@@ -18,7 +18,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
     const [loading, setLoading] = useState(false);
 
     // Calculate Level
-    const { level, xpInCurrentLevel, xpRequiredForNext, progress } = getLevelInfo(user.xp || 0);
+    const { level } = getLevelInfo(user.xp || 0);
 
     // Get earned badge IDs
     const earnedBadgeIds = new Set(user.badges.map((ub: any) => ub.badgeId));
@@ -42,6 +42,33 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
             console.error(error);
             alert("エラーが発生しました。");
         } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubscription = async (plan: 'basic' | 'pro') => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ plan }),
+            });
+
+            if (!res.ok) {
+                const error = await res.json();
+                alert(error.error || "エラーが発生しました");
+                setLoading(false);
+                return;
+            }
+
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error(error);
+            alert("通信エラーが発生しました");
             setLoading(false);
         }
     };
@@ -168,6 +195,43 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Subscription Section */}
+                    <div className="mt-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
+                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
+                            <div>
+                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                                    <span>💎</span> Subscription Plan
+                                </h3>
+                                <p className="text-sm text-neutral-500 mt-1">
+                                    Current Plan: <span className="font-bold text-indigo-600">{user.subscriptionPlan ? user.subscriptionPlan.toUpperCase() : "FREE"}</span>
+                                </p>
+                            </div>
+
+                            {!user.subscriptionPlan ? (
+                                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                                    <button
+                                        onClick={() => handleSubscription('basic')}
+                                        className="flex-1 sm:flex-none px-6 py-3 bg-white dark:bg-neutral-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                                    >
+                                        <div className="text-xs uppercase tracking-wider mb-0.5">Basic Plan</div>
+                                        <div className="text-lg leading-none">¥300<span className="text-xs font-normal opacity-70">/mo</span></div>
+                                    </button>
+                                    <button
+                                        onClick={() => handleSubscription('pro')}
+                                        className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+                                    >
+                                        <div className="text-xs uppercase tracking-wider mb-0.5 text-indigo-100">Pro Plan</div>
+                                        <div className="text-lg leading-none">¥980<span className="text-xs font-normal opacity-70">/mo</span></div>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="px-6 py-3 bg-neutral-100 dark:bg-neutral-800 rounded-xl text-sm font-bold text-neutral-500">
+                                    Plan Active
+                                </div>
+                            )}
                         </div>
                     </div>
                 </header>
