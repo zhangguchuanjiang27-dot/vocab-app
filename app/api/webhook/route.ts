@@ -106,10 +106,26 @@ export async function POST(req: Request) {
             // しかしInvoiceにはmetadataが含まれないことが多い（Subscriptionから継承されない設定の場合）。
             // 確実なのは "stripeCustomerId" でユーザーを検索すること。
 
-            // 1. Stripe Customer IDでユーザー検索 (スキーマにuniqueがないとfindUniqueできないのでfindFirst)
-            const user = await prisma.user.findFirst({
+            // 1. Stripe Customer IDでユーザー検索
+            let user = await prisma.user.findFirst({
                 where: { stripeCustomerId: customerId } as any
             }) as any;
+
+            // 見つからない場合、メールアドレスで検索 (初回決済時のズレ対策)
+            if (!user && invoice.customer_email) {
+                console.log(`User not found by Stripe ID. Trying email: ${invoice.customer_email}`);
+                user = await prisma.user.findUnique({
+                    where: { email: invoice.customer_email }
+                });
+
+                // メールで見つかったら、今後のためにStripe IDを保存しておく
+                if (user) {
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { stripeCustomerId: customerId } as any
+                    });
+                }
+            }
 
             if (user) {
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
