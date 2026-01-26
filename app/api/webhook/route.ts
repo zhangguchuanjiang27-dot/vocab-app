@@ -130,15 +130,23 @@ export async function POST(req: Request) {
             if (user) {
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
 
-                // プランの特定（Price IDから判別）
-                // 環境変数のIDと比較
-                const priceId = subscription.items.data[0]?.price.id;
-                let planName = user.subscriptionPlan; // 既存のプランを維持（デフォルト）
+                // プランの特定
+                // 1. Subscriptionのメタデータを最優先
+                let planName = subscription.metadata?.plan;
 
-                if (priceId === process.env.STRIPE_PRICE_ID_BASIC) {
-                    planName = 'basic';
-                } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
-                    planName = 'pro';
+                // 2. なければPrice IDから判別（環境変数のIDと比較）
+                if (!planName) {
+                    const priceId = subscription.items.data[0]?.price.id;
+                    if (priceId === process.env.STRIPE_PRICE_ID_BASIC) {
+                        planName = 'basic';
+                    } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
+                        planName = 'pro';
+                    } else {
+                        // ユーザーが登録時のプランを保持していた場合、それを維持
+                        // または、もしメタデータもPriceIDも特定できなければ、
+                        // "basic" としてフォールバックさせる（※開発時の柔軟性のため）
+                        planName = user.subscriptionPlan;
+                    }
                 }
 
                 const updateData: any = {
