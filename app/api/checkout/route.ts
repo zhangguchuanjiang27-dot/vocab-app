@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
+import { prisma } from "@/app/lib/prisma";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -31,10 +32,32 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Price configuration missing" }, { status: 500 });
         }
 
-        // 既存のサブスクリプションを確認（二重契約防止）などのロジックも将来的には必要だが、
-        // まずはStripe Checkoutへ誘導
+        // DBからユーザー情報を取得して顧客IDを確認
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
 
-        const checkoutSession = await stripe.checkout.sessions.create({
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        // 既に有効なサブスクリプションを持っている場合はポータルへ誘導
+        // (簡易判定: stripeCustomerIdがあり、subscriptionStatusがactiveの場合)
+        // ※ 本来はstripe上でステータスを確認するのが確実だが、ここではDB情報のキャッシュを信じる
+        const hasActiveSubscription = user.stripeCustomerId && user.subscriptionStatus === 'active';
+
+        if (hasActiveSubscription) {
+            console.log("Redirecting to billing portal for existing customer:", user.stripeCustomerId);
+            const portalSession = await stripe.billingPortal.sessions.create({
+                customer: user.stripeCustomerId!,
+                return_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/`,
+            });
+            return NextResponse.json({ url: portalSession.url });
+        }
+
+        // --- 新規または再契約の場合 ---
+
+        const checkoutSessionParams: Stripe.Checkout.SessionCreateParams = {
             payment_method_types: ["card"],
             line_items: [
                 {
@@ -43,9 +66,8 @@ export async function POST(req: Request) {
                 },
             ],
             mode: "subscription",
-            success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/profile?success=true&plan=${plan}`,
-            cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/profile?canceled=true`,
-            customer_email: session.user.email || undefined, // Emailをプレフィル
+            success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?success=true&plan=${plan}`,
+            cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?canceled=true`,
             metadata: {
                 userId: session.user.id,
                 type: "subscription_create",
@@ -57,7 +79,16 @@ export async function POST(req: Request) {
                     plan: plan
                 }
             }
-        });
+        };
+
+        // 既存のCustomer IDがある場合は再利用（新規作成しない）
+        if (user.stripeCustomerId) {
+            checkoutSessionParams.customer = user.stripeCustomerId;
+        } else {
+            checkoutSessionParams.customer_email = session.user.email || undefined;
+        }
+
+        const checkoutSession = await stripe.checkout.sessions.create(checkoutSessionParams);
 
         return NextResponse.json({ url: checkoutSession.url });
     } catch (error) {
