@@ -35,20 +35,25 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { text } = await req.json();
+    const { wordText, idiomText, text } = await req.json();
+    const inputForNormalization = `
+【単語リスト】
+${wordText || text || ""}
 
-    // 40~53行目付近の既存の単純な分割ロジックを置き換えます
+【熟語リスト】
+${idiomText || ""}
+    `.trim();
 
     // Step 0: 入力テキストをAIで解析し、単語の「原形（辞書形）」のリストに変換する
-    // 動詞の活用形、複数形などをすべて原形に直し、重複を排除する
     const normalizationPrompt = `
       あなたは言語学のエキスパートです。
-      以下のテキストに含まれる英単語や熟語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
+      提供された「単語リスト」と「熟語リスト」に含まれる英単語や熟語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
       
       【変換ルール】
-      1. **熟語・複合語の保持**: 2語以上でひとつの意味を成す言葉（熟語、専門用語、複合名詞）は、**絶対に分割せず**に1つのフレーズとして抽出すること。
-         ✅ 正しい例: "refresher training" -> "refresher training", "climate change" -> "climate change", "give up" -> "give up"
-         ❌ 悪い例: "refresher training" -> "refresher", "training" (分割してはいけない)
+      1. **熟語の扱い**: 「熟語リスト」に含まれる項目は、原則として分割せず、そのまま一つの熟語として扱ってください。
+         「単語リスト」に含まれるものでも、2語以上でひとつの意味を成す言葉（熟語、専門用語、複合名詞）は分割せずに1つのフレーズとして抽出すること。
+         ✅ 正しい例: "refresher training", "climate change", "give up"
+         ❌ 悪い例: "refresher", "training" (分割してはいけない)
 
       2. **動詞の正規化**: 過去形・進行形・三人称単数などは、すべて「現在形の原形」にする。
          例: played -> play, swimming -> swim, goes -> go
@@ -56,7 +61,7 @@ export async function POST(req: Request) {
       3. **名詞の正規化**: 複数形は「単数形」にする。
          例: apples -> apple
 
-      4. **重複排除**: 完全に重複する単語は1つにまとめる。
+      4. **重複排除**: 完全に重複する単語・熟語は1つにまとめる。
 
       5. **クレンジング**: 明らかなゴミデータ（記号のみなど）は除外する。
 
@@ -66,7 +71,7 @@ export async function POST(req: Request) {
       }
 
       テキスト:
-      ${text.slice(0, 1000)}
+      ${inputForNormalization.slice(0, 1500)}
     `;
 
     let uniqueWords: string[] = [];
@@ -96,8 +101,8 @@ export async function POST(req: Request) {
       if (normParsed.lemmas && Array.isArray(normParsed.lemmas)) {
         uniqueWords = normParsed.lemmas.map((w: string) => w.toLowerCase());
       } else {
-        // AI失敗時のフォールバック（以前のロジック）
-        const rawLines = text.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+        // AI失敗時のフォールバック
+        const rawLines = ((wordText || "") + "\n" + (idiomText || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
         const fallbackSet = new Set<string>();
         rawLines.forEach((line: string) => {
           const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
@@ -109,7 +114,7 @@ export async function POST(req: Request) {
     } catch (e) {
       console.error("Normalization Error:", e);
       // エラー時はフォールバック
-      const rawLines = text.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      const rawLines = ((wordText || "") + "\n" + (idiomText || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
       const fallbackSet = new Set<string>();
       rawLines.forEach((line: string) => {
         const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();

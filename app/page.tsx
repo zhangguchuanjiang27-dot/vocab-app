@@ -51,7 +51,8 @@ export default function Home() {
   const isLoadingSession = status === "loading";
 
   // 生成・編集用ステート
-  const [input, setInput] = useState("");
+  const [wordInput, setWordInput] = useState("");
+  const [idiomInput, setIdiomInput] = useState("");
   const [words, setWords] = useState<WordCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -263,12 +264,15 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
-    if (!input.trim()) return;
+    if (!wordInput.trim() && !idiomInput.trim()) return;
 
-    // 行数チェック（10行制限）
-    const lineCount = input.split("\n").filter(line => line.trim() !== "").length;
-    if (lineCount > 10) {
-      alert(`一度に生成できる単語数は最大10個までです。\n現在の入力: ${lineCount}個\n\n品質を保つため、10個以下に分割して入力してください。`);
+    // 行数チェック（合計10行制限）
+    const wordLineCount = wordInput.split("\n").filter(line => line.trim() !== "").length;
+    const idiomLineCount = idiomInput.split("\n").filter(line => line.trim() !== "").length;
+    const totalLineCount = wordLineCount + idiomLineCount;
+
+    if (totalLineCount > 10) {
+      alert(`一度に生成できるのは最大10項目までです。\n現在の入力: ${totalLineCount}項目 (単語: ${wordLineCount}, 熟語: ${idiomLineCount})\n\n品質を保つため、10項目以下に分割して入力してください。`);
       return;
     }
 
@@ -279,7 +283,10 @@ export default function Home() {
       const response = await fetch("/api/ai-generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: input }),
+        body: JSON.stringify({
+          wordText: wordInput,
+          idiomText: idiomInput
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to generate vocabulary");
@@ -288,7 +295,8 @@ export default function Home() {
       if (data.words) {
         // 既存のリストに追加（追記モード）
         setWords((prev) => [...prev, ...data.words]);
-        setInput("");
+        setWordInput("");
+        setIdiomInput("");
 
         // クレジットとXPを再取得
         fetchCredits();
@@ -859,24 +867,42 @@ export default function Home() {
                   {/* Left: Input */}
                   <div className="flex flex-col gap-4 sticky top-8">
                     <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
-                      <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
-                        単語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(Max 10 words)</span>
-                      </label>
-                      <textarea
-                        className="w-full h-[300px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none mb-4 font-mono leading-relaxed"
-                        placeholder={`例：\napple\nrun\ntake off`}
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                      />
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                          単語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(apple, run など)</span>
+                        </label>
+                        <textarea
+                          className="w-full h-[150px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed"
+                          placeholder={`例：\napple\nrun`}
+                          value={wordInput}
+                          onChange={(e) => setWordInput(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="mb-6">
+                        <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
+                          熟語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(take off, give up など)</span>
+                        </label>
+                        <textarea
+                          className="w-full h-[120px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed"
+                          placeholder={`例：\ntake off\ngive up`}
+                          value={idiomInput}
+                          onChange={(e) => setIdiomInput(e.target.value)}
+                        />
+                      </div>
+
                       <button
                         onClick={handleGenerate}
-                        disabled={loading || !input.trim()}
+                        disabled={loading || (!wordInput.trim() && !idiomInput.trim())}
                         className={`w-full py-3 rounded-lg font-bold text-sm transition-all
                           ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
                         `}
                       >
                         {loading ? "生成中..." : "リストを生成"}
                       </button>
+                      <p className="mt-3 text-[10px] text-neutral-400 text-center leading-tight">
+                        ※一度に合計10項目まで生成可能です
+                      </p>
                       {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
                     </div>
                   </div>
