@@ -34,8 +34,10 @@ export async function PATCH(
         // そうでない場合で且つプランがbasic/proに変更されたなら500にセット
         if (credits !== undefined) {
             updateData.credits = credits;
-        } else if (subscriptionPlan === 'basic' || subscriptionPlan === 'pro') {
+        } else if (subscriptionPlan === 'basic') {
             updateData.credits = 500;
+        } else if (subscriptionPlan === 'pro') {
+            updateData.credits = 2000;
         }
 
         const updatedUser = await prisma.user.update({
