@@ -783,13 +783,6 @@ export default function Home() {
                       <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">Coins</p>
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-neutral-900 dark:text-neutral-100">{credits ?? "..."}</p>
-                        <button
-                          onClick={() => setShowSubscriptionModal(true)}
-                          className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-bold hover:bg-emerald-200 dark:hover:bg-emerald-800 transition-colors"
-                          title="Add Credits / Upgrade Plan"
-                        >
-                          +
-                        </button>
                       </div>
                     </div>
                   </div>
