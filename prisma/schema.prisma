@@ -45,7 +45,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   decks         Deck[]
-  credits       Int       @default(100)
+  credits       Int       @default(30)
   xp            Int       @default(0)  // 総獲得経験値
   weeklyXp      Int       @default(0)  // 週間経験値（ランキング用）
   lastLoginAt   DateTime? // 最終ログイン日時

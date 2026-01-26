@@ -83,7 +83,7 @@ export default function CheckoutPage() {
                 <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold">✓</div>
                 <div>
                   <p className="font-bold text-sm">毎月 500 クレジット</p>
-                  <p className="text-xs text-neutral-500 mt-1">約50回分の単語生成が可能です。</p>
+                  <p className="text-xs text-neutral-500 mt-1">約500回分の単語生成が可能です。</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
