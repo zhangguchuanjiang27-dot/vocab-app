@@ -100,23 +100,21 @@ export async function POST(req: Request) {
         }
     }
 
-    // --- 請求書支払い成功 または サブスクリプション更新（アップグレード・解約予約） ---
-    else if (event.type === "invoice.payment_succeeded" || event.type === "customer.subscription.updated") {
-        const object = event.data.object as any;
-        const subscriptionId = (object.subscription as string) || (object.id as string);
-        const customerId = object.customer as string;
+    // --- 請求書支払い成功（毎月の更新・初回含む） ---
+    else if (event.type === "invoice.payment_succeeded") {
+        const invoice = event.data.object as any;
+        const subscriptionId = invoice.subscription as string;
+        const customerId = invoice.customer as string;
 
         if (subscriptionId) {
-            console.log(`Processing ${event.type} for subscription: ${subscriptionId}`);
+            console.log(`Processing payment success for subscription: ${subscriptionId}`);
 
             let user = await prisma.user.findFirst({
                 where: { stripeCustomerId: customerId } as any
             }) as any;
 
-            if (!user && object.customer_email) {
-                user = await prisma.user.findUnique({
-                    where: { email: object.customer_email }
-                });
+            if (!user && invoice.customer_email) {
+                user = await prisma.user.findUnique({ where: { email: invoice.customer_email } });
             }
 
             if (user) {
@@ -125,57 +123,69 @@ export async function POST(req: Request) {
                 let planName = subscription.metadata?.plan;
                 if (!planName) {
                     const priceId = subscription.items.data[0]?.price.id;
-                    if (priceId === process.env.STRIPE_PRICE_ID_BASIC) {
-                        planName = 'basic';
-                    } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
-                        planName = 'pro';
-                    } else {
-                        planName = user.subscriptionPlan;
-                    }
+                    if (priceId === process.env.STRIPE_PRICE_ID_BASIC) planName = 'basic';
+                    else if (priceId === process.env.STRIPE_PRICE_ID_PRO) planName = 'pro';
+                    else planName = user.subscriptionPlan;
                 }
 
                 const updateData: any = {
                     subscriptionStatus: subscription.status,
+                    subscriptionPlan: planName,
+                    credits: 500, // 支払い成功時にのみ500枚を付与・リセット
                 };
 
                 if (subscription.current_period_end) {
-                    const periodEnd = new Date(subscription.current_period_end * 1000);
-                    if (!isNaN(periodEnd.getTime())) {
-                        updateData.subscriptionPeriodEnd = periodEnd;
-                    }
-                }
-
-                // 解約された場合、あるいはステータスが不活性な場合はプランをnullにする
-                if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
-                    updateData.subscriptionPlan = null;
-                } else if (planName) {
-                    updateData.subscriptionPlan = planName;
-                    if (planName === 'basic' || planName === 'pro') {
-                        updateData.credits = 500;
-                    }
+                    updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
                 }
 
                 await prisma.user.update({
                     where: { id: user.id },
                     data: updateData
                 });
-                console.log(`Successfully sync subscription for user ${user.id} (Status: ${subscription.status})`);
+                console.log(`Successfully reset credits to 500 for user ${user.id} due to payment success`);
             }
         }
     }
-    // --- 完全な解約（即時終了） ---
+    // --- サブスクリプション更新（解約予約・アップグレードなど） ---
+    // ここではコインはいじらず、状態（ステータスや期限）だけを同期する
+    else if (event.type === "customer.subscription.updated") {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        console.log(`Processing subscription update: ${subscription.id} (Status: ${subscription.status})`);
+
+        const updateData: any = {
+            subscriptionStatus: subscription.status,
+        };
+
+        if (subscription.current_period_end) {
+            updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
+        }
+
+        // ポータルからプラン変更した直後の同期
+        const priceId = subscription.items.data[0]?.price.id;
+        if (priceId === process.env.STRIPE_PRICE_ID_BASIC) updateData.subscriptionPlan = 'basic';
+        else if (priceId === process.env.STRIPE_PRICE_ID_PRO) updateData.subscriptionPlan = 'pro';
+
+        await prisma.user.updateMany({
+            where: { stripeCustomerId: customerId } as any,
+            data: updateData
+        });
+    }
+    // --- 契約期間終了（完全な解約） ---
     else if (event.type === "customer.subscription.deleted") {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        console.log(`Processing subscription deletion: ${subscription.id}`);
+        console.log(`Processing subscription expiration/deletion: ${subscription.id}`);
 
         await prisma.user.updateMany({
-            where: { stripeCustomerId: customerId },
+            where: { stripeCustomerId: customerId } as any,
             data: {
                 subscriptionPlan: null,
                 subscriptionStatus: 'canceled',
-            }
+                credits: 0 // 期間が完全に終了したのでコインを0にする
+            } as any
         });
     }
 
