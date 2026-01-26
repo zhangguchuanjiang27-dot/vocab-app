@@ -37,22 +37,83 @@ export async function POST(req: Request) {
   try {
     const { text } = await req.json();
 
-    // 1. 入力テキストを「単語リスト」に分割・正規化
-    // 改行、カンマで分割し、さらに各行の先頭の番号や記号を除去する
-    const rawLines = text.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+    // 40~53行目付近の既存の単純な分割ロジックを置き換えます
 
-    // 単語のみを抽出するための簡易クリーニング (例: "1. apple" -> "apple")
-    // 小文字化してユニークにする
-    const normalizedWordsMap = new Map<string, string>(); // normalized -> original
-    rawLines.forEach((line: string) => {
-      // 先頭の数字や記号（"1. ", "- "など）を削除、文末の空白削除
-      const cleanWord = line.replace(/^[\d\-\.\s]+/, "").trim();
-      if (cleanWord) {
-        normalizedWordsMap.set(cleanWord.toLowerCase(), cleanWord);
+    // Step 0: 入力テキストをAIで解析し、単語の「原形（辞書形）」のリストに変換する
+    // 動詞の活用形、複数形などをすべて原形に直し、重複を排除する
+    const normalizationPrompt = `
+      あなたは言語学のエキスパートです。
+      以下のテキストに含まれる英単語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
+      
+      【変換ルール】
+      1. 動詞の過去形・進行形・三人称単数などは、すべて「現在形の原形」にする (例: played -> play, swimming -> swim, goes -> go)
+      2. 名詞の複数形は「単数形」にする (例: apples -> apple)
+      3. 完全に重複する単語は1つにまとめる
+      4. 固有名詞や特殊な単語はそのままで良い
+      5. 明らかなゴミデータ（記号のみなど）は除外する
+
+      【出力形式】
+      {
+        "lemmas": ["apple", "play", "study", ...]
       }
-    });
 
-    const uniqueWords = Array.from(normalizedWordsMap.keys());
+      テキスト:
+      ${text.slice(0, 1000)}
+    `;
+
+    let uniqueWords: string[] = [];
+
+    try {
+      const normResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            { role: "system", content: "You are a helpful assistant that outputs JSON." },
+            { role: "user", content: normalizationPrompt },
+          ],
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!normResponse.ok) throw new Error("Normalization API failed");
+
+      const normData = await normResponse.json();
+      const normParsed = JSON.parse(normData.choices[0].message.content || "{}");
+
+      if (normParsed.lemmas && Array.isArray(normParsed.lemmas)) {
+        uniqueWords = normParsed.lemmas.map((w: string) => w.toLowerCase());
+      } else {
+        // AI失敗時のフォールバック（以前のロジック）
+        const rawLines = text.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+        const fallbackSet = new Set<string>();
+        rawLines.forEach((line: string) => {
+          const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
+          if (clean) fallbackSet.add(clean);
+        });
+        uniqueWords = Array.from(fallbackSet);
+      }
+
+    } catch (e) {
+      console.error("Normalization Error:", e);
+      // エラー時はフォールバック
+      const rawLines = text.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      const fallbackSet = new Set<string>();
+      rawLines.forEach((line: string) => {
+        const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
+        if (clean) fallbackSet.add(clean);
+      });
+      uniqueWords = Array.from(fallbackSet);
+    }
+
+    // 元々のMapロジックは不要になるので削除し、APIに投げる用のマッピングを単純化
+    // (AIが正規化した単語をそのまま使う)
+    const normalizedWordsMap = new Map<string, string>();
+    uniqueWords.forEach(w => normalizedWordsMap.set(w, w));
 
     if (uniqueWords.length === 0) {
       return NextResponse.json({ words: [] });
