@@ -54,8 +54,8 @@ model User {
   badges        UserBadge[]
 
   // Stripe Subscription
-  stripeCustomerId       String?   @unique
-  subscriptionId         String?   @unique
+  stripeCustomerId       String?
+  subscriptionId         String?
   subscriptionStatus     String?   // active, past_due, canceled, etc.
   subscriptionPlan       String?   // basic, pro
   subscriptionPeriodEnd  DateTime?
