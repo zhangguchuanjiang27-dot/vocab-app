@@ -37,8 +37,8 @@ export default function DeckPage() {
     const [loading, setLoading] = useState(true);
     const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
-    // モード管理: 'list' (一覧) | 'flashcard' (学習) | 'writing_test' (テスト)
-    const [mode, setMode] = useState<'list' | 'flashcard' | 'writing_test'>('list');
+    // モード管理: 'list' (一覧) | 'flashcard' (学習) | 'writing_test' (テスト) | 'dictation' (書き取り)
+    const [mode, setMode] = useState<'list' | 'flashcard' | 'writing_test' | 'dictation'>('list');
 
     // Writing Test State
     const [writingInput, setWritingInput] = useState("");
@@ -57,6 +57,27 @@ export default function DeckPage() {
     const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
     const [includeMastered, setIncludeMastered] = useState(false);
     const [earnedXp, setEarnedXp] = useState(0);
+
+    // Helper to get words for the current session (Review/Writing/Dictation)
+    const getSessionWords = () => {
+        if (reviewWords) return reviewWords;
+        const source = isRandomMode ? shuffledWords : (deck?.words || []);
+        const active = includeMastered ? source : source.filter(w => !w.isMastered);
+        return active.length > 0 ? active : source;
+    };
+
+    // Dictation Mode Auto-Speak
+    useEffect(() => {
+        if (mode === 'dictation' && !isFinished) {
+            const words = getSessionWords();
+            const currentCard = words[currentIndex];
+            if (currentCard) {
+                // Delay slightly to ensure UI is ready and feels natural
+                const timer = setTimeout(() => speak(currentCard.word), 600);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [mode, currentIndex, isFinished]);
 
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
@@ -973,6 +994,140 @@ export default function DeckPage() {
 
 
 
+    // --- Dictation Mode ---
+    if (mode === 'dictation') {
+        if (isFinished) {
+            return (
+                <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-50 dark:bg-black p-6">
+                    <div className="text-center space-y-6 animate-in zoom-in duration-300">
+                        <div className="text-6xl mb-4">🎧</div>
+                        <h1 className="text-3xl font-bold dark:text-white">Dictation Completed!</h1>
+                        <p className="text-neutral-500">"{deck.title}" の書き取り練習が完了しました。</p>
+                        <div className="flex flex-wrap gap-4 justify-center mt-8">
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">最初から学習する</button>
+                            {wrongWordIds.size > 0 && (
+                                <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
+                                    <span>🔁</span> {wrongWordIds.size}件を復習する
+                                </button>
+                            )}
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const displayWords = getSessionWords();
+        const currentCard = displayWords[currentIndex];
+
+        if (!currentCard) return null;
+
+        return (
+            <div className="min-h-screen bg-neutral-100 dark:bg-[#111] text-neutral-900 dark:text-neutral-100 p-6 flex flex-col">
+                <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ キャンセル</button>
+                    <div className="text-center">
+                        <h1 className="font-bold text-lg dark:text-white/90">Dictation Practice</h1>
+                        <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
+                    </div>
+                    <div className="w-20"></div>
+                </header>
+
+                <main className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+                    <div className="w-full bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-12 border border-neutral-200 dark:border-neutral-800 flex flex-col items-center relative overflow-hidden">
+
+                        {/* Audio Visualizer / Button */}
+                        <div className="mb-10 text-center relative group">
+                            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
+                            <button
+                                onClick={() => speak(currentCard.word)}
+                                className="relative w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-indigo-500/40 hover:scale-105 active:scale-95 transition-all group-hover:bg-indigo-500"
+                            >
+                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                            </button>
+                            <p className="mt-6 text-sm font-bold text-neutral-400 uppercase tracking-widest">お聞きください</p>
+                        </div>
+
+                        {/* Hint Display */}
+                        <div className="mb-8 h-8 flex items-center justify-center">
+                            {showHint ? (
+                                <div className="text-center animate-in fade-in slide-in-from-bottom-2">
+                                    <p className="text-sm font-bold text-neutral-400 mb-1">First letter:</p>
+                                    <p className="text-4xl font-black text-indigo-500 font-mono">{currentCard.word.charAt(0)}...</p>
+                                </div>
+                            ) : (
+                                !isAnswerChecked && (
+                                    <button
+                                        onClick={() => setShowHint(true)}
+                                        className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full"
+                                    >
+                                        <span>💡</span> ヒントを見る
+                                    </button>
+                                )
+                            )}
+                        </div>
+
+                        <div className="w-full max-w-md space-y-6 z-10">
+                            <input
+                                autoFocus
+                                type="text"
+                                value={writingInput}
+                                onChange={(e) => setWritingInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word)}
+                                disabled={isAnswerChecked}
+                                placeholder="Type what you hear..."
+                                className={`w-full p-4 text-2xl font-bold text-center bg-neutral-50 dark:bg-black border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
+                                    ? isCorrect
+                                        ? 'border-green-500 bg-green-50 dark:bg-green-950/20 text-green-600'
+                                        : 'border-red-500 bg-red-50 dark:bg-red-950/20 text-red-600'
+                                    : 'border-neutral-200 dark:border-neutral-800 focus:border-indigo-500'
+                                    }`}
+                            />
+
+                            {isAnswerChecked && (
+                                <div className="animate-in slide-in-from-top-2 duration-300 text-center space-y-4">
+                                    {!isCorrect && (
+                                        <div>
+                                            <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">正解:</p>
+                                            <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
+                                            <p className="text-sm text-neutral-500 mt-2 font-bold">{currentCard.meaning}</p>
+                                        </div>
+                                    )}
+                                    {isCorrect && (
+                                        <p className="text-sm text-neutral-500 mt-2 font-bold">{currentCard.meaning}</p>
+                                    )}
+
+                                    <div className="flex flex-col items-center gap-2">
+                                        <p className={`text-lg font-bold ${isCorrect ? 'text-green-500' : 'text-red-500'}`}>
+                                            {isCorrect ? '✨ Excellent!' : '📌 Don\'t worry, next time!'}
+                                        </p>
+                                        <button
+                                            onClick={handleWritingNext}
+                                            autoFocus
+                                            className="mt-4 px-12 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-full font-bold shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                            Next Word
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {!isAnswerChecked && (
+                                <button
+                                    onClick={() => handleCheckAnswer(currentCard.id, currentCard.word)}
+                                    disabled={!writingInput.trim()}
+                                    className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Check Answer
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
     // --- Writing Test Mode ---
     if (mode === 'writing_test') {
         if (isFinished) {
@@ -1001,14 +1156,7 @@ export default function DeckPage() {
             );
         }
 
-        const getWritingWords = () => {
-            if (reviewWords) return reviewWords;
-            const source = isRandomMode ? shuffledWords : (deck?.words || []);
-            const active = includeMastered ? source : source.filter(w => !w.isMastered);
-            return active.length > 0 ? active : source;
-        };
-
-        const displayWords = getWritingWords();
+        const displayWords = getSessionWords();
         const currentCard = displayWords[currentIndex];
 
         if (!currentCard) return null;
@@ -1188,6 +1336,9 @@ export default function DeckPage() {
                                 </button>
                                 <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-6 py-3.5 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">📝</span> Writingテスト
+                                </button>
+                                <button onClick={() => { handleRestart(); setMode('dictation'); }} className="px-6 py-3.5 bg-white dark:bg-neutral-800 border-2 border-indigo-100 dark:border-neutral-800 text-indigo-600 dark:text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                    <span className="text-2xl">🎧</span> Dictation
                                 </button>
 
                                 <div className="flex items-center gap-2 ml-2">
