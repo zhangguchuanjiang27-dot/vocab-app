@@ -789,9 +789,10 @@ export default function DeckPage() {
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US'; // 英語（米国）
-            utterance.rate = 1.0; // 速度
-            // 必要なら voice を選ぶ処理も追加できるが、デフォルトでも十分
+            // 日本語が含まれているか簡易判定 (ひらがな, カタカナ, 漢字)
+            const isJapanese = /[一-龠]+|[ぁ-ん]+|[ァ-ヴー]+/.test(text);
+            utterance.lang = isJapanese ? 'ja-JP' : 'en-US';
+            utterance.rate = 1.0;
             window.speechSynthesis.speak(utterance);
         }
     };
