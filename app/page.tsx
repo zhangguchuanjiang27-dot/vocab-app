@@ -761,9 +761,6 @@ export default function Home() {
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <span className="text-2xl">⭐</span>
-                      <div className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
-                        {getLevelInfo(xp).level}
-                      </div>
                     </div>
                     <div className="flex flex-col min-w-[140px]">
                       <div className="flex justify-between items-end mb-1.5">
@@ -790,7 +787,7 @@ export default function Home() {
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🪙</span>
                     <div>
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">Coins</p>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">コイン</p>
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-neutral-900 dark:text-neutral-100">
                           {userPlan === 'unlimited' ? "無制限" : (credits ?? "...")}

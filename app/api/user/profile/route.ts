@@ -10,13 +10,14 @@ export async function PATCH(req: Request) {
     }
 
     try {
-        const { name, image } = await req.json();
+        const { name, image, isPublicRanking } = await req.json();
 
-        const updatedUser = await prisma.user.update({
+        const updatedUser = await (prisma.user as any).update({
             where: { id: session.user.id },
             data: {
                 name: name !== undefined ? name : undefined,
                 image: image !== undefined ? image : undefined,
+                isPublicRanking: isPublicRanking !== undefined ? isPublicRanking : undefined,
             },
         });
 

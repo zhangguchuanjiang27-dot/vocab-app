@@ -16,6 +16,7 @@ export async function GET() {
             credits: true,
             xp: true,
             subscriptionPlan: true,
+            isPublicRanking: true,
             badges: {
                 include: { badge: true }
             }
@@ -26,6 +27,7 @@ export async function GET() {
         credits: user?.credits ?? 0,
         xp: user?.xp ?? 0,
         subscriptionPlan: user?.subscriptionPlan,
+        isPublicRanking: user?.isPublicRanking ?? false,
         badges: user?.badges ?? []
     });
 }

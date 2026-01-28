@@ -10,21 +10,18 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
         }),
-        // 開発用モックログインプロバイダー
         ...(process.env.NODE_ENV === 'development' ? [{
             id: 'credentials',
-            name: 'Mock Login (Dev Only)',
+            name: 'Mock Login',
             type: 'credentials',
             credentials: {},
             authorize: async () => {
-                // 開発用のダミーユーザーを返す
                 const user = await prisma.user.upsert({
                     where: { email: 'dev@example.com' },
                     update: {},
                     create: {
                         email: 'dev@example.com',
-                        name: 'Developer User',
-                        image: 'https://ui-avatars.com/api/?name=Dev+User',
+                        name: 'Developer',
                         credits: 1000,
                     }
                 });
@@ -32,7 +29,6 @@ export const authOptions: NextAuthOptions = {
                     id: user.id,
                     name: user.name,
                     email: user.email,
-                    image: user.image
                 };
             }
         }] : []) as any,
@@ -43,16 +39,21 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         jwt: async ({ token, user }) => {
             if (user) {
-                token.id = user.id;
+                token.sub = user.id;
             }
+            // 常にDBから最新のステータスを取得するようにするとヘッダーが大きくなる可能性があるが、
+            // isPublicRankingだけなら微々たるもの。
+            // ただし、パフォーマンスを考えて、ここではIDのみ保持し、
+            // ページ側で必要に応じて再取得するのが安全か。
             return token;
         },
         session: async ({ session, token }) => {
             if (session?.user) {
-                session.user.id = token.id as string;
+                session.user.id = token.sub as string;
             }
             return session;
         },
     },
-    debug: true,
+    debug: false,
+    secret: process.env.NEXTAUTH_SECRET || "secret",
 }

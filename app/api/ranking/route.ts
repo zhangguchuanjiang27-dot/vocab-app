@@ -55,7 +55,7 @@ export async function GET(req: Request) {
             FROM "User" u
             JOIN "Deck" d ON d."userId" = u.id
             JOIN "WordCard" w ON w."deckId" = d.id
-            WHERE w."createdAt" >= ${startDate}
+            WHERE w."createdAt" >= ${startDate} AND u."isPublicRanking" = true
             GROUP BY u.id
             ORDER BY word_count DESC
             LIMIT 50;
