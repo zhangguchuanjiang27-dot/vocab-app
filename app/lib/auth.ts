@@ -59,11 +59,10 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
-    // エラー時に強制的にサインインページへ戻るようにする
-    pages: {
-        signIn: '/auth/signin',
-        error: '/auth/error',
-    },
+    // pages: {
+    //     signIn: '/auth/signin',
+    //     error: '/auth/error',
+    // },
     debug: false,
     secret: process.env.NEXTAUTH_SECRET || "secret",
 }
