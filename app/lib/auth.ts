@@ -9,6 +9,14 @@ export const authOptions: NextAuthOptions = {
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID ?? "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+            // アカウント選択画面を強制的に表示し、セッションの不整合を防ぐ
+            authorization: {
+                params: {
+                    prompt: "select_account",
+                    access_type: "offline",
+                    response_type: "code"
+                }
+            }
         }),
         ...(process.env.NODE_ENV === 'development' ? [{
             id: 'credentials',
@@ -35,16 +43,13 @@ export const authOptions: NextAuthOptions = {
     ],
     session: {
         strategy: "jwt",
+        maxAge: 30 * 24 * 60 * 60, // 30 days
     },
     callbacks: {
         jwt: async ({ token, user }) => {
             if (user) {
                 token.sub = user.id;
             }
-            // 常にDBから最新のステータスを取得するようにするとヘッダーが大きくなる可能性があるが、
-            // isPublicRankingだけなら微々たるもの。
-            // ただし、パフォーマンスを考えて、ここではIDのみ保持し、
-            // ページ側で必要に応じて再取得するのが安全か。
             return token;
         },
         session: async ({ session, token }) => {
@@ -53,6 +58,11 @@ export const authOptions: NextAuthOptions = {
             }
             return session;
         },
+    },
+    // エラー時に強制的にサインインページへ戻るようにする
+    pages: {
+        signIn: '/auth/signin',
+        error: '/auth/error',
     },
     debug: false,
     secret: process.env.NEXTAUTH_SECRET || "secret",
