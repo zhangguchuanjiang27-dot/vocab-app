@@ -412,9 +412,10 @@ export default function DeckPage() {
         }
     };
 
-    const handleGenerateExtras = async (wordId: string, type: 'all' | 'synonyms') => {
+    const handleGenerateExtras = async (wordId: string, type: 'all' | 'synonyms', force: boolean = false) => {
         const cost = 1;
-        const actionName = type === 'all' ? '類義語・派生語の生成' : '類義語の再生成';
+        const actionLabel = type === 'all' ? '類義語・派生語' : '類義語';
+        const actionName = force ? `${actionLabel}の再生成` : `${actionLabel}の生成`;
 
         if (!confirm(`${actionName}を行いますか？\nコインを${cost}枚消費します。`)) return;
 
@@ -422,7 +423,7 @@ export default function DeckPage() {
             const res = await fetch(`/api/words/${wordId}/generate-extras`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ type })
+                body: JSON.stringify({ type, force })
             });
 
             if (!res.ok) {
@@ -595,15 +596,13 @@ export default function DeckPage() {
                     ...deck,
                     words: deck.words.map(w => {
                         if (w.id === editingWordId) {
-                            // Merge the updated fields
                             return {
                                 ...w,
                                 ...updatedWord,
-                                // ensure consistency with WordCard type
-                                // ensure consistency with WordCard type
-                                otherExamples: w.otherExamples,
-                                synonyms: w.synonyms,
-                                derivatives: w.derivatives
+                                // stateの古い値で上書きしてしまわないように注意
+                                otherExamples: updatedWord.otherExamples || w.otherExamples,
+                                synonyms: updatedWord.synonyms || w.synonyms,
+                                derivatives: updatedWord.derivatives || w.derivatives
                             };
                         }
                         return w;
@@ -1708,68 +1707,95 @@ export default function DeckPage() {
                                                     {expandedListItems[card.id!] && (
                                                         <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2">
 
-                                                            {/* Generate Button if missing */}
-                                                            {(!card.synonyms && !card.derivatives) && (
-                                                                <button
-                                                                    onClick={() => card.id && handleGenerateExtras(card.id, 'all')}
-                                                                    className="w-full py-2 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-100 hover:to-purple-100 dark:hover:from-indigo-900/30 dark:hover:to-purple-900/30 transition-all flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-800/50"
-                                                                >
-                                                                    <span>✨</span> 類義語・派生語を生成 (1コイン)
-                                                                </button>
-                                                            )}
+                                                            {/* Generate Button if missing or empty */}
+                                                            {(!card.synonyms || card.synonyms.length === 0) && (!card.derivatives || card.derivatives.length === 0) ? (
+                                                                <div className="pb-4">
+                                                                    <button
+                                                                        onClick={() => card.id && handleGenerateExtras(card.id, 'all', false)}
+                                                                        className="w-full py-3 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-100/50 hover:to-purple-100/50 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/20 transition-all flex items-center justify-center gap-2 border border-indigo-100/50 dark:border-indigo-800/30 shadow-sm"
+                                                                    >
+                                                                        <span>✨</span> 類義語・派生語を生成 (1コイン)
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex justify-end mb-4">
+                                                                        <button
+                                                                            onClick={() => card.id && handleGenerateExtras(card.id, 'all', true)}
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-full text-[10px] font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors border border-neutral-200 dark:border-neutral-700"
+                                                                        >
+                                                                            <span>↻</span> 類義語・派生語を再生成 (🪙1)
+                                                                        </button>
+                                                                    </div>
 
-                                                            {/* Lists */}
-                                                            {(card.synonyms || card.derivatives) && (
-                                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                                                    {/* Synonyms */}
-                                                                    <div>
-                                                                        <div className="flex items-center justify-between mb-3">
-                                                                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">類義語 (Synonyms)</h4>
-                                                                            {card.synonyms && card.synonyms.length > 0 && (
-                                                                                <button onClick={() => card.id && handleGenerateExtras(card.id, 'synonyms')} className="text-[10px] text-indigo-500 hover:underline">
-                                                                                    ↻ 再生成 (🪙1)
-                                                                                </button>
+                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                                        {/* Synonyms */}
+                                                                        <div>
+                                                                            <div className="flex items-center justify-between mb-3">
+                                                                                <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">類義語 (Synonyms)</h4>
+                                                                            </div>
+
+                                                                            {!card.synonyms || card.synonyms.length === 0 ? (
+                                                                                <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                            ) : (
+                                                                                <ul className="space-y-2">
+                                                                                    {card.synonyms.map((s, i) => {
+                                                                                        const formatPOS = (pos: string) => {
+                                                                                            const lower = pos.toLowerCase();
+                                                                                            if (lower.startsWith('verb')) return '動';
+                                                                                            if (lower.startsWith('noun')) return '名';
+                                                                                            if (lower.startsWith('adj')) return '形';
+                                                                                            if (lower.startsWith('adv')) return '副';
+                                                                                            if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
+                                                                                            return pos;
+                                                                                        };
+                                                                                        return (
+                                                                                            <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
+                                                                                                <div className="font-bold text-indigo-600 dark:text-indigo-400">{s.word}</div>
+                                                                                                <div className="text-xs text-neutral-500 flex gap-2">
+                                                                                                    <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
+                                                                                                    <span>{s.meaning}</span>
+                                                                                                </div>
+                                                                                            </li>
+                                                                                        );
+                                                                                    })}
+                                                                                </ul>
                                                                             )}
                                                                         </div>
 
-                                                                        {!card.synonyms || card.synonyms.length === 0 ? (
-                                                                            <p className="text-xs text-neutral-400 italic">なし</p>
-                                                                        ) : (
-                                                                            <ul className="space-y-2">
-                                                                                {card.synonyms.map((s, i) => (
-                                                                                    <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
-                                                                                        <div className="font-bold text-indigo-600 dark:text-indigo-400">{s.word}</div>
-                                                                                        <div className="text-xs text-neutral-500 flex gap-2">
-                                                                                            <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{s.partOfSpeech}</span>
-                                                                                            <span>{s.meaning}</span>
-                                                                                        </div>
-                                                                                    </li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        )}
-                                                                    </div>
+                                                                        {/* Derivatives */}
+                                                                        <div>
+                                                                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">派生語 (Derivatives)</h4>
 
-                                                                    {/* Derivatives */}
-                                                                    <div>
-                                                                        <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">派生語 (Derivatives)</h4>
-
-                                                                        {!card.derivatives || card.derivatives.length === 0 ? (
-                                                                            <p className="text-xs text-neutral-400 italic">なし</p>
-                                                                        ) : (
-                                                                            <ul className="space-y-2">
-                                                                                {card.derivatives.map((d, i) => (
-                                                                                    <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
-                                                                                        <div className="font-bold text-purple-600 dark:text-purple-400">{d.word}</div>
-                                                                                        <div className="text-xs text-neutral-500 flex gap-2">
-                                                                                            <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{d.partOfSpeech}</span>
-                                                                                            <span>{d.meaning}</span>
-                                                                                        </div>
-                                                                                    </li>
-                                                                                ))}
-                                                                            </ul>
-                                                                        )}
+                                                                            {!card.derivatives || card.derivatives.length === 0 ? (
+                                                                                <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                            ) : (
+                                                                                <ul className="space-y-2">
+                                                                                    {card.derivatives.map((d, i) => {
+                                                                                        const formatPOS = (pos: string) => {
+                                                                                            const lower = pos.toLowerCase();
+                                                                                            if (lower.startsWith('verb')) return '動';
+                                                                                            if (lower.startsWith('noun')) return '名';
+                                                                                            if (lower.startsWith('adj')) return '形';
+                                                                                            if (lower.startsWith('adv')) return '副';
+                                                                                            if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
+                                                                                            return pos;
+                                                                                        };
+                                                                                        return (
+                                                                                            <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
+                                                                                                <div className="font-bold text-purple-600 dark:text-purple-400">{d.word}</div>
+                                                                                                <div className="text-xs text-neutral-500 flex gap-2">
+                                                                                                    <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
+                                                                                                    <span>{d.meaning}</span>
+                                                                                                </div>
+                                                                                            </li>
+                                                                                        );
+                                                                                    })}
+                                                                                </ul>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                </div>
+                                                                </>
                                                             )}
                                                         </div>
                                                     )}

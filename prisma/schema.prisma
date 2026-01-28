@@ -46,6 +46,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   decks         Deck[]
+  folders       Folder[]
   credits       Int       @default(30)
   xp            Int       @default(0)  // 総獲得経験値
   weeklyXp      Int       @default(0)  // 週間経験値（ランキング用）
@@ -102,6 +103,11 @@ model Deck {
     updatedAt DateTime @updatedAt
     userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    // Folder Relation
+    folderId  String?
+    folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
     words     WordCard[]
 }
 
@@ -139,4 +145,14 @@ model Inquiry {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    String?
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  decks     Deck[]
 }

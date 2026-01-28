@@ -24,6 +24,14 @@ type Deck = {
   title: string;
   createdAt: string;
   words: WordCard[];
+  folderId?: string | null;
+};
+
+type Folder = {
+  id: string;
+  name: string;
+  createdAt: string;
+  decks?: Deck[];
 };
 
 // --- Leveling Helpers ---
@@ -52,7 +60,6 @@ export default function Home() {
 
   // 生成・編集用ステート
   const [wordInput, setWordInput] = useState("");
-  const [idiomInput, setIdiomInput] = useState("");
   const [words, setWords] = useState<WordCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -63,6 +70,13 @@ export default function Home() {
   const [showAddToDeckModal, setShowAddToDeckModal] = useState(false);
   const [savedDecks, setSavedDecks] = useState<Deck[]>([]);
   const [showSaved, setShowSaved] = useState(false);
+
+  // フォルダ用ステート
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   // 詳細表示と音声用
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
@@ -80,9 +94,11 @@ export default function Home() {
   useEffect(() => {
     if (session?.user) {
       fetchDecks();
+      fetchFolders();
       fetchCredits();
     } else {
       setSavedDecks([]);
+      setFolders([]);
     }
   }, [session]);
 
@@ -95,6 +111,124 @@ export default function Home() {
       }
     } catch (e) {
       console.error("Failed to fetch decks", e);
+    }
+  };
+
+  const fetchFolders = async () => {
+    try {
+      const res = await fetch("/api/folders");
+      if (res.ok) {
+        const data = await res.json();
+        setFolders(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch folders", e);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) return;
+    try {
+      const res = await fetch("/api/folders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newFolderName }),
+      });
+      if (res.ok) {
+        setNewFolderName("");
+        setShowCreateFolderModal(false);
+        fetchFolders();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("フォルダ作成に失敗しました");
+    }
+  };
+
+  const handleDeleteFolder = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("フォルダを削除しますか？\n(中の単語帳は削除されません)")) return;
+    try {
+      const res = await fetch(`/api/folders/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        fetchFolders();
+        fetchDecks(); // フォルダから出たデッキの再取得も兼ねて
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const toggleFolder = (id: string) => {
+    const newSet = new Set(expandedFolderIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setExpandedFolderIds(newSet);
+  };
+
+  // --- Drag and Drop Logic ---
+  const handleDragStart = (e: React.DragEvent, deckId: string) => {
+    e.dataTransfer.setData("deckId", deckId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent, folderId: string | 'ROOT') => {
+    e.preventDefault(); // これがないとdropイベントが発火しない
+    e.dataTransfer.dropEffect = "move";
+    if (dragOverFolderId !== folderId) {
+      setDragOverFolderId(folderId);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // 親子要素を行き来する際のちらつき防止のため、あえて厳密には消さない、
+    // またはDrop時にリセットする運用でシンプルにする
+  };
+
+  const handleDrop = async (e: React.DragEvent, folderId: string | 'ROOT') => {
+    e.preventDefault();
+    setDragOverFolderId(null);
+    const deckId = e.dataTransfer.getData("deckId");
+
+    if (!deckId) return;
+
+    // 移動処理 ('ROOT' の場合は null にする)
+    await moveDeckToFolder(deckId, folderId === 'ROOT' ? null : folderId);
+  };
+
+  const moveDeckToFolder = async (deckId: string, folderId: string | null) => {
+    try {
+      // Optimistic Update (UIを先に更新)
+      setSavedDecks(prev => prev.map(d => d.id === deckId ? { ...d, folderId } : d));
+
+      // フォルダへの移動なら開く
+      if (folderId) {
+        setExpandedFolderIds(prev => {
+          const next = new Set(prev);
+          next.add(folderId);
+          return next;
+        });
+      }
+
+      const res = await fetch(`/api/decks/${deckId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId })
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to move deck");
+      }
+
+      // 念のため再取得
+      fetchDecks();
+    } catch (e) {
+      console.error(e);
+      alert("移動に失敗しました");
+      fetchDecks(); // ロールバック
     }
   };
 
@@ -264,15 +398,13 @@ export default function Home() {
   };
 
   const handleGenerate = async () => {
-    if (!wordInput.trim() && !idiomInput.trim()) return;
+    if (!wordInput.trim()) return;
 
     // 行数チェック（合計10行制限）
-    const wordLineCount = wordInput.split("\n").filter(line => line.trim() !== "").length;
-    const idiomLineCount = idiomInput.split("\n").filter(line => line.trim() !== "").length;
-    const totalLineCount = wordLineCount + idiomLineCount;
+    const lineCount = wordInput.split("\n").filter(line => line.trim() !== "").length;
 
-    if (totalLineCount > 10) {
-      alert(`一度に生成できるのは最大10項目までです。\n現在の入力: ${totalLineCount}項目 (単語: ${wordLineCount}, 熟語: ${idiomLineCount})\n\n品質を保つため、10項目以下に分割して入力してください。`);
+    if (lineCount > 10) {
+      alert(`一度に生成できるのは最大10項目までです。\n現在の入力: ${lineCount}項目\n\n品質を保つため、10項目以下に分割して入力してください。`);
       return;
     }
 
@@ -284,8 +416,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          wordText: wordInput,
-          idiomText: idiomInput
+          text: wordInput,
         }),
       });
 
@@ -296,7 +427,6 @@ export default function Home() {
         // 既存のリストに追加（追記モード）
         setWords((prev) => [...prev, ...data.words]);
         setWordInput("");
-        setIdiomInput("");
 
         // クレジットとXPを再取得
         fetchCredits();
@@ -369,6 +499,38 @@ export default function Home() {
               <p className="text-indigo-100 font-bold mt-2">Level {prevLevel} → {prevLevel! + 1}</p>
             </div>
             <div className="text-2xl">✨✨✨</div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolderModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
+            <h3 className="text-xl font-bold mb-4">新規フォルダ作成</h3>
+            <input
+              type="text"
+              className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-800 border-none focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="フォルダ名 (例: TOEIC, 旅行)"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowCreateFolderModal(false)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleCreateFolder}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                disabled={!newFolderName.trim()}
+              >
+                作成
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -834,63 +996,154 @@ export default function Home() {
             <>
               {showSaved ? (
                 <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-4">
-                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                    保存した単語帳
-                  </h2>
-                  {savedDecks.length === 0 ? (
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                      保存した単語帳
+                    </h2>
+                    <button
+                      onClick={() => setShowCreateFolderModal(true)}
+                      className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <span className="text-lg">+</span> フォルダ作成
+                    </button>
+                  </div>
+
+                  {savedDecks.length === 0 && folders.length === 0 ? (
                     <div className="text-center py-12 text-neutral-400">
                       <p>保存された単語帳はありません。</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {savedDecks.map((deck) => (
-                        <div
-                          key={deck.id}
-                          className="group relative p-6 rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-xl hover:border-indigo-400 transition-all cursor-pointer"
-                          onClick={() => handleDeckClick(deck.id)}
-                        >
-                          <h3 className="font-bold text-lg mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
-                          <div className="flex items-center gap-3">
-                            <p className="text-xs text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
-                            <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
-                          </div>
+                    <div className="space-y-8">
+                      {/* Folders Section */}
+                      {folders.length > 0 && (
+                        <div className="space-y-3">
+                          {folders.map(folder => {
+                            const isExpanded = expandedFolderIds.has(folder.id);
+                            // このフォルダに入っているデッキを抽出
+                            const folderDecks = savedDecks.filter(d => d.folderId === folder.id);
+                            const isDragOver = dragOverFolderId === folder.id;
+
+                            return (
+                              <div
+                                key={folder.id}
+                                className={`rounded-2xl border transition-all duration-200 overflow-hidden
+                                    ${isDragOver
+                                    ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
+                                    : 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800'
+                                  }
+                                `}
+                                onDragOver={(e) => handleDragOver(e, folder.id)}
+                                onDrop={(e) => handleDrop(e, folder.id)}
+                                onDragLeave={handleDragLeave}
+                              >
+                                {/* Header */}
+                                <div
+                                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors"
+                                  onClick={() => toggleFolder(folder.id)}
+                                >
+                                  <div className="flex items-center gap-3 pointer-events-none">
+                                    <span className={`text-xl transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                                    <span className="text-2xl">📂</span>
+                                    <span className="font-bold text-lg">{folder.name}</span>
+                                    <span className="ml-2 text-xs font-bold text-neutral-400 bg-white dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-100 dark:border-neutral-700">
+                                      {folderDecks.length}
+                                    </span>
+                                  </div>
+                                  <button
+                                    onClick={(e) => handleDeleteFolder(folder.id, e)}
+                                    className="text-neutral-300 hover:text-red-500 p-2"
+                                    title="フォルダを削除"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                  </button>
+                                </div>
+
+                                {/* Body */}
+                                {isExpanded && (
+                                  <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
+                                    {folderDecks.length === 0 ? (
+                                      <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>
+                                    ) : (
+                                      folderDecks.map((deck) => (
+                                        <div
+                                          key={deck.id}
+                                          draggable
+                                          onDragStart={(e) => handleDragStart(e, deck.id)}
+                                          className="group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all cursor-move active:cursor-grabbing"
+                                          onClick={() => handleDeckClick(deck.id)}
+                                        >
+                                          <h3 className="font-bold text-md mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
+                                          <div className="flex items-center gap-3 pointer-events-none">
+                                            <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
+                      )}
+
+                      {/* Root Decks Section */}
+                      <div
+                        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 rounded-3xl transition-all duration-300 min-h-[100px]
+                            ${dragOverFolderId === 'ROOT'
+                            ? 'bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-400 ring-dashed p-4'
+                            : ''
+                          }
+                        `}
+                        onDragOver={(e) => handleDragOver(e, 'ROOT')}
+                        onDrop={(e) => handleDrop(e, 'ROOT')}
+                      >
+                        {savedDecks.filter(d => !d.folderId).length === 0 && (
+                          <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
+                            <span className="text-4xl mb-2">📥</span>
+                            <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
+                          </div>
+                        )}
+                        {savedDecks.filter(d => !d.folderId).map((deck) => (
+                          <div
+                            key={deck.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, deck.id)}
+                            className="group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all cursor-move active:cursor-grabbing"
+                            onClick={() => handleDeckClick(deck.id)}
+                          >
+                            <h3 className="font-bold text-md mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
+                            <div className="flex items-center gap-3 pointer-events-none">
+                              <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+                              <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="grid lg:grid-cols-[320px_1fr] gap-8 items-start">
+                <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
                   {/* Left: Input */}
                   <div className="flex flex-col gap-4 sticky top-8">
                     <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
                       <div className="mb-6">
                         <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
-                          単語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(apple, run など)</span>
+                          単語・フレーズを入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(1行に1つ入力)</span>
                         </label>
                         <textarea
-                          className="w-full h-[150px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed"
-                          placeholder={`例：\napple\nrun`}
+                          className="w-full h-[200px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed overflow-x-auto"
+                          wrap="off"
+                          placeholder={"apple\ntake off\nclimate change"}
                           value={wordInput}
                           onChange={(e) => setWordInput(e.target.value)}
                         />
                       </div>
 
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
-                          熟語を入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(take off, give up など)</span>
-                        </label>
-                        <textarea
-                          className="w-full h-[120px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed"
-                          placeholder={`例：\ntake off\ngive up`}
-                          value={idiomInput}
-                          onChange={(e) => setIdiomInput(e.target.value)}
-                        />
-                      </div>
-
                       <button
                         onClick={handleGenerate}
-                        disabled={loading || (!wordInput.trim() && !idiomInput.trim())}
+                        disabled={loading || !wordInput.trim()}
                         className={`w-full py-3 rounded-lg font-bold text-sm transition-all
                           ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
                         `}
@@ -907,8 +1160,11 @@ export default function Home() {
                   {/* Right: Output List */}
                   <div className="min-h-[500px]">
                     {words.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 p-12">
-                        <p>左のフォームに単語を入力して生成してください</p>
+                      <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 p-12 text-center">
+                        <p className="whitespace-pre-line leading-relaxed">
+                          まずは単語・フレーズを入力して、{"\n"}
+                          あなただけの学習リストを作りましょう！
+                        </p>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-6">

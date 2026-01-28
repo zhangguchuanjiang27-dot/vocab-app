@@ -98,10 +98,21 @@ export async function PUT(
         }
 
         // タイトル変更のリクエストがある場合
-        if (title) {
+        if (title !== undefined) {
             await prisma.deck.update({
                 where: { id },
                 data: { title }
+            });
+        }
+
+        // フォルダ移動
+        // @ts-ignore
+        if (body.folderId !== undefined) {
+            // @ts-ignore
+            await prisma.deck.update({
+                where: { id },
+                // @ts-ignore
+                data: { folderId: body.folderId }
             });
         }
 

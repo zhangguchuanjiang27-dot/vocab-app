@@ -19,6 +19,7 @@ export async function POST(
     // Parse body
     const body = await req.json().catch(() => ({}));
     const type = body.type || "all"; // "all" or "synonyms"
+    const isForce = !!body.force;
 
     // User Check
     const user = await prisma.user.findUnique({
@@ -49,8 +50,8 @@ export async function POST(
         let derivatives = null;
         let isCached = false;
 
-        // 1. Cache Check (Only for 'all' mode)
-        if (type === 'all') {
+        // 1. Cache Check (Only for 'all' mode, unless force is true)
+        if (type === 'all' && !isForce) {
             // @ts-ignore
             const cacheEntry = await prisma.dictionaryEntry.findUnique({
                 where: { word: wordKey }
@@ -58,8 +59,14 @@ export async function POST(
 
             if (cacheEntry && cacheEntry.data) {
                 const data = cacheEntry.data as any;
-                // Check if extra data exists
-                if (Array.isArray(data.synonyms) || Array.isArray(data.derivatives)) {
+
+                // 意味が大幅に変わっている場合はキャッシュを無視する（ユーザーが手動で編集した場合など）
+                const cachedMeaning = String(data.meaning || "");
+                const currentMeaning = String(word.meaning || "");
+
+                // キャッシュに類義語/派生語があり、かつ意味が（ある程度）変わっていない場合のみキャッシュ採用
+                if ((Array.isArray(data.synonyms) || Array.isArray(data.derivatives)) &&
+                    (currentMeaning === cachedMeaning || currentMeaning.includes(cachedMeaning) || cachedMeaning.includes(currentMeaning))) {
                     synonyms = data.synonyms || null;
                     derivatives = data.derivatives || null;
                     isCached = true;
@@ -68,36 +75,52 @@ export async function POST(
             }
         }
 
-        // 2. Generate if not cached
+        // 2. Generation Logic
         if (!isCached) {
-            // Construct Prompt
             let prompt = "";
             if (type === "all") {
                 prompt = `
-                単語 "${word.word}" (意味: ${word.meaning}) について、以下のリストを作成してください。
+                単語 "${word.word}" について、以下のすべての意味を考慮して、類義語と派生語をリストアップしてください。
+                意味: ${word.meaning}
 
-                1. **類義語 (Synonyms)**: 3つ（必須ではないが、あれば3つ）。
+                1. **類義語 (Synonyms)**: 全てを網羅するように最大5つまで。
                 2. **派生語 (Derivatives)**: 存在するものを全て。
 
-                出力は以下のJSON形式のみで返してください。
+                【品詞ラベルのルール】
+                品詞は必ず以下の略称（1文字）で出力してください：
+                - 動詞 → 動
+                - 名詞 → 名
+                - 形容詞 → 形
+                - 副詞 → 副
+                - 熟語・その他 → 他
+
+                出力形式:
                 {
                   "synonyms": [
-                    { "word": "単語", "partOfSpeech": "品詞(例えば 形、名、副など)", "meaning": "意味" }
+                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
                   ],
                   "derivatives": [
-                    { "word": "単語", "partOfSpeech": "品詞", "meaning": "意味" }
+                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
                   ]
                 }
                 `;
             } else if (type === "synonyms") {
                 prompt = `
-                単語 "${word.word}" (意味: ${word.meaning}) の **類義語** を3つ提案してください。
-                前回とは異なるものを優先してください。
+                単語 "${word.word}" (意味: ${word.meaning}) の **類義語** を5つ提案してください。
+                複数の意味がある場合は、それぞれの意味に対してバランスよく提案してください。
+
+                【品詞ラベルのルール】
+                品詞は必ず以下の略称（1文字）で出力してください：
+                - 動詞 → 動
+                - 名詞 → 名
+                - 形容詞 → 形
+                - 副詞 → 副
+                - 熟語・その他 → 他
 
                 出力形式:
                 {
                   "synonyms": [
-                     { "word": "単語", "partOfSpeech": "品詞", "meaning": "意味" }
+                     { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
                   ]
                 }
                 `;
@@ -130,45 +153,34 @@ export async function POST(
                 derivatives = content.derivatives || undefined;
             } else {
                 synonyms = content.synonyms || undefined;
-                // derivatives not requested for 'synonyms' type
             }
 
-            // 3. Update/Create Cache (ONLY for 'all' / first-time generation)
+            // 3. Update Cache (Only for 'all')
             if (type === 'all') {
                 try {
-                    // Fetch or Create Base Cache Data
                     // @ts-ignore
                     const existingCache = await prisma.dictionaryEntry.findUnique({
                         where: { word: wordKey }
                     });
-
                     let cacheData = existingCache?.data as any || {};
-
-                    // Ensure base fields exist
-                    if (!cacheData.word) cacheData.word = word.word;
-                    if (!cacheData.meaning) cacheData.meaning = word.meaning;
-                    if (!cacheData.partOfSpeech) cacheData.partOfSpeech = word.partOfSpeech;
-
-                    // Merge new extras
-                    if (synonyms) cacheData.synonyms = synonyms;
-                    if (derivatives) cacheData.derivatives = derivatives;
+                    cacheData.word = word.word;
+                    cacheData.meaning = word.meaning;
+                    cacheData.synonyms = synonyms;
+                    cacheData.derivatives = derivatives;
 
                     // @ts-ignore
                     await prisma.dictionaryEntry.upsert({
                         where: { word: wordKey },
                         update: { data: cacheData },
-                        create: {
-                            word: wordKey,
-                            data: cacheData
-                        }
+                        create: { word: wordKey, data: cacheData }
                     });
                 } catch (e) {
-                    console.error("Failed to update cache", e);
+                    console.error("Cache update failed", e);
                 }
             }
         }
 
-        // 4. Always Deduct Credit
+        // 4. Deduct Credit
         await prisma.user.update({
             where: { id: userId },
             data: { credits: { decrement: 1 } }
