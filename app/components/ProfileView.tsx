@@ -15,6 +15,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [name, setName] = useState(user.name || "");
     const [image, setImage] = useState(user.image || "");
+    const [isPublicRanking, setIsPublicRanking] = useState(user.isPublicRanking || false);
     const [loading, setLoading] = useState(false);
 
     // Calculate Level
@@ -29,7 +30,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
             const res = await fetch("/api/user/profile", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, image }),
+                body: JSON.stringify({ name, image, isPublicRanking }),
             });
 
             if (res.ok) {
@@ -78,7 +79,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
             <div className="max-w-4xl mx-auto">
                 <header className="mb-12">
                     <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
-                        ← Back to App
+                        ← アプリに戻る
                     </Link>
 
                     <div className="flex flex-col sm:flex-row items-center gap-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
@@ -105,21 +106,21 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                             {isEditing ? (
                                 <div className="space-y-4 mb-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">Username</label>
+                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">ユーザー名</label>
                                         <input
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
                                             className="w-full px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-lg font-bold"
-                                            placeholder="名前を入力"
+                                            placeholder="ニックネームを入力"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">Profile Image</label>
+                                        <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">プロフィール画像</label>
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-2">
                                                 <label className="cursor-pointer px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300 transition-colors flex items-center gap-2">
-                                                    <span>📁 Choose File</span>
+                                                    <span>📁 ファイルを選択</span>
                                                     <input
                                                         type="file"
                                                         accept="image/*"
@@ -144,13 +145,30 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                                        <div className="pt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                id="isPublicRanking"
+                                                checked={isPublicRanking}
+                                                onChange={(e) => setIsPublicRanking(e.target.checked)}
+                                                className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                                            />
+                                        </div>
+                                        <label htmlFor="isPublicRanking" className="text-sm cursor-pointer">
+                                            <span className="block font-bold text-indigo-900 dark:text-indigo-300">公開ランキングに参加する</span>
+                                            <span className="block text-xs text-indigo-700/70 dark:text-indigo-400/70 mt-0.5">
+                                                チェックを入れると、あなたのユーザー名、アイコン、獲得単語数がランキングに表示されます。
+                                            </span>
+                                        </label>
+                                    </div>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={handleSave}
                                             disabled={loading}
                                             className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
                                         >
-                                            {loading ? "Saving..." : "Save Changes"}
+                                            {loading ? "保存中..." : "変更を保存"}
                                         </button>
                                         <button
                                             onClick={() => {
@@ -160,7 +178,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             }}
                                             className="px-6 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-xl font-bold"
                                         >
-                                            Cancel
+                                            キャンセル
                                         </button>
                                     </div>
                                 </div>
@@ -185,7 +203,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         <button
                                             onClick={() => setIsEditing(true)}
                                             className="text-neutral-400 hover:text-indigo-500 transition-colors"
-                                            title="Edit Profile"
+                                            title="プロフィールを編集"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                                                 <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" />
@@ -199,26 +217,39 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'basic' : 'pro')}
                                             className="text-xs font-bold text-indigo-500 hover:text-indigo-400 border border-indigo-500/30 px-3 py-1.5 rounded-lg mb-4 flex items-center gap-2 transition-all"
                                         >
-                                            <span>⚙️</span> Manage Plan / Upgrade
+                                            <span>⚙️</span> プラン管理 / アップグレード
                                         </button>
                                     )}
+
+                                    <div className="flex items-center gap-2 mt-2 mb-6">
+                                        {user.isPublicRanking ? (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                ランキング公開中
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 text-[10px] font-bold">
+                                                🔒 ランキング非公開
+                                            </span>
+                                        )}
+                                    </div>
                                 </>
                             )}
 
                             {/* Stats */}
                             <div className="flex flex-wrap justify-center sm:justify-start gap-4">
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Total XP</div>
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">合計 XP</div>
                                     <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Coins</div>
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">コイン</div>
                                     <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
                                         {user.subscriptionPlan === 'unlimited' ? "無制限" : user.credits.toLocaleString()}
                                     </div>
                                 </div>
                                 <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Decks</div>
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">単語帳</div>
                                     <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
@@ -228,8 +259,8 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
 
                 <main>
                     <div className="flex items-end justify-between mb-8">
-                        <h2 className="text-2xl font-bold dark:text-white">Badges Collection</h2>
-                        <div className="text-sm font-bold text-neutral-400">{user.badges.length} / {allBadges.length} Unlocked</div>
+                        <h2 className="text-2xl font-bold dark:text-white">バッジコレクション</h2>
+                        <div className="text-sm font-bold text-neutral-400">{user.badges.length} / {allBadges.length} 獲得済み</div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -258,7 +289,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         </p>
                                         {!isUnlocked && (
                                             <div className="mt-2 text-[10px] font-bold text-neutral-300 uppercase tracking-wider flex items-center justify-center gap-1">
-                                                <span>🔒</span> Locked
+                                                <span>🔒</span> 未獲得
                                             </div>
                                         )}
                                     </div>

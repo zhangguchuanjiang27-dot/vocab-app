@@ -17,6 +17,7 @@ export default function RankingPage() {
     const { data: session, status } = useSession();
     const [period, setPeriod] = useState<Period>('lifetime');
     const [rankings, setRankings] = useState<RankingUser[]>([]);
+    const [isPublicRanking, setIsPublicRanking] = useState<boolean | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -28,10 +29,18 @@ export default function RankingPage() {
         const fetchRanking = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/ranking?period=${period}`);
-                if (res.ok) {
-                    const data = await res.json();
+                const [rankRes, userRes] = await Promise.all([
+                    fetch(`/api/ranking?period=${period}`),
+                    fetch(`/api/user/credits`)
+                ]);
+
+                if (rankRes.ok) {
+                    const data = await rankRes.json();
                     setRankings(data);
+                }
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    setIsPublicRanking(userData.isPublicRanking);
                 }
             } catch (error) {
                 console.error(error);
@@ -115,25 +124,41 @@ export default function RankingPage() {
 
                 {/* My Rank Banner */}
                 {session && !loading && (
-                    <div className="mb-8 bg-indigo-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-indigo-500/30">
-                        <div className="flex items-center gap-4">
-                            <div className="ml-2 font-bold text-indigo-200 text-sm uppercase tracking-wider">Your Rank</div>
-                            {myRank > 0 ? (
-                                <div className="text-2xl font-black">
-                                    {myRank}<span className="text-sm font-normal opacity-70 ml-1">位</span>
+                    <>
+                        {isPublicRanking === false ? (
+                            <div className="mb-8 p-6 bg-white dark:bg-neutral-900 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl text-center">
+                                <span className="text-3xl block mb-2">👋</span>
+                                <h2 className="font-bold text-neutral-900 dark:text-white mb-1">ランキングに参加しませんか？</h2>
+                                <p className="text-sm text-neutral-500 mb-4">
+                                    現在はランキングに表示されない設定になっています。<br />
+                                    プロフィールから「公開ランキングに参加する」をオンにしましょう！
+                                </p>
+                                <Link href="/profile" className="inline-block bg-indigo-600 text-white px-6 py-2 rounded-full font-bold text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-500/20">
+                                    プロフィールを編集する
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="mb-8 bg-indigo-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-indigo-500/30">
+                                <div className="flex items-center gap-4">
+                                    <div className="ml-2 font-bold text-indigo-200 text-sm uppercase tracking-wider">Your Rank</div>
+                                    {myRank > 0 ? (
+                                        <div className="text-2xl font-black">
+                                            {myRank}<span className="text-sm font-normal opacity-70 ml-1">位</span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-sm opacity-80">ランク外 (0語)</div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="text-sm opacity-80">ランク外 (0語)</div>
-                            )}
-                        </div>
-                        <div className="text-right">
-                            {myRank > 0 && (
-                                <div className="font-mono font-bold text-xl">
-                                    {rankings[myRank - 1]?.count.toLocaleString()} <span className="text-xs font-sans font-normal opacity-70">words</span>
+                                <div className="text-right">
+                                    {myRank > 0 && (
+                                        <div className="font-mono font-bold text-xl">
+                                            {rankings[myRank - 1]?.count.toLocaleString()} <span className="text-xs font-sans font-normal opacity-70">words</span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
+                        )}
+                    </>
                 )}
 
                 {/* Ranking List */}
@@ -168,7 +193,7 @@ export default function RankingPage() {
 
                                         <div className="flex-1 min-w-0">
                                             <div className={`font-bold truncate ${isMe ? "text-indigo-600 dark:text-indigo-400" : ""}`}>
-                                                {user.name || "Unknown"} {isMe && "(You)"}
+                                                {isMe ? (user.name || "Unknown") : (user.name?.split(' ')[0] || "Unknown")} {isMe && "(You)"}
                                             </div>
                                         </div>
 
