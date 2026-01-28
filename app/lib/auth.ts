@@ -16,7 +16,10 @@ export const authOptions: NextAuthOptions = {
                     access_type: "offline",
                     response_type: "code"
                 }
-            }
+            },
+            // すでにUserテーブルに同じメールアドレスが存在する場合、
+            // 自動的にGoogleアカウントと紐付ける（DBセットアップ直後のログイン問題を解決）
+            allowDangerousEmailAccountLinking: true,
         }),
         ...(process.env.NODE_ENV === 'development' ? [{
             id: 'credentials',
@@ -59,10 +62,6 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
-    // pages: {
-    //     signIn: '/auth/signin',
-    //     error: '/auth/error',
-    // },
     debug: false,
     secret: process.env.NEXTAUTH_SECRET || "secret",
 }
