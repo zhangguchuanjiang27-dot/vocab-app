@@ -166,6 +166,13 @@ export async function POST(req: Request) {
             subscriptionPlan: planName,
         };
 
+        // プラン変更時にクレジットを付与
+        if (planName === 'basic') {
+            updateData.credits = 500;
+        } else if (planName === 'pro') {
+            updateData.credits = 2000;
+        }
+
         if (subscription.current_period_end) {
             updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
         }
@@ -175,7 +182,7 @@ export async function POST(req: Request) {
                 where: { stripeCustomerId: customerId } as any,
                 data: updateData
             });
-            console.log(`✨ DONE: Updated ${result.count} user(s) to Plan: ${planName}`);
+            console.log(`✨ DONE: Updated ${result.count} user(s) to Plan: ${planName} and reset credits.`);
         } catch (error) {
             console.error('❌ DB Update Error (subscription update):', error);
         }
