@@ -38,42 +38,34 @@ export async function POST(req: Request) {
     if (event.type === "checkout.session.completed") {
         const checkoutSession = event.data.object as Stripe.Checkout.Session;
         const userId = checkoutSession.metadata?.userId;
+        const plan = checkoutSession.metadata?.plan;
+
+        console.log(`✅ checkout.session.completed: UserID=${userId}, Plan=${plan}, Mode=${checkoutSession.mode}`);
 
         // サブスクリプション購入
         if (checkoutSession.mode === "subscription") {
             const subscriptionId = checkoutSession.subscription as string;
             const customerId = checkoutSession.customer as string;
-            // メタデータからプランを取るが、なければinvoiceから推測が必要（後述のinvoiceイベントでカバーされるためここでは最低限）
-            const plan = checkoutSession.metadata?.plan;
 
             if (userId && subscriptionId) {
-                console.log(`Processing subscription checkout for UserID: ${userId}, Plan: ${plan}`);
+                console.log(`🔍 Processing subscription: ${subscriptionId} for user ${userId}`);
 
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
-                console.log(`Retrieved subscription status: ${subscription.status}`);
-
                 const updateData: any = {
                     stripeCustomerId: customerId,
                     subscriptionId: subscriptionId,
                     subscriptionStatus: subscription.status,
                 };
 
-                // 日付の安全な変換
                 if (subscription.current_period_end) {
-                    const periodEnd = new Date(subscription.current_period_end * 1000);
-                    if (!isNaN(periodEnd.getTime())) {
-                        updateData.subscriptionPeriodEnd = periodEnd;
-                    }
+                    updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
                 }
 
                 if (plan) {
                     updateData.subscriptionPlan = plan;
-                    // 初回のみここで付与（更新時はinvoiceイベントで）
-                    if (plan === 'basic') {
-                        updateData.credits = 500;
-                    } else if (plan === 'pro') {
-                        updateData.credits = 2000;
-                    }
+                    if (plan === 'basic') updateData.credits = 500;
+                    else if (plan === 'pro') updateData.credits = 2000;
+                    console.log(`💰 Setting initial credits for plan ${plan}: ${updateData.credits}`);
                 }
 
                 try {
@@ -81,76 +73,71 @@ export async function POST(req: Request) {
                         where: { id: userId },
                         data: updateData
                     });
-                    console.log(`Successfully activated subscription for user ${userId}`);
+                    console.log(`✨ DONE: User ${userId} is now ${plan}`);
                 } catch (error) {
-                    console.error('Database update failed for subscription:', error);
+                    console.error('❌ DB Update Error (checkout):', error);
                 }
-            }
-        }
-        // 都度課金
-        else if (checkoutSession.metadata?.type === "credit_purchase") {
-            const creditsStr = checkoutSession.metadata?.credits;
-            if (userId && creditsStr) {
-                const creditsToAdd = parseInt(creditsStr, 10);
-                if (!isNaN(creditsToAdd) && creditsToAdd > 0) {
-                    await prisma.user.update({
-                        where: { id: userId },
-                        data: { credits: { increment: creditsToAdd } }
-                    });
-                }
+            } else {
+                console.warn("⚠️ Missing userId or subscriptionId in checkoutSession metadata");
             }
         }
     }
 
-    // --- 請求書支払い成功（毎月の更新・初回含む） ---
+    // --- 請求書支払い成功 ---
     else if (event.type === "invoice.payment_succeeded") {
         const invoice = event.data.object as any;
         const subscriptionId = invoice.subscription as string;
         const customerId = invoice.customer as string;
 
-        if (subscriptionId) {
-            console.log(`Processing payment success for subscription: ${subscriptionId}`);
+        console.log(`✅ invoice.payment_succeeded: Customer=${customerId}, Sub=${subscriptionId}`);
 
+        if (subscriptionId) {
             let user = await prisma.user.findFirst({
                 where: { stripeCustomerId: customerId } as any
             }) as any;
 
             if (!user && invoice.customer_email) {
                 user = await prisma.user.findUnique({ where: { email: invoice.customer_email } });
+                console.log(`🔍 Found user by email: ${invoice.customer_email}`);
             }
 
             if (user) {
+                console.log(`👤 Found matching user: ${user.id} (${user.email})`);
                 const subscription: any = await stripe.subscriptions.retrieve(subscriptionId);
 
                 let planName = subscription.metadata?.plan;
                 if (!planName) {
                     const priceId = subscription.items.data[0]?.price.id;
+                    console.log(`🔍 No plan in metadata, checking PriceID: ${priceId}`);
                     if (priceId === process.env.STRIPE_PRICE_ID_BASIC) planName = 'basic';
                     else if (priceId === process.env.STRIPE_PRICE_ID_PRO) planName = 'pro';
-                    else planName = user.subscriptionPlan;
                 }
+
+                console.log(`📊 Determined Plan: ${planName}`);
 
                 const updateData: any = {
                     subscriptionStatus: subscription.status,
                     subscriptionPlan: planName,
                 };
 
-                // 支払い成功時にプランに応じたクレジットを付与・リセット
-                if (planName === 'basic') {
-                    updateData.credits = 500;
-                } else if (planName === 'pro') {
-                    updateData.credits = 2000;
-                }
+                if (planName === 'basic') updateData.credits = 500;
+                else if (planName === 'pro') updateData.credits = 2000;
 
                 if (subscription.current_period_end) {
                     updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
                 }
 
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: updateData
-                });
-                console.log(`Successfully reset credits to 500 for user ${user.id} due to payment success`);
+                try {
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: updateData
+                    });
+                    console.log(`✨ DONE: User ${user.id} updated via invoice success`);
+                } catch (error) {
+                    console.error('❌ DB Update Error (invoice):', error);
+                }
+            } else {
+                console.warn("⚠️ No user found for this invoice/customer");
             }
         }
     }
