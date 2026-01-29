@@ -5,7 +5,7 @@ import { prisma } from "@/app/lib/prisma";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    // apiVersion: "2025-12-15.clover",
+    apiVersion: "2024-06-20" as any, // Force stable version despite strange local types
 });
 
 export async function POST(req: Request) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Price configuration missing" }, { status: 500 });
         }
 
-        // DBからユーザー情報を取得して顧客IDを確認
+        // DBからユーザー情報を取得
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
         });
@@ -41,16 +41,36 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // 型定義エラー回避のためのキャスト
         const dbUser = user as any;
+        let stripeCustomerId = dbUser.stripeCustomerId;
+
+        // --- Important: Satisfy Accounts V2 requirement ---
+        // If no customer exists, we MUST create one first.
+        if (!stripeCustomerId) {
+            console.log("Creating new Stripe customer for user:", session.user.email);
+            const customer = await stripe.customers.create({
+                email: session.user.email || undefined,
+                name: session.user.name || undefined,
+                metadata: {
+                    userId: session.user.id,
+                }
+            });
+            stripeCustomerId = customer.id;
+
+            // Update user in DB with the new customer ID
+            await prisma.user.update({
+                where: { id: session.user.id },
+                data: { stripeCustomerId: stripeCustomerId }
+            });
+        }
 
         // 既に有効なサブスクリプションを持っている場合はポータルへ誘導
-        const hasActiveSubscription = dbUser.stripeCustomerId && dbUser.subscriptionStatus === 'active';
+        const hasActiveSubscription = dbUser.subscriptionStatus === 'active';
 
         if (hasActiveSubscription) {
-            console.log("Redirecting to billing portal for existing customer:", dbUser.stripeCustomerId);
+            console.log("Redirecting to billing portal for existing customer:", stripeCustomerId);
             const portalSession = await stripe.billingPortal.sessions.create({
-                customer: dbUser.stripeCustomerId,
+                customer: stripeCustomerId,
                 return_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/`,
             });
             return NextResponse.json({ url: portalSession.url });
@@ -67,6 +87,7 @@ export async function POST(req: Request) {
                 },
             ],
             mode: "subscription",
+            customer: stripeCustomerId, // Always provide the customer ID
             success_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?success=true&plan=${plan}`,
             cancel_url: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?canceled=true`,
             metadata: {
@@ -81,13 +102,6 @@ export async function POST(req: Request) {
                 }
             }
         };
-
-        // 既存のCustomer IDがある場合は再利用（新規作成しない）
-        if (dbUser.stripeCustomerId) {
-            checkoutSessionParams.customer = dbUser.stripeCustomerId;
-        } else {
-            checkoutSessionParams.customer_email = session.user.email || undefined;
-        }
 
         const checkoutSession = await stripe.checkout.sessions.create(checkoutSessionParams);
 

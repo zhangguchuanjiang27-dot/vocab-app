@@ -4,7 +4,7 @@ import Stripe from "stripe";
 import { prisma } from "@/app/lib/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    // apiVersion: "2025-12-15.clover", // STARTUP ERROR FIX: Use default SDK version
+    apiVersion: "2024-06-20" as any, // Force stable version
     typescript: true,
 });
 
