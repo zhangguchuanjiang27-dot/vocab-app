@@ -142,30 +142,38 @@ export async function POST(req: Request) {
         }
     }
     // --- サブスクリプション更新（解約予約・アップグレードなど） ---
-    // ここではコインはいじらず、状態（ステータスや期限）だけを同期する
     else if (event.type === "customer.subscription.updated") {
         const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
 
-        console.log(`Processing subscription update: ${subscription.id} (Status: ${subscription.status})`);
+        console.log(`🔄 customer.subscription.updated: ${subscription.id} (Status: ${subscription.status})`);
+
+        const priceId = subscription.items.data[0]?.price.id;
+        let planName: string | null = null;
+
+        if (priceId === process.env.STRIPE_PRICE_ID_BASIC) planName = 'basic';
+        else if (priceId === process.env.STRIPE_PRICE_ID_PRO) planName = 'pro';
 
         const updateData: any = {
             subscriptionStatus: subscription.status,
+            subscriptionPlan: planName, // プラン変更を反映
         };
 
         if (subscription.current_period_end) {
             updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
         }
 
-        // ポータルからプラン変更した直後の同期
-        const priceId = subscription.items.data[0]?.price.id;
-        if (priceId === process.env.STRIPE_PRICE_ID_BASIC) updateData.subscriptionPlan = 'basic';
-        else if (priceId === process.env.STRIPE_PRICE_ID_PRO) updateData.subscriptionPlan = 'pro';
+        console.log(`📊 Plan sync in update event: Price=${priceId} -> Plan=${planName}`);
 
-        await prisma.user.updateMany({
-            where: { stripeCustomerId: customerId } as any,
-            data: updateData
-        });
+        try {
+            await prisma.user.updateMany({
+                where: { stripeCustomerId: customerId } as any,
+                data: updateData
+            });
+            console.log(`✨ DONE: User with CustomerID ${customerId} updated to ${planName}`);
+        } catch (error) {
+            console.error('❌ DB Update Error (subscription update):', error);
+        }
     }
     // --- 契約期間終了（完全な解約） ---
     else if (event.type === "customer.subscription.deleted") {
