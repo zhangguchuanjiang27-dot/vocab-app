@@ -67,7 +67,7 @@ export default function AdminPage() {
                             <th className="px-6 py-4">Plan</th>
                             <th className="px-6 py-4">Coins</th>
                             <th className="px-6 py-4">Stats</th>
-                            <th className="px-6 py-4">Login</th>
+                            <th className="px-6 py-4">Period</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-100 dark:divide-neutral-900">
@@ -124,8 +124,39 @@ export default function AdminPage() {
                                     <br />
                                     <span className="text-neutral-500">Decks:</span> <span className="font-bold">{user._count?.decks}</span>
                                 </td>
-                                <td className="px-6 py-4 text-[10px] text-neutral-400 font-mono">
-                                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'N/A'}
+                                <td className="px-6 py-4">
+                                    {user.subscriptionPeriodEnd && (user.subscriptionPlan === 'basic' || user.subscriptionPlan === 'pro' || user.subscriptionPlan === 'unlimited') ? (() => {
+                                        const now = new Date();
+                                        const end = new Date(user.subscriptionPeriodEnd);
+                                        const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000); // 簡易的に30日前を開始日とする
+
+                                        const total = end.getTime() - start.getTime();
+                                        const elapsed = now.getTime() - start.getTime();
+                                        const percentage = Math.max(0, Math.min(100, (elapsed / total) * 100));
+
+                                        const daysRemaining = Math.max(0, Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+                                        return (
+                                            <div className="w-32">
+                                                <div className="flex justify-between items-end mb-1">
+                                                    <span className={`text-[10px] font-black ${daysRemaining < 3 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                        あと {daysRemaining} 日
+                                                    </span>
+                                                    <span className="text-[8px] text-neutral-500 font-mono italic">
+                                                        {end.getMonth() + 1}/{end.getDate()} 補充
+                                                    </span>
+                                                </div>
+                                                <div className="h-1 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={`h-full transition-all duration-500 ${daysRemaining < 3 ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                                                        style={{ width: `${100 - percentage}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })() : (
+                                        <span className="text-[10px] text-neutral-400 font-mono italic opacity-30">No Period</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}

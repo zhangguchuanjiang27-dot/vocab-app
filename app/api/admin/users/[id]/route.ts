@@ -28,6 +28,7 @@ export async function PATCH(
             subscriptionPlan,
             role,
             subscriptionStatus: subscriptionPlan ? "active" : null,
+            subscriptionPeriodEnd: subscriptionPlan ? undefined : null, // FREE(null)なら期限を消去
         };
 
         // creditsが明示的に指定されている場合はそれを使用、
