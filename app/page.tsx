@@ -487,7 +487,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300">
+    <div className="min-h-screen bg-neutral-50 dark:bg-[#050505] text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 overflow-x-hidden relative">
+
+      {/* 🌌 Ambient Background Glow */}
+      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-500/5 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-purple-500/5 blur-[100px] rounded-full animate-pulse delay-1000"></div>
+      </div>
 
       {/* Level Up Animation Overlay */}
       {showLevelUp && (
@@ -1144,11 +1150,29 @@ export default function Home() {
                       <button
                         onClick={handleGenerate}
                         disabled={loading || !wordInput.trim()}
-                        className={`w-full py-3 rounded-lg font-bold text-sm transition-all
-                          ${loading ? "bg-neutral-100 text-neutral-400" : "bg-neutral-900 dark:bg-white text-white dark:text-black hover:opacity-90 shadow-md"}
+                        className={`w-full py-4 rounded-xl font-bold text-sm transition-all relative overflow-hidden group
+                          ${loading
+                            ? "bg-neutral-100 text-neutral-400"
+                            : "bg-neutral-900 dark:bg-white text-white dark:text-black shadow-[0_0_20px_rgba(0,0,0,0.1)] dark:shadow-[0_0_25px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98]"
+                          }
                         `}
                       >
-                        {loading ? "生成中..." : "リストを生成"}
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                          {loading ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              生成中...
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-lg">✨</span> リストを生成
+                            </>
+                          )}
+                        </span>
+                        {!loading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>}
                       </button>
                       <p className="mt-3 text-[10px] text-neutral-400 text-center leading-tight">
                         ※一度に合計10項目まで生成可能です
@@ -1160,11 +1184,32 @@ export default function Home() {
                   {/* Right: Output List */}
                   <div className="min-h-[500px]">
                     {words.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl text-neutral-400 p-12 text-center">
-                        <p className="whitespace-pre-line leading-relaxed">
-                          まずは単語・フレーズを入力して、{"\n"}
-                          あなただけの学習リストを作りましょう！
-                        </p>
+                      <div className="h-full flex flex-col items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-50/50 dark:bg-neutral-900/30 relative overflow-hidden group">
+
+                        {/* 🃏 Floating Cards Visual (Empty State) */}
+                        <div className="absolute inset-0 pointer-events-none opacity-30 select-none overflow-hidden">
+                          <div className="absolute top-[20%] right-[10%] bg-white dark:bg-neutral-800 p-3 rounded-xl shadow-lg rotate-12 animate-float delay-0 scale-75 blur-[1px]">
+                            <div className="w-16 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full mb-2"></div>
+                            <div className="w-8 h-2 bg-neutral-100 dark:bg-neutral-700/50 rounded-full"></div>
+                          </div>
+                          <div className="absolute bottom-[30%] left-[10%] bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-lg -rotate-6 animate-float delay-1000 scale-90 blur-[2px]">
+                            <div className="w-20 h-2.5 bg-neutral-200 dark:bg-neutral-700 rounded-full mb-2"></div>
+                            <div className="w-12 h-2.5 bg-neutral-100 dark:bg-neutral-700/50 rounded-full"></div>
+                          </div>
+                          <div className="absolute top-[10%] left-[20%] bg-indigo-500/10 p-2 rounded-lg rotate-[-12deg] animate-pulse">
+                            <span className="text-2xl">✨</span>
+                          </div>
+                        </div>
+
+                        <div className="relative z-10">
+                          <div className="w-16 h-16 bg-white dark:bg-neutral-800 rounded-2xl flex items-center justify-center text-3xl shadow-xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-500">
+                            🚀
+                          </div>
+                          <p className="whitespace-pre-line leading-relaxed font-bold text-neutral-500 dark:text-neutral-400">
+                            まずは単語・フレーズを入力して、{"\n"}
+                            あなただけの学習リストを作りましょう！
+                          </p>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex flex-col gap-6">

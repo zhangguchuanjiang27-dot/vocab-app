@@ -51,13 +51,22 @@ export default async function RootLayout({
   // ユーザーのクレジット情報を取得（ログイン時のみ）
   let credits = 0;
   let plan: string | null = null;
+  let subscriptionPeriodEnd: Date | null = null;
+  let role: string = 'user';
   if (session?.user?.id) {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { credits: true, subscriptionPlan: true }
+      select: {
+        credits: true,
+        subscriptionPlan: true,
+        subscriptionPeriodEnd: true,
+        role: true
+      }
     }) as any;
     credits = user?.credits ?? 0;
     plan = user?.subscriptionPlan ?? null;
+    subscriptionPeriodEnd = user?.subscriptionPeriodEnd;
+    role = user?.role ?? 'user';
   }
 
   // クライアントサイドでのストリーク取得用のコンポーネントを差し込むか、
@@ -87,7 +96,13 @@ export default async function RootLayout({
             {/* 実際の実装: 既存のlayoutのnavをcomponents/Header.tsxに移設するよう指示し、それをインポート配置する。*/}
             {/* しかしファイル数が増えるので、簡易的に StreakBadge コンポーネントを作って配置する。 */}
             {/* ここで直接インポートできないため、一旦ファイルを書き換えて別ファイル (Header.tsx) を作成し、layout.tsxからはそれを呼ぶ形にするのが最もクリーン。 */}
-            <Header initialCredits={credits} session={session} plan={plan} />
+            <Header
+              initialCredits={credits}
+              session={session}
+              plan={plan}
+              subscriptionPeriodEnd={subscriptionPeriodEnd ? subscriptionPeriodEnd.toISOString() : null}
+              role={role}
+            />
           </nav>
 
           <main className="flex-1">

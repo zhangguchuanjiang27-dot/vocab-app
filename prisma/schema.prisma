@@ -4,9 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model Account {
@@ -123,16 +122,17 @@ model WordCard {
     isMastered Boolean  @default(false)
     createdAt DateTime @default(now())
 
-    synonyms    Json?  // 類義語: [{word, partOfSpeech, meaning}]
-    derivatives Json?  // 派生語: [{word, partOfSpeech, meaning}]
+    synonyms    String?
+    derivatives String?
 }
 
 // 生成済み単語のキャッシュ辞書
 model DictionaryEntry {
   id        String   @id @default(cuid())
   word      String   @unique
-  data      Json     // 生成された全データ（意味、品詞、例文など）
+  data      String   // 生成された全データ（意味、品詞、例文など）
   createdAt DateTime @default(now())
+
   updatedAt DateTime @updatedAt
 }
 

@@ -8,9 +8,11 @@ type HeaderProps = {
     initialCredits: number;
     session: Session | null;
     plan?: string | null;
+    subscriptionPeriodEnd?: string | null;
+    role?: string;
 };
 
-export default function Header({ initialCredits, session, plan }: HeaderProps) {
+export default function Header({ initialCredits, session, plan, subscriptionPeriodEnd, role }: HeaderProps) {
     const [streak, setStreak] = useState<number | null>(null);
     const [streakUpdated, setStreakUpdated] = useState(false);
 
@@ -23,7 +25,6 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                         setStreak(data.streak);
                         if (data.updated) {
                             setStreakUpdated(true);
-                            // Simple toast or effect could trigger here
                             setTimeout(() => setStreakUpdated(false), 5000);
                         }
                     }
@@ -31,6 +32,18 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                 .catch(console.error);
         }
     }, [session]);
+
+    // Calculate remaining days
+    const getDaysRemaining = () => {
+        if (!subscriptionPeriodEnd) return null;
+        const end = new Date(subscriptionPeriodEnd);
+        const now = new Date();
+        const diff = end.getTime() - now.getTime();
+        const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+        return days > 0 ? days : 0;
+    };
+
+    const daysRemaining = getDaysRemaining();
 
     return (
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -44,6 +57,12 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                     <Link href="/ranking" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
                         <span className="group-hover:scale-110 transition-transform">👑</span>
                         <span>Ranking</span>
+                    </Link>
+                )}
+                {session && role === 'admin' && (
+                    <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
+                        <span>📊</span>
+                        <span>Admin</span>
                     </Link>
                 )}
             </div>
@@ -75,11 +94,20 @@ export default function Header({ initialCredits, session, plan }: HeaderProps) {
                             {plan || 'FREE'}
                         </div>
 
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 relative group/wallet">
                             <span className="text-lg">🪙</span>
                             <span className="font-bold font-mono text-sm">
                                 {plan === 'unlimited' ? "無制限" : initialCredits}
                             </span>
+
+                            {/* Days Remaining Tooltip/Badge */}
+                            {plan && daysRemaining !== null && (
+                                <div className="ml-1 px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 rounded text-[9px] font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-1 group-hover/wallet:scale-105 transition-transform">
+                                    <span className="opacity-70">あと</span>
+                                    <span className={`${daysRemaining <= 3 ? 'text-red-500 animate-pulse' : ''}`}>{daysRemaining}日</span>
+                                </div>
+                            )}
+
                             <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1">
                                 追加
                             </Link>
