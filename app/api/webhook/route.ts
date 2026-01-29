@@ -145,32 +145,37 @@ export async function POST(req: Request) {
     else if (event.type === "customer.subscription.updated") {
         const subscription = event.data.object as any;
         const customerId = subscription.customer as string;
-
-        console.log(`🔄 customer.subscription.updated: ${subscription.id} (Status: ${subscription.status})`);
-
         const priceId = subscription.items.data[0]?.price.id;
-        let planName: string | null = null;
 
-        if (priceId === process.env.STRIPE_PRICE_ID_BASIC) planName = 'basic';
-        else if (priceId === process.env.STRIPE_PRICE_ID_PRO) planName = 'pro';
+        console.log(`🔄 customer.subscription.updated: SubID=${subscription.id}, Customer=${customerId}`);
+        console.log(`🔍 Received PriceID: ${priceId}`);
+        console.log(`🔍 ENV BASIC ID: ${process.env.STRIPE_PRICE_ID_BASIC}`);
+        console.log(`🔍 ENV PRO ID: ${process.env.STRIPE_PRICE_ID_PRO}`);
+
+        let planName: string | null = null;
+        if (priceId === process.env.STRIPE_PRICE_ID_BASIC) {
+            planName = 'basic';
+        } else if (priceId === process.env.STRIPE_PRICE_ID_PRO) {
+            planName = 'pro';
+        } else {
+            console.warn(`⚠️ Could not match PriceID ${priceId} to any known plan.`);
+        }
 
         const updateData: any = {
             subscriptionStatus: subscription.status,
-            subscriptionPlan: planName, // プラン変更を反映
+            subscriptionPlan: planName,
         };
 
         if (subscription.current_period_end) {
             updateData.subscriptionPeriodEnd = new Date(subscription.current_period_end * 1000);
         }
 
-        console.log(`📊 Plan sync in update event: Price=${priceId} -> Plan=${planName}`);
-
         try {
-            await prisma.user.updateMany({
+            const result = await prisma.user.updateMany({
                 where: { stripeCustomerId: customerId } as any,
                 data: updateData
             });
-            console.log(`✨ DONE: User with CustomerID ${customerId} updated to ${planName}`);
+            console.log(`✨ DONE: Updated ${result.count} user(s) to Plan: ${planName}`);
         } catch (error) {
             console.error('❌ DB Update Error (subscription update):', error);
         }
