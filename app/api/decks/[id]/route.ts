@@ -33,14 +33,6 @@ export async function GET(
             return NextResponse.json({ error: "Deck not found" }, { status: 404 });
         }
 
-        if (deck) {
-            // @ts-ignore
-            deck.words = deck.words.map((w: any) => ({
-                ...w,
-                synonyms: w.synonyms && typeof w.synonyms === 'string' ? JSON.parse(w.synonyms) : w.synonyms,
-                derivatives: w.derivatives && typeof w.derivatives === 'string' ? JSON.parse(w.derivatives) : w.derivatives,
-            }));
-        }
 
         return NextResponse.json(deck);
     } catch (err) {
@@ -153,8 +145,8 @@ export async function PUT(
                     example: w.example || "",
                     example_jp: exampleJp,
                     deckId: id,
-                    synonyms: w.synonyms ? JSON.stringify(w.synonyms) : undefined,
-                    derivatives: w.derivatives ? JSON.stringify(w.derivatives) : undefined
+                    synonyms: w.synonyms || undefined,
+                    derivatives: w.derivatives || undefined
                 };
             });
 

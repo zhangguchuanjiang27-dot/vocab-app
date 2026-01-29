@@ -94,8 +94,8 @@ export async function PATCH(
         if (meaning !== undefined) updateData.meaning = meaning;
         if (partOfSpeech !== undefined) updateData.partOfSpeech = partOfSpeech;
         if (example !== undefined) updateData.example = example;
-        if (synonyms !== undefined) updateData.synonyms = JSON.stringify(synonyms);
-        if (derivatives !== undefined) updateData.derivatives = JSON.stringify(derivatives);
+        if (synonyms !== undefined) updateData.synonyms = synonyms;
+        if (derivatives !== undefined) updateData.derivatives = derivatives;
 
         // example_jp と otherExamples の処理
         let baseExampleJp = example_jp;

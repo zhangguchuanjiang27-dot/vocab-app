@@ -59,7 +59,7 @@ export async function POST(
 
             if (cacheEntry && cacheEntry.data) {
                 // @ts-ignore
-                const data = typeof cacheEntry.data === 'string' ? JSON.parse(cacheEntry.data) : cacheEntry.data;
+                const data = cacheEntry.data;
 
                 // 意味が大幅に変わっている場合はキャッシュを無視する（ユーザーが手動で編集した場合など）
                 const cachedMeaning = String(data.meaning || "");
@@ -121,7 +121,7 @@ export async function POST(
                 出力形式:
                 {
                   "synonyms": [
-                     { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
+                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
                   ]
                 }
                 `;
@@ -166,7 +166,7 @@ export async function POST(
                     let cacheData: any = {};
                     if (existingCache?.data) {
                         try {
-                            cacheData = typeof existingCache.data === 'string' ? JSON.parse(existingCache.data) : existingCache.data;
+                            cacheData = existingCache.data;
                         } catch (e) {
                             console.error("Failed to parse cache", e);
                         }
@@ -179,8 +179,8 @@ export async function POST(
                     // @ts-ignore
                     await prisma.dictionaryEntry.upsert({
                         where: { word: wordKey },
-                        update: { data: JSON.stringify(cacheData) },
-                        create: { word: wordKey, data: JSON.stringify(cacheData) }
+                        update: { data: cacheData },
+                        create: { word: wordKey, data: cacheData }
                     });
                 } catch (e) {
                     console.error("Cache update failed", e);
@@ -196,8 +196,8 @@ export async function POST(
 
         // 5. Update WordCard
         const updateData: any = {};
-        if (synonyms !== undefined && synonyms !== null) updateData.synonyms = JSON.stringify(synonyms);
-        if (derivatives !== undefined && derivatives !== null) updateData.derivatives = JSON.stringify(derivatives);
+        if (synonyms !== undefined && synonyms !== null) updateData.synonyms = synonyms;
+        if (derivatives !== undefined && derivatives !== null) updateData.derivatives = derivatives;
 
         const updatedWord = await prisma.wordCard.update({
             where: { id },

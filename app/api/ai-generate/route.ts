@@ -143,7 +143,7 @@ ${idiomText || ""}
     // キャッシュにあった単語データ
     // @ts-ignore
     // @ts-ignore
-    const foundWordsData = cachedEntries.map((entry: any) => typeof entry.data === 'string' ? JSON.parse(entry.data) : entry.data);
+    const foundWordsData = cachedEntries.map((entry: any) => entry.data);
     const foundWordsSet = new Set(cachedEntries.map((entry: any) => entry.word));
 
     // 3. キャッシュになかった単語を特定
@@ -311,10 +311,10 @@ ${idiomText || ""}
         // @ts-ignore
         await prisma.dictionaryEntry.upsert({
           where: { word: wordData.word.toLowerCase() },
-          update: { data: JSON.stringify(wordData) },
+          update: { data: wordData },
           create: {
             word: wordData.word.toLowerCase(),
-            data: JSON.stringify(wordData)
+            data: wordData
           }
         }).catch((e: any) => console.error("Failed to cache word:", wordData.word, e));
       }

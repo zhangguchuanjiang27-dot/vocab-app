@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Account {
@@ -122,15 +123,15 @@ model WordCard {
     isMastered Boolean  @default(false)
     createdAt DateTime @default(now())
 
-    synonyms    String?
-    derivatives String?
+    synonyms    Json?
+    derivatives Json?
 }
 
 // 生成済み単語のキャッシュ辞書
 model DictionaryEntry {
   id        String   @id @default(cuid())
   word      String   @unique
-  data      String   // 生成された全データ（意味、品詞、例文など）
+  data      Json   // 生成された全データ（意味、品詞、例文など）
   createdAt DateTime @default(now())
 
   updatedAt DateTime @updatedAt
