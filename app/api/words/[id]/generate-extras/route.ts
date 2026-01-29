@@ -59,7 +59,8 @@ export async function POST(
 
             if (cacheEntry && cacheEntry.data) {
                 // @ts-ignore
-                const data = cacheEntry.data;
+                // @ts-ignore
+                const data = cacheEntry.data as any;
 
                 // 意味が大幅に変わっている場合はキャッシュを無視する（ユーザーが手動で編集した場合など）
                 const cachedMeaning = String(data.meaning || "");
@@ -147,7 +148,7 @@ export async function POST(
             if (!response.ok) throw new Error("OpenAI API Error");
 
             const aiData = await response.json();
-            const content = JSON.parse(aiData.choices[0].message.content || "{}");
+            const content = JSON.parse(aiData.choices[0].message.content || "{}") as any;
 
             if (type === 'all') {
                 synonyms = content.synonyms || undefined;
