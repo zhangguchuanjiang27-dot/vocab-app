@@ -36,42 +36,41 @@ export async function POST(req: Request) {
 
   try {
     const { wordText, idiomText, text } = await req.json();
-    const inputForNormalization = `
-【単語リスト】
-${wordText || text || ""}
+    const rawInput = (wordText || idiomText || text || "").trim();
+    const rawLines = rawInput.split('\n')
+      .map((line: string) => line.replace(/^[\d\-\.\s]+/, "").trim()) // 行番号や記号を除去
+      .filter((line: string) => line.length > 0);
 
-【熟語リスト】
-${idiomText || ""}
-    `.trim();
+    if (rawLines.length === 0) {
+      return NextResponse.json({ words: [] });
+    }
 
-    // Step 0: 入力テキストをAIで解析し、単語の「原形（辞書形）」のリストに変換する
+    // Step 0: 入力テキストをAIで解析し、各行を「原形（辞書形）」に正規化する
     const normalizationPrompt = `
       あなたは言語学のエキスパートです。
-      提供されたテキストから英単語や熟語を抽出し、すべて「原形（辞書形・単数形）」に直してリスト化してください。
+      提供された英単語・熟語のリストを、適切な「学習用の基本形」に変換してください。
       
-      【入力形式の解釈ルール】
-      提供されたテキストは**改行区切り**のリストです。以下のルールを厳守してください。
+      【最優先ルール：熟語の扱い】
+      1. **慣用的な形を維持する**: 
+         熟語や慣用句については、**最も一般的で正しい慣用的な形**を維持してください。
+         ❌ 例: "when it comes to" を無理に "when it come to" にしないでください。これは間違いです。
+         ✅ 正解: "when it comes to" (sがついた形が一般的)
+      2. **絶対に分割しない**: 
+         各項目（1行）は、必ず1つの項目として出力してください。
+         ❌ 例: "be no stranger to" を分解してはいけません。
 
-      1. **1行 = 1エントリー**: 改行で区切られた各行を、それぞれ独立した1つの項目として扱ってください。
-      2. **スペースを含む行は熟語**: 行の中にスペースが含まれている場合（例: "look after", "human rights", "climate change"）は、**その行全体で1つの熟語や複合語**として扱ってください。
-         ❌ 絶対に分割してはいけません（例: "look after" -> "look", "after" とするのはNG）。
-      3. **スペースを含まない行は単語**: 行の中にスペースがない場合（例: "apple"）は、単一の単語として扱ってください。
-
-      【正規化ルール】
-      1. **動詞**: 過去形・進行形・三人称単数などは、すべて「現在形の原形」にする。
-         例: played -> play, swimming -> swim, goes -> go
-      2. **名詞**: 複数形は「単数形」にする。
-         例: apples -> apple
-      3. **重複排除**: 完全に重複する項目は1つにまとめる。
-      4. **クレンジング**: 明らかなゴミデータ（記号のみなど）は除外する。
+      【正規化のガイドライン】
+      1. **通常の単語**: 動詞は原形に、名詞は単数形にします (例: "playing" -> "play")。
+      2. **1対1の対応**: 入力が3行なら、出力も必ず3つの項目にしてください。
 
       【出力形式】
+      以下のJSON形式のみで出力してください。
       {
-        "lemmas": ["refresher training", "apple", "play", "study", "look after"]
+        "items": ["normalized_term_1", "normalized_term_2", ...]
       }
 
-      テキスト:
-      ${inputForNormalization.slice(0, 1500)}
+      対象リスト:
+      ${JSON.stringify(rawLines)}
     `;
 
     let uniqueWords: string[] = [];
@@ -90,6 +89,7 @@ ${idiomText || ""}
             { role: "user", content: normalizationPrompt },
           ],
           response_format: { type: "json_object" },
+          temperature: 0, // 決定論的な出力を期待
         }),
       });
 
@@ -98,23 +98,17 @@ ${idiomText || ""}
       const normData = await normResponse.json();
       const normParsed = JSON.parse(normData.choices[0].message.content || "{}");
 
-      if (normParsed.lemmas && Array.isArray(normParsed.lemmas)) {
-        uniqueWords = normParsed.lemmas.map((w: string) => w.toLowerCase());
+      if (normParsed.items && Array.isArray(normParsed.items)) {
+        uniqueWords = Array.from(new Set(normParsed.items.map((w: string) => w.toLowerCase())));
       } else {
         // AI失敗時のフォールバック
-        const rawLines = ((wordText || "") + "\n" + (idiomText || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-        const fallbackSet = new Set<string>();
-        rawLines.forEach((line: string) => {
-          const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
-          if (clean) fallbackSet.add(clean);
-        });
-        uniqueWords = Array.from(fallbackSet);
+        uniqueWords = Array.from(new Set(rawLines.map((l: string) => l.toLowerCase())));
       }
 
     } catch (e) {
       console.error("Normalization Error:", e);
       // エラー時はフォールバック
-      const rawLines = ((wordText || "") + "\n" + (idiomText || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      const rawLines = ((wordText || "") + "\n" + (idiomText || "") + "\n" + (text || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
       const fallbackSet = new Set<string>();
       rawLines.forEach((line: string) => {
         const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
