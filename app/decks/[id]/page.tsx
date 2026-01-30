@@ -27,6 +27,68 @@ type Deck = {
     words: WordCard[];
 };
 
+type Folder = {
+    id: string;
+    name: string;
+    createdAt: string;
+    decks?: Deck[];
+};
+
+// Helper function to process raw word data from API (handles custom markers in example_jp)
+const processWordCard = (w: any): WordCard => {
+    if (!w || typeof w !== 'object') return w;
+
+    // Force string conversion for safety
+    let cleanExampleJp = String(w.example_jp || "");
+    let otherExamples: any[] = Array.isArray(w.otherExamples) ? w.otherExamples : [];
+
+    // 1. アンロックマーカーのチェック (表示上は除去)
+    if (cleanExampleJp.includes('|||UNLOCKED|||')) {
+        cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
+    }
+
+    // 2. 追加例文マーカーのチェック
+    if (cleanExampleJp.includes('|||EXT|||')) {
+        const parts = cleanExampleJp.split('|||EXT|||');
+        cleanExampleJp = parts[0] || "";
+        try {
+            const extPart = parts[1].split('|||UNLOCKED|||')[0]; // |||UNLOCKED||| が後ろにある可能性を考慮
+            const parsed = JSON.parse(extPart);
+            if (Array.isArray(parsed)) {
+                otherExamples = parsed;
+            } else if (parsed && typeof parsed === 'object') {
+                if (parsed.examples && Array.isArray(parsed.examples)) {
+                    otherExamples = parsed.examples;
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to parse extended data", e);
+        }
+    }
+
+    // Clean otherExamples to match expected structure
+    const safeOtherExamples = otherExamples.map((ex: any) => {
+        if (!ex || typeof ex !== 'object') return null;
+        return {
+            role: String(ex.role || ''),
+            text: String(ex.text || ''),
+            translation: String(ex.translation || '')
+        };
+    }).filter(Boolean) as { role: string; text: string; translation: string }[];
+
+    return {
+        ...w,
+        word: String(w.word || ""),
+        meaning: String(w.meaning || ""),
+        example: String(w.example || ""),
+        partOfSpeech: w.partOfSpeech ? String(w.partOfSpeech) : undefined,
+        example_jp: cleanExampleJp,
+        otherExamples: safeOtherExamples,
+        synonyms: Array.isArray(w.synonyms) ? w.synonyms : undefined,
+        derivatives: Array.isArray(w.derivatives) ? w.derivatives : undefined,
+    };
+};
+
 export default function DeckPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -309,66 +371,8 @@ export default function DeckPage() {
                 // 埋め込まれた追加例文とアンロック情報のパース処理
                 const rawWords = Array.isArray(data.words) ? data.words : [];
                 const processedWords = rawWords
-                    .filter((w: any) => w && typeof w === 'object') // Filter out falsy/null items first
-                    .map((w: WordCard) => {
-                        // Force string conversion for safety
-                        let cleanExampleJp = String(w.example_jp || "");
-                        const isUnlocked = false;
-
-                        // Safety: Ensure these are arrays
-                        let otherExamples: any[] = Array.isArray(w.otherExamples) ? w.otherExamples : [];
-
-
-                        // 1. アンロックマーカーのチェック (表示上は除去するが、ロック機能は廃止)
-                        if (cleanExampleJp.includes('|||UNLOCKED|||')) {
-                            cleanExampleJp = cleanExampleJp.replace('|||UNLOCKED|||', '');
-                        }
-
-                        // 2. 追加例文マーカーのチェック
-                        if (cleanExampleJp.includes('|||EXT|||')) {
-                            const parts = cleanExampleJp.split('|||EXT|||');
-                            cleanExampleJp = parts[0] || "";
-                            try {
-                                const parsed = JSON.parse(parts[1]);
-                                if (Array.isArray(parsed)) {
-                                    otherExamples = parsed;
-                                } else if (parsed && typeof parsed === 'object') {
-                                    if (parsed.examples && Array.isArray(parsed.examples)) {
-                                        otherExamples = parsed.examples;
-                                    }
-                                    if (parsed.examples && Array.isArray(parsed.examples)) {
-                                        otherExamples = parsed.examples;
-                                    }
-                                }
-                            } catch (e) {
-                                // パースエラー時はそのまま
-                                console.warn("Failed to parse extended data", e);
-                            }
-                        }
-
-                        // Clean otherExamples to match expected structure and ensure safe rendering
-                        const safeOtherExamples = otherExamples.map((ex: any) => {
-                            if (!ex || typeof ex !== 'object') return null;
-                            return {
-                                role: String(ex.role || ''),
-                                text: String(ex.text || ''),
-                                translation: String(ex.translation || '')
-                            };
-                        }).filter(Boolean) as { role: string; text: string; translation: string }[];
-
-                        return {
-                            ...w,
-                            word: String(w.word || ""),
-                            meaning: String(w.meaning || ""),
-                            example: String(w.example || ""),
-                            partOfSpeech: w.partOfSpeech ? String(w.partOfSpeech) : undefined,
-                            example_jp: cleanExampleJp,
-                            otherExamples: safeOtherExamples,
-
-                            synonyms: Array.isArray(w.synonyms) ? w.synonyms : undefined,
-                            derivatives: Array.isArray(w.derivatives) ? w.derivatives : undefined,
-                        };
-                    });
+                    .filter((w: any) => w && typeof w === 'object')
+                    .map((w: any) => processWordCard(w));
 
                 setDeck({ ...data, words: processedWords });
                 setEditTitle(data.title);
@@ -592,17 +596,14 @@ export default function DeckPage() {
                 const updatedWord = await res.json();
 
                 // Update local state
+                const processedUpdatedWord = processWordCard(updatedWord);
                 setDeck({
                     ...deck,
                     words: deck.words.map(w => {
                         if (w.id === editingWordId) {
                             return {
                                 ...w,
-                                ...updatedWord,
-                                // stateの古い値で上書きしてしまわないように注意
-                                otherExamples: updatedWord.otherExamples || w.otherExamples,
-                                synonyms: updatedWord.synonyms || w.synonyms,
-                                derivatives: updatedWord.derivatives || w.derivatives
+                                ...processedUpdatedWord
                             };
                         }
                         return w;
@@ -1482,6 +1483,15 @@ export default function DeckPage() {
                                                 />
                                             </div>
 
+                                            <div>
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">品詞</label>
+                                                <input
+                                                    value={editFormData.partOfSpeech}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, partOfSpeech: e.target.value })}
+                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold text-sm"
+                                                    placeholder="例: 動, 名, 熟"
+                                                />
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
@@ -1889,7 +1899,6 @@ export default function DeckPage() {
                     </div>
                 </div>
             )}
-
-        </div >
+        </div>
     );
 }
