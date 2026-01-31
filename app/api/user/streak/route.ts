@@ -70,6 +70,21 @@ export async function GET(req: Request) {
                 lastLoginAt: now // 保存は実際のタイムスタンプ(UTC)
             }
         });
+
+        // バッジ獲得チェック（ストリーク更新時）
+        try {
+            // gamification.tsがサーバーサイド専用の場合、動的インポートや共通関数化が必要だが、
+            // ここでは簡易的にcheckBadgesがstreakのチェックも含んでいる前提で呼び出すか、
+            // またはここで直接ロジックを書く。
+            // 既存のcheckBadgesはstreakを見ていないため、修正が必要。
+            // ここではまずcheckBadgesを呼び出し、その中でstreak判定を追加する修正をlib/gamification.tsに行う。
+
+            // 下記のようにgamificationの関数を呼ぶためにはimportが必要
+            const { checkBadges } = await import("@/lib/gamification");
+            await checkBadges(userId);
+        } catch (e) {
+            console.error("Badge check failed:", e);
+        }
     }
 
     return NextResponse.json({

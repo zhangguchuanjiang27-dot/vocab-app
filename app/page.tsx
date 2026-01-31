@@ -81,6 +81,9 @@ export default function Home() {
   // 詳細表示と音声用
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
 
+  // デモ動画切り替え用
+  const [activeDemo, setActiveDemo] = useState<'generate' | 'example'>('generate');
+
   const speak = (text: string) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -707,95 +710,129 @@ export default function Home() {
                   </span>
                   <div className="absolute inset-0 bg-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
                 </button>
+
               </div>
 
-              {/* Floating Cards Visual */}
-              <div className="mt-32 relative w-full max-w-4xl mx-auto h-[400px] select-none pointer-events-none hidden sm:block">
-                {/* Card 1: Left */}
-                <div className="absolute top-10 left-0 xl:-left-12 w-64 p-6 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 rotate-[-6deg] animate-in slide-in-from-left-12 duration-1000 delay-300">
-                  <div className="h-2 w-24 bg-neutral-100 dark:bg-neutral-800 rounded-full mb-4"></div>
-                  <div className="text-3xl font-black mb-2 font-serif">Serendipity</div>
-                  <div className="text-sm text-neutral-500">【名】思いがけない幸運</div>
-                </div>
-                {/* Card 2: Center (Front) */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 p-8 bg-indigo-600 text-white rounded-3xl shadow-2xl shadow-indigo-500/30 rotate-[0deg] z-10 animate-in zoom-in duration-700 delay-500">
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-xs font-bold uppercase tracking-widest opacity-50">New Word</span>
-                    <span>🔊</span>
+              {/* MacBook Video Container */}
+              <div className="mt-24 relative w-full max-w-5xl mx-auto perspective-1000 animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-300">
+                {/* Laptop Body */}
+                <div className="relative bg-neutral-900 border-[10px] border-neutral-800 rounded-[2rem] shadow-2xl overflow-hidden aspect-video mx-auto transform rotate-x-6 origin-bottom group hover:scale-[1.02] transition-transform duration-500">
+                  {/* Camera Notion */}
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-neutral-800 rounded-b-xl z-20 flex items-center justify-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-700"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-900/50"></div>
                   </div>
-                  <div className="text-4xl font-black mb-4 font-serif">Ephemeral</div>
-                  <div className="text-indigo-200 text-sm font-bold">【形】儚い、短命な</div>
-                  <div className="mt-6 pt-6 border-t border-white/20 text-sm opacity-80 italic">
-                    "Beauty is ephemeral."
+
+                  {/* Screen Content (Video Placeholder) */}
+                  <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
+                    <video
+                      key={activeDemo} // Key change forces re-render/reload when source changes
+                      src={activeDemo === 'generate' ? "/demo.mp4" : "/demoexample.mp4"}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover animate-in fade-in duration-500"
+                    />
+
+                    {/* Glass Reflection Effect */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none z-10"></div>
                   </div>
                 </div>
-                {/* Card 3: Right */}
-                <div className="absolute top-20 right-0 xl:-right-12 w-60 p-6 bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl border border-neutral-200 dark:border-neutral-800 rotate-[6deg] animate-in slide-in-from-right-12 duration-1000 delay-700">
-                  <div className="h-2 w-12 bg-green-100 text-green-600 rounded-full mb-4 text-[10px] font-bold flex items-center justify-center">Easy</div>
-                  <div className="text-2xl font-black mb-2 font-serif">Tranquility</div>
+
+                {/* Laptop Base Reflection/Shadow */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-4 bg-black/40 blur-xl rounded-[100%]"></div>
+
+                {/* Video Switcher Controls */}
+                <div className="flex justify-center gap-4 mt-12">
+                  <button
+                    onClick={() => setActiveDemo('generate')}
+                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'generate' ? 'bg-white text-black shadow-lg scale-105' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                  >
+                    ⚡ 生成デモ
+                  </button>
+                  <button
+                    onClick={() => setActiveDemo('example')}
+                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'example' ? 'bg-white text-black shadow-lg scale-105' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                  >
+                    📖 学習デモ
+                  </button>
                 </div>
               </div>
             </section>
 
             {/* Bento Grid Features */}
             <section className="px-6 max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Large Feature */}
-              <div className="md:col-span-2 bg-neutral-50 dark:bg-neutral-900 p-8 sm:p-12 rounded-3xl border border-neutral-200 dark:border-neutral-800 relative overflow-hidden group hover:border-indigo-200 dark:hover:border-indigo-900 transition-colors">
-                <div className="relative z-10">
-                  <h3 className="text-2xl font-bold mb-4">⚡ AI自動生成</h3>
-                  <p className="text-neutral-500 max-w-md leading-relaxed">
-                    単語を入力するだけ。意味、品詞、そして文脈に沿った最適な例文をAIが瞬時に生成します。
-                    辞書を引く時間はもう必要ありません。
-                  </p>
+              {/* Large Feature: AI Generation */}
+              <div className="md:col-span-2 relative group overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 p-8 sm:p-12 transition-all hover:border-indigo-500/50">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="absolute -right-20 -top-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+                <div className="relative z-10 flex flex-col h-full justify-between">
+                  <div>
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center mb-6 text-indigo-400">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></svg>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-4">AI自動生成</h3>
+                    <p className="text-neutral-400 leading-relaxed max-w-md">
+                      単語を入力するだけ。意味、品詞、そして文脈に沿った最適な例文をAIが瞬時に生成します。<br />
+                      <span className="text-indigo-400">辞書を引く時間はもう必要ありません。</span>
+                    </p>
+                  </div>
                 </div>
-                <div className="absolute top-1/2 right-[-50px] w-64 h-64 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
               </div>
 
-              {/* Tall Feature */}
-              <div className="bg-neutral-900 dark:bg-black text-white p-8 rounded-3xl border border-neutral-800 relative overflow-hidden md:row-span-2 flex flex-col justify-between group">
-                <div className="space-y-2 relative z-10">
-                  <span className="text-4xl">🔥</span>
-                  <h3 className="text-xl font-bold">Gamified</h3>
+              {/* Tall Feature: Gamification */}
+              <div className="md:row-span-2 relative group overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 p-8 flex flex-col justify-between transition-all hover:border-orange-500/50">
+                <div className="absolute inset-0 bg-gradient-to-t from-orange-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center mb-6 text-orange-400">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" /></svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">継続をゲームにする</h3>
                   <p className="text-neutral-400 text-sm">
                     XPを稼ぎ、レベルを上げ、バッジを集める。学習がゲームのような楽しさに。
                   </p>
                 </div>
+
                 <div className="mt-8 relative z-10">
-                  <div className="w-full bg-white/10 h-2 rounded-full overflow-hidden">
-                    <div className="w-[70%] h-full bg-indigo-500 animate-pulse"></div>
+                  <div className="flex justify-between items-end mb-2">
+                    <span className="text-xs font-mono text-orange-400">現在のレベル</span>
+                    <span className="text-xl font-bold text-white">Lvl. 5</span>
                   </div>
-                  <div className="flex justify-between text-xs font-mono mt-2 text-neutral-500">
-                    <span>Lvl. 5</span>
-                    <span>70%</span>
+                  <div className="w-full bg-neutral-800 h-2 rounded-full overflow-hidden">
+                    <div className="w-[70%] h-full bg-gradient-to-r from-orange-500 to-red-500 animate-pulse"></div>
                   </div>
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-indigo-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
 
-              {/* Small Feature */}
-              <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col justify-center items-center text-center gap-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-default group">
-                <div className="w-12 h-12 bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  ✍️
-                </div>
-                <div>
-                  <h3 className="font-bold mb-1">Writing Test</h3>
+              {/* Small Feature: Writing Test */}
+              <div className="relative group overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 p-8 flex flex-col transition-all hover:border-emerald-500/50">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center mb-4 text-emerald-400">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                  </div>
+                  <h3 className="font-bold text-white mb-1">ライティング・テスト</h3>
                   <p className="text-xs text-neutral-400">
                     覚えた単語をタイピングして出力。<br />
-                    「使える英語」が身につきます。
+                    <span className="text-emerald-400">「使える英語」</span>が身につきます。
                   </p>
                 </div>
               </div>
 
-              {/* Small Feature */}
-              <div className="bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 flex flex-col justify-center items-center text-center gap-4 hover:shadow-xl hover:-translate-y-1 transition-all cursor-default group">
-                <div className="w-12 h-12 bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🧠
-                </div>
-                <div>
-                  <h3 className="font-bold mb-1">Smart Review</h3>
+              {/* Small Feature: Smart Review */}
+              <div className="relative group overflow-hidden rounded-3xl bg-neutral-900 border border-neutral-800 p-8 flex flex-col transition-all hover:border-pink-500/50">
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-2xl bg-pink-500/20 flex items-center justify-center mb-4 text-pink-400">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" /><path d="M8.5 8.5v.01" /><path d="M16 15.5v.01" /><path d="M12 12v.01" /><path d="M8.5 15.5v.01" /><path d="M16 8.5v.01" /></svg>
+                  </div>
+                  <h3 className="font-bold text-white mb-1">記憶定着レビュー</h3>
                   <p className="text-xs text-neutral-400">
                     間違えた単語だけを自動でピックアップ。<br />
-                    効率的な復習サイクル。
+                    <span className="text-pink-400">効率的な復習サイクル。</span>
                   </p>
                 </div>
               </div>
@@ -804,7 +841,7 @@ export default function Home() {
             {/* How it Works / Step by Step */}
             <section className="px-6 py-24 max-w-7xl mx-auto">
               <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold mb-4">How it Works</h2>
+                <h2 className="text-3xl font-bold mb-4">使い方</h2>
                 <p className="text-neutral-500">たったの3ステップで、あなただけの単語帳が完成します。</p>
               </div>
 
@@ -835,19 +872,19 @@ export default function Home() {
                   <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
                     <CountUp end={50000} duration={2.5} separator="," suffix="+" />
                   </div>
-                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">Generated Words</div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">生成された単語数</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-indigo-400 to-indigo-200">
                     <CountUp end={95} duration={3} suffix="%" />
                   </div>
-                  <div className="text-sm font-bold tracking-widest uppercase text-indigo-200">Retention Rate</div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-indigo-200">記憶定着率</div>
                 </div>
                 <div className="space-y-2">
                   <div className="text-5xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-white/50">
                     <CountUp end={5000} duration={2.5} separator="," suffix="+" />
                   </div>
-                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">Study Sessions</div>
+                  <div className="text-sm font-bold tracking-widest uppercase text-neutral-400">学習セッション数</div>
                 </div>
               </div>
             </section>
@@ -865,30 +902,30 @@ export default function Home() {
             </section>
 
             {/* Contact Form Section */}
-            <section className="py-24 px-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
-              <div className="max-w-xl mx-auto">
-                <div className="text-center mb-10">
-                  <h2 className="text-2xl font-bold mb-2">お問い合わせ</h2>
-                  <p className="text-sm text-neutral-500">不具合の報告や、機能のリクエストはこちらから。</p>
+            <section className="py-12 px-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+              <div className="max-w-lg mx-auto">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold mb-1">お問い合わせ</h2>
+                  <p className="text-xs text-neutral-500">不具合の報告や、機能のリクエストはこちらから。</p>
                 </div>
-                <form onSubmit={handleContactSubmit} className="space-y-6">
+                <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">メールアドレス</label>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">メールアドレス</label>
                     <input
                       type="email"
                       required
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
                       placeholder="your@email.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">種類</label>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">種類</label>
                     <select
                       value={contactType}
                       onChange={(e) => setContactType(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
                     >
                       <option value="bug">不具合報告 (Bug)</option>
                       <option value="feature">機能リクエスト (Feature Request)</option>
@@ -896,20 +933,20 @@ export default function Home() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-2">内容</label>
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">内容</label>
                     <textarea
                       required
                       value={contactMessage}
                       onChange={(e) => setContactMessage(e.target.value)}
-                      rows={4}
-                      className="w-full px-4 py-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm"
                       placeholder="詳細をご記入ください..."
                     ></textarea>
                   </div>
                   <button
                     type="submit"
                     disabled={isSendingContact}
-                    className="w-full py-4 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="w-full py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
                   >
                     {isSendingContact ? "送信中..." : "送信する"}
                   </button>
@@ -964,18 +1001,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {badges.length > 0 && (
-                    <>
-                      <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
-                      <div className="flex items-center gap-1">
-                        {badges.map((b: any) => (
-                          <span key={b.id} title={b.badge.displayName} className="text-xl cursor-help hover:scale-125 transition-transform">
-                            {b.badge.icon}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
+
 
                   {/* Chevron to indicate clickable */}
                   <div className="pl-2 text-neutral-300 group-hover:text-indigo-500 transition-colors">
@@ -1275,14 +1301,16 @@ export default function Home() {
 
 
         {/* Hidden Admin Link */}
-        {session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
-          <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
-            <Link href="/admin" className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors">
-              Admin
-            </Link>
-          </div>
-        )}
-      </main>
-    </div>
+        {
+          session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
+            <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
+              <Link href="/admin" className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors">
+                Admin
+              </Link>
+            </div>
+          )
+        }
+      </main >
+    </div >
   );
 }

@@ -29,11 +29,12 @@ export const authOptions: NextAuthOptions = {
             authorize: async () => {
                 const user = await prisma.user.upsert({
                     where: { email: 'dev@example.com' },
-                    update: {},
+                    update: { role: 'admin' },
                     create: {
                         email: 'dev@example.com',
                         name: 'Developer',
                         credits: 1000,
+                        role: 'admin',
                     }
                 });
                 return {

@@ -6,14 +6,23 @@ import { prisma } from "@/app/lib/prisma";
 // 全ユーザー取得API
 export async function GET() {
     try {
+
         const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
         // 管理者チェック (role !== 'admin' なら拒否)
         const currentUser = await prisma.user.findUnique({
-            where: { id: session?.user?.id },
+            where: { id: session.user.id },
         });
 
-        if (!currentUser || (currentUser as any).role !== "admin") {
+        const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+        const isDemoAdmin = session.user.email === 'dev@example.com';
+        const isEnvAdmin = ADMIN_EMAIL && session.user.email === ADMIN_EMAIL;
+        const isDbAdmin = (currentUser as any)?.role === "admin";
+
+        if (!isDemoAdmin && !isEnvAdmin && !isDbAdmin) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
         }
 

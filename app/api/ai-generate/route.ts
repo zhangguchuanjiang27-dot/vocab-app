@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     } catch (e) {
       console.error("Normalization Error:", e);
       // エラー時はフォールバック
-      const rawLines = ((wordText || "") + "\n" + (idiomText || "") + "\n" + (text || "")).split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      // rawLines is already available from outer scope
       const fallbackSet = new Set<string>();
       rawLines.forEach((line: string) => {
         const clean = line.replace(/^[\d\-\.\s]+/, "").trim().toLowerCase();
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     }
 
     // 2. キャッシュ(辞書)を検索
-    // @ts-ignore
+
     const cachedEntries = await prisma.dictionaryEntry.findMany({
       where: {
         word: { in: uniqueWords }
@@ -145,8 +145,8 @@ export async function POST(req: Request) {
     });
 
     // キャッシュにあった単語データ
-    // @ts-ignore
-    // @ts-ignore
+
+
     const foundWordsData = cachedEntries.map((entry: any) => entry.data);
     const foundWordsSet = new Set(cachedEntries.map((entry: any) => entry.word));
 
@@ -314,7 +314,7 @@ export async function POST(req: Request) {
 
       // 5. 新しく生成されたデータをキャッシュに保存
       for (const wordData of newWordsData) {
-        // @ts-ignore
+
         await prisma.dictionaryEntry.upsert({
           where: { word: wordData.word.toLowerCase() },
           update: { data: wordData },

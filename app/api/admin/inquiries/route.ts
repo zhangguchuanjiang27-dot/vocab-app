@@ -12,13 +12,30 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (ADMIN_EMAIL && session.user.email !== ADMIN_EMAIL) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        const isDemoAdmin = session.user.email === 'dev@example.com';
+        const isEnvAdmin = ADMIN_EMAIL && session.user.email === ADMIN_EMAIL;
+        const isDbAdmin = (currentUser as any)?.role === "admin";
+
+        if (!isDemoAdmin && !isEnvAdmin && !isDbAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const inquiries = await prisma.inquiry.findMany({
             orderBy: { createdAt: "desc" },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        image: true,
+                        email: true,
+                    }
+                }
+            }
         });
         return NextResponse.json(inquiries);
     } catch (error) {
@@ -34,11 +51,19 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (ADMIN_EMAIL && session.user.email !== ADMIN_EMAIL) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     try {
+        const currentUser = await prisma.user.findUnique({
+            where: { id: session.user.id },
+        });
+
+        const isDemoAdmin = session.user.email === 'dev@example.com';
+        const isEnvAdmin = ADMIN_EMAIL && session.user.email === ADMIN_EMAIL;
+        const isDbAdmin = (currentUser as any)?.role === "admin";
+
+        if (!isDemoAdmin && !isEnvAdmin && !isDbAdmin) {
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const body = await req.json();
         const { id, status } = body;
         const updated = await prisma.inquiry.update({

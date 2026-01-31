@@ -234,8 +234,27 @@ export async function checkBadges(userId: string) {
         newBadges.push("level_50");
     }
 
-    // TODO: 他のバッジ条件（継続日数、生成回数など）はDBに詳細ログがないため、
-    // 必要に応じてUserモデルにカウンターを追加するか、簡易的な判定で実装する。
+    // --- 継続日数バッジ (Streak) ---
+    // User定義に loginStreak がある前提
+    // @ts-ignore
+    const streak = user.loginStreak || 0;
+
+    const streakBadges = [
+        { days: 3, name: "streak_3" },
+        { days: 7, name: "streak_7" },
+        { days: 14, name: "streak_14" },
+        { days: 30, name: "streak_30" },
+        { days: 60, name: "streak_60" },
+        { days: 100, name: "streak_100" },
+        { days: 200, name: "streak_200" },
+        { days: 365, name: "streak_365" },
+    ];
+
+    for (const sb of streakBadges) {
+        if (!ownedBadgeNames.has(sb.name) && streak >= sb.days) {
+            newBadges.push(sb.name);
+        }
+    }
 
     // --- バッジ付与処理 ---
     for (const badgeName of newBadges) {
