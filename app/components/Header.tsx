@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Session } from "next-auth"; // Should import Type not value? Actually Session is type usually.
+import Link from "next/link"; // Keep Link
+import { signOut } from "next-auth/react"; // Add signOut
+import { Session } from "next-auth";
 
 type HeaderProps = {
     initialCredits: number;
@@ -50,6 +51,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
     const [contactMessage, setContactMessage] = useState("");
     const [contactType, setContactType] = useState("other");
     const [isSendingContact, setIsSendingContact] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
 
     useEffect(() => {
         if (session?.user) {
@@ -93,16 +95,16 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 {session && (
                     <div className="flex items-center gap-2 sm:gap-2">
                         <Link href="/ranking" className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group">
-                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none">👑</span>
-                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">Ranking</span>
+                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-1">👑</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">ランキング</span>
                         </Link>
 
                         <button
                             onClick={() => setShowContactModal(true)}
                             className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group"
                         >
-                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none pt-1">💌</span>
-                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">Support</span>
+                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-0.5">💌</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">サポート</span>
                         </button>
                     </div>
                 )}
@@ -170,7 +172,11 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                     </div>
                                 )}
                             </Link>
-                            <Link href="/api/auth/signout" className="group flex items-center justify-center p-1" title="ログアウト">
+                            <button
+                                onClick={() => setShowLogoutModal(true)}
+                                className="group flex items-center justify-center p-1"
+                                title="ログアウト"
+                            >
                                 {/* Mobile Icon */}
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 sm:hidden text-neutral-400 group-hover:text-red-500 transition-colors flex-shrink-0">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
@@ -179,7 +185,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 <span className="hidden sm:block text-xs font-bold text-neutral-500 group-hover:text-black dark:group-hover:text-white transition-colors">
                                     ログアウト
                                 </span>
-                            </Link>
+                            </button>
                         </div>
                     </>
                 ) : (
@@ -192,7 +198,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
             {/* Contact Modal */}
             {showContactModal && (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative">
+                    <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative mt-60">
                         <button
                             onClick={() => setShowContactModal(false)}
                             className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-2"
@@ -258,6 +264,34 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                     </div>
                 </div>
             )}
+
+            {/* Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-neutral-200 dark:border-neutral-800 scale-100 animate-in zoom-in-95 duration-200 mt-24">
+                        <h3 className="text-lg font-bold text-center mb-2 text-neutral-900 dark:text-white">ログアウトしますか？</h3>
+                        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300 text-center mb-6 leading-relaxed">
+                            アカウントからログアウトします。<br className="hidden sm:block" />
+                            次回利用時は再ログインが必要です。
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowLogoutModal(false)}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={() => signOut({ callbackUrl: "/" })}
+                                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-red-600 text-white hover:bg-red-500 transition-colors"
+                            >
+                                ログアウト
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
+

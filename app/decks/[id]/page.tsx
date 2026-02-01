@@ -1802,8 +1802,8 @@ export default function DeckPage() {
                                                                                         return (
                                                                                             <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
                                                                                                 <div className="font-bold text-indigo-600 dark:text-indigo-400">{s.word}</div>
-                                                                                                <div className="text-xs text-neutral-500 flex gap-2">
-                                                                                                    <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
+                                                                                                <div className="text-xs text-neutral-500 flex items-start gap-2">
+                                                                                                    <span className="shrink-0 bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
                                                                                                     <span>{s.meaning}</span>
                                                                                                 </div>
                                                                                             </li>
@@ -1834,8 +1834,8 @@ export default function DeckPage() {
                                                                                         return (
                                                                                             <li key={i} className="text-sm bg-white dark:bg-black/20 p-2 rounded-lg border border-neutral-100 dark:border-neutral-800">
                                                                                                 <div className="font-bold text-purple-600 dark:text-purple-400">{d.word}</div>
-                                                                                                <div className="text-xs text-neutral-500 flex gap-2">
-                                                                                                    <span className="bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
+                                                                                                <div className="text-xs text-neutral-500 flex items-start gap-2">
+                                                                                                    <span className="shrink-0 bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
                                                                                                     <span>{d.meaning}</span>
                                                                                                 </div>
                                                                                             </li>

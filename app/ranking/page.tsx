@@ -60,7 +60,7 @@ export default function RankingPage() {
     if (status === 'unauthenticated') {
         return (
             <div className="min-h-screen bg-neutral-50 dark:bg-black p-6 flex flex-col items-center justify-center text-center font-sans">
-                <h1 className="text-3xl font-black mb-4">👑 Word Master Ranking</h1>
+                <h1 className="text-3xl font-black mb-4">👑 ワードマスター ランキング</h1>
                 <p className="text-neutral-500 mb-8">ランキングを見るにはログインが必要です。</p>
                 <Link href="/api/auth/signin" className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
                     ログインしてランキングを見る
@@ -95,11 +95,11 @@ export default function RankingPage() {
             <div className="max-w-2xl mx-auto">
                 <header className="mb-8 text-center">
                     <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
-                        ← Back to Home
+                        ← トップに戻る
                     </Link>
                     <h1 className="text-3xl font-black mb-2 flex items-center justify-center gap-2">
                         <span className="text-4xl">👑</span>
-                        <span>Word Master Ranking</span>
+                        <span>ワードマスター ランキング</span>
                     </h1>
                     <p className="text-neutral-500 text-sm">
                         生成・登録した単語数のランキングです。
@@ -140,7 +140,7 @@ export default function RankingPage() {
                         ) : (
                             <div className="mb-8 bg-indigo-600 text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-indigo-500/30">
                                 <div className="flex items-center gap-4">
-                                    <div className="ml-2 font-bold text-indigo-200 text-sm uppercase tracking-wider">Your Rank</div>
+                                    <div className="ml-2 font-bold text-indigo-200 text-sm uppercase tracking-wider">あなたの順位</div>
                                     {myRank > 0 ? (
                                         <div className="text-2xl font-black">
                                             {myRank}<span className="text-sm font-normal opacity-70 ml-1">位</span>
