@@ -465,13 +465,45 @@ export default function Home() {
   // 既存のデッキに追加処理
   const handleAddToExistingDeck = async (deckId: string, deckTitle: string) => {
     if (!words.length) return;
-    if (!confirm(`単語帳 "${deckTitle}" に現在の ${words.length} 語を追加しますか？`)) return;
+
+    // 重複チェック
+    const targetDeck = savedDecks.find(d => d.id === deckId);
+    let wordsToAdd = [...words];
+    let skippedWords: string[] = [];
+
+    if (targetDeck) {
+      const existingWords = new Set(targetDeck.words.map(w => w.word.toLowerCase().trim()));
+      wordsToAdd = words.filter(w => {
+        const isDuplicate = existingWords.has(w.word.toLowerCase().trim());
+        if (isDuplicate) {
+          skippedWords.push(w.word);
+        }
+        return !isDuplicate;
+      });
+    }
+
+    // 全て重複していた場合
+    if (wordsToAdd.length === 0) {
+      alert(`選択した単語は、すでに "${deckTitle}" にすべて登録されています。`);
+      return;
+    }
+
+    // メッセージの構築
+    let message = `"${deckTitle}" に ${wordsToAdd.length} 語を追加しますか？`;
+    if (skippedWords.length > 0) {
+      const details = skippedWords.length > 5
+        ? `${skippedWords.slice(0, 5).join(", ")}... 他${skippedWords.length - 5}語`
+        : skippedWords.join(", ");
+      message += `\n\n⚠️ ${skippedWords.length} 語の重複をスキップします：\n(${details})`;
+    }
+
+    if (!confirm(message)) return;
 
     try {
       const res = await fetch(`/api/decks/${deckId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ words }),
+        body: JSON.stringify({ words: wordsToAdd }),
       });
 
       if (!res.ok) {
@@ -479,7 +511,11 @@ export default function Home() {
         throw new Error(errData.error || "Server Error");
       }
 
-      alert(`"${deckTitle}" に追加しました！`);
+      const successMsg = skippedWords.length > 0
+        ? `"${deckTitle}" に ${wordsToAdd.length} 語を追加しました！\n(${skippedWords.length} 語は重複のためスキップされました)`
+        : `"${deckTitle}" に追加しました！`;
+
+      alert(successMsg);
       setShowAddToDeckModal(false);
       setWords([]); // 追加後はクリア
       fetchDecks(); // 一覧更新

@@ -60,7 +60,7 @@ export default function CheckoutPage() {
         </Link>
         <div className="text-center mb-12">
           <h1 className="text-4xl sm:text-5xl font-black mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 font-feature-settings-opentype">
-            Choose Your Plan
+            プランの選択
           </h1>
           <p className="text-xl text-neutral-500 dark:text-neutral-400">
             あなたの学習スタイルに合わせて、最適なプランをお選びください。
@@ -74,7 +74,7 @@ export default function CheckoutPage() {
               <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">Basic Plan</div>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-black text-neutral-900 dark:text-white">¥300</span>
-                <span className="text-neutral-500">/mo</span>
+                <span className="text-neutral-500">/月</span>
               </div>
             </div>
 
@@ -96,7 +96,7 @@ export default function CheckoutPage() {
               <div className="flex items-start gap-3">
                 <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 text-xs font-bold">✓</div>
                 <div>
-                  <p className="font-bold text-sm">基本機能へのアクセス</p>
+                  <p className="font-bold text-sm">全ての基本機能へアクセス</p>
                   <p className="text-xs text-neutral-500 mt-1">全ての学習モードが利用可能です。</p>
                 </div>
               </div>
@@ -107,19 +107,19 @@ export default function CheckoutPage() {
               disabled={subscriptionLoading}
               className="w-full py-4 bg-white dark:bg-neutral-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50 shadow-sm"
             >
-              {subscriptionLoading ? "処理中..." : "Basicを選択"}
+              {subscriptionLoading ? "処理中..." : "Basic Planを選択"}
             </button>
           </div>
 
           {/* Pro Plan */}
           <div className="p-8 rounded-3xl bg-neutral-900 dark:bg-white text-white dark:text-black shadow-2xl shadow-indigo-500/20 flex flex-col relative overflow-hidden transform hover:scale-[1.02] transition-transform duration-300">
-            <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-xl tracking-widest uppercase">Most Popular</div>
+            <div className="absolute top-0 right-0 bg-gradient-to-r from-indigo-500 to-purple-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-xl tracking-widest uppercase">一番人気</div>
 
             <div className="mb-6 relative z-10">
               <div className="text-sm font-bold text-indigo-300 dark:text-indigo-600 uppercase tracking-wider mb-2">Pro Plan</div>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-black">¥980</span>
-                <span className="text-neutral-400 dark:text-neutral-600">/mo</span>
+                <span className="text-neutral-400 dark:text-neutral-600">/月</span>
               </div>
             </div>
 
@@ -152,7 +152,7 @@ export default function CheckoutPage() {
               disabled={subscriptionLoading}
               className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:shadow-indigo-500/50 transition-all disabled:opacity-50 relative z-10"
             >
-              {subscriptionLoading ? "処理中..." : "Proへのアップグレード"}
+              {subscriptionLoading ? "処理中..." : "Pro Planを選択"}
             </button>
 
             {/* Decoration */}

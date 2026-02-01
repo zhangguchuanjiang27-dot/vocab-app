@@ -170,18 +170,55 @@ export default function DeckPage() {
 
     const handleMoveWords = async (action: 'copy' | 'move') => {
         if (!targetDeckId) return;
-        const count = selectedWordIds.size;
+
+        const selectedWordsData = deck?.words.filter(w => w.id && selectedWordIds.has(w.id));
+        if (!selectedWordsData || selectedWordsData.length === 0) return;
+
+        // Duplicate Check
+        const targetDeck = (myDecks as any[]).find(d => d.id === targetDeckId);
+        let wordsToTransfer = [...selectedWordsData];
+        let skippedWords: string[] = [];
+
+        if (targetDeck && Array.isArray(targetDeck.words)) {
+            const existingWords = new Set(targetDeck.words.map((w: any) => w.word.toLowerCase().trim()));
+            wordsToTransfer = selectedWordsData.filter(w => {
+                const isDuplicate = existingWords.has(w.word.toLowerCase().trim());
+                if (isDuplicate) {
+                    skippedWords.push(w.word);
+                }
+                return !isDuplicate;
+            });
+        }
+
+        const count = wordsToTransfer.length;
+
+        // If all duplicates
+        if (count === 0) {
+            alert(`選択した単語は、移動先の "${targetDeck?.title}" にすべて登録済みです。`);
+            return;
+        }
+
+        // Confirmation Message
+        let message = "";
+        let skippedMsg = "";
+        if (skippedWords.length > 0) {
+            const details = skippedWords.length > 5
+                ? `${skippedWords.slice(0, 5).join(", ")}... 他${skippedWords.length - 5}語`
+                : skippedWords.join(", ");
+            skippedMsg = `\n\n⚠️ ${skippedWords.length} 語は重複しているため${action === 'move' ? '移動' : 'コピー'}されません：\n(${details})`;
+        }
 
         if (action === 'copy') {
-            // 1 coin per word
             if (credits < count) {
                 alert(`コインが足りません。\n必要: ${count}枚\n所持: ${credits}枚`);
                 return;
             }
-            if (!confirm(`${count}単語をコピーしますか？\nコインを${count}枚消費します。`)) return;
+            message = `${count}単語をコピーしますか？\nコインを${count}枚消費します。${skippedMsg}`;
         } else {
-            if (!confirm(`${count}単語を移動しますか？`)) return;
+            message = `${count}単語を移動しますか？${skippedMsg}`;
         }
+
+        if (!confirm(message)) return;
 
         setLoading(true);
 
@@ -200,11 +237,8 @@ export default function DeckPage() {
                 setCredits(creditData.credits);
             }
 
-            const selectedWordsData = deck?.words.filter(w => w.id && selectedWordIds.has(w.id));
-            if (!selectedWordsData || selectedWordsData.length === 0) return;
-
             // 1. Add to target deck
-            const wordsToTransfer = selectedWordsData.map(w => ({
+            const payload = wordsToTransfer.map(w => ({
                 word: w.word,
                 meaning: w.meaning,
                 example: w.example,
@@ -218,27 +252,40 @@ export default function DeckPage() {
             const res = await fetch(`/api/decks/${targetDeckId}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ words: wordsToTransfer }),
+                body: JSON.stringify({ words: payload }),
             });
 
             if (!res.ok) throw new Error("Failed to add words to target deck");
 
-            // 2. If 'move', remove from current deck
+            // 2. If 'move', remove ONLY the transferred words from current deck
             if (action === 'move') {
+                const transferredids = new Set(wordsToTransfer.map(w => w.id));
                 await Promise.all(
-                    Array.from(selectedWordIds).map(id =>
-                        fetch(`/api/words/${id}`, { method: "DELETE" })
+                    wordsToTransfer.map(w =>
+                        w.id ? fetch(`/api/words/${w.id}`, { method: "DELETE" }) : Promise.resolve()
                     )
                 );
 
                 // Update local state
                 setDeck(prev => prev ? ({
                     ...prev,
-                    words: prev.words.filter(w => w.id && !selectedWordIds.has(w.id))
+                    words: prev.words.filter(w => w.id && !transferredids.has(w.id))
                 }) : null);
             }
 
-            alert(`単語を${action === 'copy' ? 'コピー' : '移動'}しました！\n${action === 'copy' ? `(コイン -${count})` : ''}`);
+            // Fetch target deck to update local myDecks cache (so future moves know about new words immediately)
+            fetch("/api/decks").then(res => res.json()).then(data => {
+                if (Array.isArray(data)) {
+                    setMyDecks(data.filter((d: any) => d.id !== deckId));
+                }
+            }).catch(console.error);
+
+            const resultMsg = action === 'copy'
+                ? `単語をコピーしました！(コイン -${count})${skippedWords.length > 0 ? `\n(重複 ${skippedWords.length} 語はスキップされました)` : ''}`
+                : `単語を移動しました！${skippedWords.length > 0 ? `\n(重複 ${skippedWords.length} 語はスキップされました)` : ''}`;
+
+            alert(resultMsg);
+
             setShowMoveModal(false);
             setTargetDeckId("");
             setIsSelectionMode(false);
@@ -1473,7 +1520,7 @@ export default function DeckPage() {
                                 {/* Editing Form */}
                                 {editingWordId === card.id ? (
                                     <div className="flex-1 space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4">
                                             <div>
                                                 <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">単語</label>
                                                 <input
@@ -1483,15 +1530,7 @@ export default function DeckPage() {
                                                 />
                                             </div>
 
-                                            <div>
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">品詞</label>
-                                                <input
-                                                    value={editFormData.partOfSpeech}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, partOfSpeech: e.target.value })}
-                                                    className="w-full p-2 border border-neutral-300 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold text-sm"
-                                                    placeholder="例: 動, 名, 熟"
-                                                />
-                                            </div>
+                                            {/* POS Field Removed */}
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
@@ -1628,7 +1667,7 @@ export default function DeckPage() {
                                         <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
                                             <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-lg font-bold font-serif break-all" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                                    <span className="text-xl sm:text-2xl font-black font-serif tracking-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
                                                     <button
                                                         onClick={() => speak(card.word)}
                                                         className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
@@ -1637,9 +1676,10 @@ export default function DeckPage() {
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                                                     </button>
                                                 </div>
+                                                {/* POS Badge Removed */}
                                             </div>
-                                            <div className="flex-1">
-                                                <div className="font-medium text-neutral-800 dark:text-neutral-200 mb-2 whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
+                                            <div className="flex-1 pt-1">
+                                                <div className="text-sm sm:text-base font-bold text-neutral-200 mb-2 leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</div>
                                                 <div className="space-y-1">
                                                     {/* 例文セクション (ロック機能なし) */}
                                                     {(card.example || (card.otherExamples && card.otherExamples.length > 0)) ? (

@@ -237,32 +237,43 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                             )}
 
                             {/* Stats */}
-                            <div className="flex flex-wrap justify-center sm:justify-start gap-4">
-                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
+                            <div className="grid grid-cols-3 gap-4 w-full">
+                                {/* XP Card */}
+                                <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-1">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">合計 XP</div>
-                                    <div className="text-xl font-bold font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
+                                    <div className="text-xl sm:text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
-                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-3 rounded-2xl border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900 transition-colors">
-                                    <div className="flex items-center justify-between mb-1">
+
+                                {/* Coins Card */}
+                                <div className="relative bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900 transition-colors flex flex-col items-center justify-center gap-1">
+                                    <div className="flex items-center gap-2">
                                         <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">コイン</div>
-                                        {user.subscriptionPeriodEnd && (
-                                            <div className="text-[9px] font-bold text-neutral-500 bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded-md">
-                                                あと {Math.ceil((new Date(user.subscriptionPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} 日
-                                            </div>
-                                        )}
                                     </div>
-                                    <div className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                                        {user.subscriptionPlan === 'unlimited' ? "無制限" : user.credits.toLocaleString()}
+
+                                    <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                                        {user.subscriptionPlan === 'unlimited' ? "∞" : user.credits.toLocaleString()}
                                     </div>
+
+                                    {/* Subscription Badge */}
                                     {user.subscriptionPeriodEnd && (
-                                        <div className="text-[9px] text-neutral-400 mt-1">
-                                            {new Date(user.subscriptionPeriodEnd).toLocaleDateString()} にリセット
+                                        <div className="absolute top-2 right-2">
+                                            <div className="text-[9px] font-bold text-neutral-500 bg-white dark:bg-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-600">
+                                                あと{Math.ceil((new Date(user.subscriptionPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}日
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {user.subscriptionPeriodEnd && (
+                                        <div className="text-[8px] text-neutral-400 mt-0.5">
+                                            {new Date(user.subscriptionPeriodEnd).toLocaleDateString()} 更新
                                         </div>
                                     )}
                                 </div>
-                                <div className="bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl">
+
+                                {/* Decks Card */}
+                                <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-1">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">単語帳</div>
-                                    <div className="text-xl font-bold font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
+                                    <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
 
