@@ -92,17 +92,17 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 {session && (
                     <>
                         {/* Adjust flex alignment to ensure icon and text are perfectly centered */}
-                        <Link href="/ranking" className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
-                            <span className="group-hover:scale-110 transition-transform -mt-0.5">👑</span>
-                            <span>Ranking</span>
+                        <Link href="/ranking" className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
+                            <span className="group-hover:scale-110 transition-transform -mt-0.5 text-lg sm:text-base">👑</span>
+                            <span className="hidden sm:inline">Ranking</span>
                         </Link>
 
                         <button
                             onClick={() => setShowContactModal(true)}
-                            className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group"
+                            className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group"
                         >
-                            <span className="group-hover:scale-110 transition-transform">💌</span>
-                            <span>Support</span>
+                            <span className="group-hover:scale-110 transition-transform text-lg sm:text-base">💌</span>
+                            <span className="hidden sm:inline">Support</span>
                         </button>
                     </>
                 )}
@@ -165,8 +165,15 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                     <img src={session.user.image} alt="User" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform" />
                                 </Link>
                             )}
-                            <Link href="/api/auth/signout" className="hidden sm:block text-xs font-bold text-neutral-500 hover:text-black dark:hover:text-white">
-                                ログアウト
+                            <Link href="/api/auth/signout" className="group flex items-center justify-center" title="ログアウト">
+                                {/* Mobile Icon */}
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 sm:hidden text-neutral-400 group-hover:text-red-500 transition-colors">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                                </svg>
+                                {/* Desktop Text */}
+                                <span className="hidden sm:block text-xs font-bold text-neutral-500 group-hover:text-black dark:group-hover:text-white transition-colors">
+                                    ログアウト
+                                </span>
                             </Link>
                         </div>
                     </>

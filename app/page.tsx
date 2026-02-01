@@ -1025,13 +1025,13 @@ export default function Home() {
             {/* Gamification Stats */}
             <div className="flex flex-col gap-2">
               <Link href="/profile" className="block group">
-                <div className="flex items-center gap-6 bg-white dark:bg-neutral-900 px-6 py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 sm:gap-6 bg-white dark:bg-neutral-900 px-4 py-2.5 sm:px-6 sm:py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <div className="relative">
-                      <span className="text-2xl">⭐</span>
+                      <span className="text-xl sm:text-2xl">⭐</span>
                     </div>
-                    <div className="flex flex-col min-w-[140px]">
-                      <div className="flex justify-between items-end mb-1.5">
+                    <div className="flex flex-col min-w-[100px] sm:min-w-[140px]">
+                      <div className="flex justify-between items-end mb-1">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">Lv.</span>
                           <span className="text-sm font-black text-neutral-900 dark:text-white leading-none">{getLevelInfo(xp).level}</span>
@@ -1041,7 +1041,7 @@ export default function Home() {
                         </p>
                       </div>
                       {/* Progress Bar */}
-                      <div className="w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-inner">
+                      <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-inner">
                         <div
                           className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
                           style={{ width: `${getLevelInfo(xp).progress}%` }}
@@ -1050,25 +1050,23 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="w-px h-8 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+                  <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xl">🪙</span>
+                    <span className="text-lg sm:text-xl">🪙</span>
                     <div>
-                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">コイン</p>
+                      <p className="text-[8px] sm:text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">コイン</p>
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-neutral-900 dark:text-neutral-100">
+                        <p className="font-bold text-sm sm:text-base text-neutral-900 dark:text-neutral-100 leading-none">
                           {userPlan === 'unlimited' ? "無制限" : (credits ?? "...")}
                         </p>
                       </div>
                     </div>
                   </div>
 
-
-
                   {/* Chevron to indicate clickable */}
-                  <div className="pl-2 text-neutral-300 group-hover:text-indigo-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+                  <div className="ml-auto sm:ml-0 pl-1 sm:pl-2 text-neutral-300 group-hover:text-indigo-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                     </svg>
                   </div>
