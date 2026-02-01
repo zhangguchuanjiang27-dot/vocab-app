@@ -82,29 +82,29 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
     };
 
     return (
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-                <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-2">
-                    <img src="/logo.png" alt="Voca Logo" className="w-8 h-8 object-contain" />
+        <div className="max-w-5xl mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+            {/* Left Side: Logo & Nav Links */}
+            <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
+                <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-1 sm:gap-2">
+                    <img src="/logo.png" alt="Voca Logo" className="w-9 h-9 sm:w-8 sm:h-8 object-contain flex-shrink-0" />
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300 hidden sm:inline">Voca</span>
                 </Link>
 
                 {session && (
-                    <>
-                        {/* Adjust flex alignment to ensure icon and text are perfectly centered */}
-                        <Link href="/ranking" className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
-                            <span className="group-hover:scale-110 transition-transform -mt-0.5 text-lg sm:text-base">👑</span>
-                            <span className="hidden sm:inline">Ranking</span>
+                    <div className="flex items-center gap-2 sm:gap-2">
+                        <Link href="/ranking" className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group">
+                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none">👑</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">Ranking</span>
                         </Link>
 
                         <button
                             onClick={() => setShowContactModal(true)}
-                            className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group"
+                            className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group"
                         >
-                            <span className="group-hover:scale-110 transition-transform text-lg sm:text-base">💌</span>
-                            <span className="hidden sm:inline">Support</span>
+                            <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none pt-1">💌</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">Support</span>
                         </button>
-                    </>
+                    </div>
                 )}
                 {session && role === 'admin' && (
                     <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
@@ -114,21 +114,22 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 )}
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-6">
+            {/* Right Side: Stats & User Actions */}
+            <div className="flex items-center gap-1.5 sm:gap-6 flex-shrink-0">
                 {session ? (
                     <>
                         {/* Streak Badge */}
                         {streak !== null && (
-                            <div className={`flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
-                                <span className={streakUpdated ? "animate-bounce" : ""}>🔥</span>
-                                <span>
+                            <div className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
+                                <span className={`${streakUpdated ? "animate-bounce" : ""} text-base sm:text-lg leading-none`}>🔥</span>
+                                <span className="leading-none pt-0.5">
                                     {streak}
                                     <span className="ml-1 text-[10px] uppercase opacity-80 hidden sm:inline">Day{streak !== 1 ? 's' : ''}</span>
                                 </span>
                             </div>
                         )}
 
-                        {/* Plan Badge */}
+                        {/* Plan Badge (Hidden on Mobile) */}
                         <div className={`
                             hidden md:flex items-center px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase
                             ${plan === 'pro'
@@ -142,8 +143,8 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                         </div>
 
                         <div className="flex items-center gap-1.5 px-2 py-1 sm:gap-2 sm:px-3 sm:py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 relative group/wallet whitespace-nowrap">
-                            <span className="text-sm sm:text-lg">🪙</span>
-                            <span className="font-bold font-mono text-xs sm:text-sm">
+                            <span className="text-base sm:text-lg leading-none">🪙</span>
+                            <span className="font-bold font-mono text-xs sm:text-sm leading-none pt-0.5">
                                 {plan === 'unlimited' ? "無制限" : initialCredits}
                             </span>
 
@@ -155,19 +156,23 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 </div>
                             )}
 
-                            <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1">
+                            <Link href="/checkout" className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold hover:bg-indigo-500 transition-colors ml-1 leading-none flex items-center h-4 sm:h-auto">
                                 追加
                             </Link>
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
-                            {session.user?.image && (
-                                <Link href="/profile">
-                                    <img src={session.user.image} alt="User" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform" />
-                                </Link>
-                            )}
-                            <Link href="/api/auth/signout" className="group flex items-center justify-center" title="ログアウト">
+                            <Link href="/profile" className="flex-shrink-0 block">
+                                {session.user?.image ? (
+                                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform block" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-300 border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform">
+                                        {session.user?.name?.[0] || "U"}
+                                    </div>
+                                )}
+                            </Link>
+                            <Link href="/api/auth/signout" className="group flex items-center justify-center p-1" title="ログアウト">
                                 {/* Mobile Icon */}
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 sm:hidden text-neutral-400 group-hover:text-red-500 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 sm:hidden text-neutral-400 group-hover:text-red-500 transition-colors flex-shrink-0">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                                 </svg>
                                 {/* Desktop Text */}
