@@ -82,7 +82,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
     };
 
     return (
-        <div className="max-w-5xl mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+        <div className="max-w-5xl mx-auto px-2 sm:px-6 h-16 flex items-center justify-between gap-2 overflow-x-auto md:overflow-visible no-scrollbar">
             {/* Left Side: Logo & Nav Links */}
             <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
                 <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-1 sm:gap-2">
