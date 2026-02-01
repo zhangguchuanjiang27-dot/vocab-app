@@ -83,7 +83,7 @@ export default async function RootLayout({
 
 
   return (
-    <html lang="ja">
+    <html lang="ja" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col`}>
         <Providers>
           {/* Server Component から呼び出す Client Component として Header を実装 */}

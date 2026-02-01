@@ -780,19 +780,46 @@ export default function Home() {
                 <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[90%] h-4 bg-black/40 blur-xl rounded-[100%]"></div>
 
                 {/* Video Switcher Controls */}
-                <div className="flex justify-center gap-4 mt-12">
+                <div className="flex justify-center gap-4 mt-12 mb-12">
                   <button
                     onClick={() => setActiveDemo('generate')}
-                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'generate' ? 'bg-white text-black shadow-lg scale-105' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'generate' ? 'bg-white text-black shadow-xl shadow-indigo-500/20 scale-105 ring-2 ring-indigo-500/20' : 'bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 border border-transparent'}`}
                   >
                     ⚡ 生成デモ
                   </button>
                   <button
                     onClick={() => setActiveDemo('example')}
-                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'example' ? 'bg-white text-black shadow-lg scale-105' : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                    className={`px-6 py-2 rounded-full font-bold text-sm transition-all ${activeDemo === 'example' ? 'bg-white text-black shadow-xl shadow-emerald-500/20 scale-105 ring-2 ring-emerald-500/20' : 'bg-neutral-800/50 text-neutral-400 hover:bg-neutral-800 border border-transparent'}`}
                   >
                     📖 学習デモ
                   </button>
+                </div>
+
+                {/* Dynamic Description Text */}
+                <div className="text-center max-w-2xl mx-auto px-6 overflow-hidden min-h-[140px] relative">
+                  {activeDemo === 'generate' ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 absolute inset-0">
+                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400">
+                        AIが、面倒な「単語帳作り」を終わらせます
+                      </h3>
+                      <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed font-medium">
+                        覚えたい単語を入力するだけ。AIが文脈を理解し、<br className="hidden sm:block" />
+                        最適な日本語訳・例文・音声を<span className="text-indigo-500 dark:text-indigo-400 font-bold">一瞬でセットアップ</span>します。<br />
+                        もう辞書を引く必要はありません。
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 absolute inset-0">
+                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-400 dark:to-teal-400">
+                        「見るだけ」の暗記は、もう古い
+                      </h3>
+                      <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed font-medium">
+                        フラッシュカードはもちろん、<span className="text-emerald-500 dark:text-emerald-400 font-bold">ライティングテストや書き取り</span>も搭載。<br />
+                        実際に「書いて」「聞いて」出力することで、<br className="hidden sm:block" />
+                        使える英語として脳に定着させます。
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

@@ -85,8 +85,8 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-6">
                 <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-2">
-                    <span className="text-2xl">⚡️</span>
-                    <span>Voca</span>
+                    <img src="/logo.png" alt="Voca Logo" className="w-8 h-8 object-contain" />
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400">Voca</span>
                 </Link>
 
                 {session && (
