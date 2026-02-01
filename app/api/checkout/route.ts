@@ -46,6 +46,7 @@ export async function POST(req: Request) {
 
         // --- Important: Satisfy Accounts V2 requirement ---
         // If no customer exists, we MUST create one first.
+        // If no customer exists, we MUST create one first.
         if (!stripeCustomerId) {
             console.log("Creating new Stripe customer for user:", session.user.email);
             const customer = await stripe.customers.create({
@@ -62,6 +63,21 @@ export async function POST(req: Request) {
                 where: { id: session.user.id },
                 data: { stripeCustomerId: stripeCustomerId }
             });
+        } else {
+            // 既存の顧客情報（特にメールアドレス）を最新の状態に更新
+            // ※ Stripeのダッシュボードで「成功した支払いのメールを送信」を有効にしている場合、
+            //    ここで設定されたメールアドレスに領収書が送信されます。
+            if (session.user.email) {
+                try {
+                    await stripe.customers.update(stripeCustomerId, {
+                        email: session.user.email,
+                        name: session.user.name || undefined
+                    });
+                } catch (e) {
+                    console.error("Failed to update Stripe customer email:", e);
+                    // 更新に失敗しても決済処理は続行する
+                }
+            }
         }
 
         // 既に有効なサブスクリプションを持っている場合はポータルへ誘導
