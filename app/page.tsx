@@ -701,7 +701,7 @@ export default function Home() {
 
               {/* Voca Brand Header */}
               <div className="mb-6 animate-in fade-in slide-in-from-top-8 duration-1000">
-                <h2 className="text-4xl sm:text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                <h2 className="text-4xl sm:text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300" style={{ fontFamily: 'var(--font-merriweather)' }}>
                   Voca
                 </h2>
               </div>
@@ -796,9 +796,9 @@ export default function Home() {
                 </div>
 
                 {/* Dynamic Description Text */}
-                <div className="text-center max-w-2xl mx-auto px-6 overflow-hidden min-h-[140px] relative">
+                <div className="text-center max-w-2xl mx-auto px-6 relative">
                   {activeDemo === 'generate' ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 absolute inset-0">
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400">
                         AIが、面倒な「単語帳作り」を終わらせます
                       </h3>
@@ -809,7 +809,7 @@ export default function Home() {
                       </p>
                     </div>
                   ) : (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 absolute inset-0">
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-400 dark:to-teal-400">
                         「見るだけ」の暗記は、もう古い
                       </h3>
