@@ -82,11 +82,11 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
     };
 
     return (
-        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-6">
                 <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-2">
                     <img src="/logo.png" alt="Voca Logo" className="w-8 h-8 object-contain" />
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 dark:from-indigo-400 dark:via-purple-400 dark:to-indigo-400">Voca</span>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300 hidden sm:inline">Voca</span>
                 </Link>
 
                 {session && (
@@ -114,23 +114,23 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 )}
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 sm:gap-6">
                 {session ? (
                     <>
                         {/* Streak Badge */}
                         {streak !== null && (
-                            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
+                            <div className={`flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
                                 <span className={streakUpdated ? "animate-bounce" : ""}>🔥</span>
                                 <span>
                                     {streak}
-                                    <span className="ml-1 text-[10px] uppercase opacity-80">Day{streak !== 1 ? 's' : ''}</span>
+                                    <span className="ml-1 text-[10px] uppercase opacity-80 hidden sm:inline">Day{streak !== 1 ? 's' : ''}</span>
                                 </span>
                             </div>
                         )}
 
                         {/* Plan Badge */}
                         <div className={`
-                            hidden sm:flex items-center px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase
+                            hidden md:flex items-center px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase
                             ${plan === 'pro'
                                 ? 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
                                 : plan === 'basic'
@@ -141,15 +141,15 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                             {plan || 'FREE'}
                         </div>
 
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 relative group/wallet">
-                            <span className="text-lg">🪙</span>
-                            <span className="font-bold font-mono text-sm">
+                        <div className="flex items-center gap-1.5 px-2 py-1 sm:gap-2 sm:px-3 sm:py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 relative group/wallet whitespace-nowrap">
+                            <span className="text-sm sm:text-lg">🪙</span>
+                            <span className="font-bold font-mono text-xs sm:text-sm">
                                 {plan === 'unlimited' ? "無制限" : initialCredits}
                             </span>
 
                             {/* Days Remaining Tooltip/Badge */}
                             {plan && daysRemaining !== null && (
-                                <div className="ml-1 px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 rounded text-[9px] font-bold text-neutral-500 dark:text-neutral-400 flex items-center gap-1 group-hover/wallet:scale-105 transition-transform">
+                                <div className="hidden sm:flex ml-1 px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 rounded text-[9px] font-bold text-neutral-500 dark:text-neutral-400 items-center gap-1 group-hover/wallet:scale-105 transition-transform">
                                     <span className="opacity-70">あと</span>
                                     <span className={`${daysRemaining <= 3 ? 'text-red-500 animate-pulse' : ''}`}>{daysRemaining}日</span>
                                 </div>
@@ -159,13 +159,13 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 追加
                             </Link>
                         </div>
-                        <div className="flex items-center gap-3 pl-3 border-l border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
                             {session.user?.image && (
                                 <Link href="/profile">
-                                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform" />
+                                    <img src={session.user.image} alt="User" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform" />
                                 </Link>
                             )}
-                            <Link href="/api/auth/signout" className="text-xs font-bold text-neutral-500 hover:text-black dark:hover:text-white">
+                            <Link href="/api/auth/signout" className="hidden sm:block text-xs font-bold text-neutral-500 hover:text-black dark:hover:text-white">
                                 ログアウト
                             </Link>
                         </div>
