@@ -144,6 +144,10 @@ export default function DeckPage() {
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
 
+    // XP Tracking States
+    const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
+    const [sessionCorrectCount, setSessionCorrectCount] = useState(0);
+
     // Copy/Move Feature State
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [targetDeckId, setTargetDeckId] = useState<string>("");
@@ -695,7 +699,7 @@ export default function DeckPage() {
         if (currentIndex < words.length - 1) {
             setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
         } else {
-            finishSession(words.length);
+            finishSession(flippedIndices.size * 5);
         }
     };
 
@@ -717,6 +721,8 @@ export default function DeckPage() {
         setIsAnswerChecked(false);
         setIsCorrect(null);
         setShowHint(false);
+        setFlippedIndices(new Set());
+        setSessionCorrectCount(0);
     };
 
 
@@ -760,6 +766,8 @@ export default function DeckPage() {
         setIsAnswerChecked(false);
         setIsCorrect(null);
         setShowHint(false);
+        setFlippedIndices(new Set());
+        setSessionCorrectCount(0);
     };
 
     const handleCheckAnswer = (cardId: string | undefined, correctWord: string) => {
@@ -783,6 +791,7 @@ export default function DeckPage() {
                 });
             }
             speak(correctWord);
+            setSessionCorrectCount(prev => prev + 1);
         }
     };
 
@@ -797,32 +806,32 @@ export default function DeckPage() {
             setShowHint(false);
             setTimeout(() => setCurrentIndex((prev) => prev + 1), 150);
         } else {
-            finishSession(words.length);
+            finishSession(sessionCorrectCount * 5);
         }
     };
 
-    const finishSession = async (wordCount: number) => {
+    const finishSession = async (earned: number) => {
         setIsFinished(true);
-        // Calculate XP: e.g. 5 XP per word
-        const earned = wordCount * 5;
         setEarnedXp(earned);
 
-        // Shoot confetti
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-
-        // Save XP to server
-        try {
-            await fetch("/api/user/add-xp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount: earned }),
+        if (earned > 0) {
+            // Shoot confetti
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 }
             });
-        } catch (e) {
-            console.error("Failed to add XP", e);
+
+            // Save XP to server
+            try {
+                await fetch("/api/user/add-xp", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount: earned }),
+                });
+            } catch (e) {
+                console.error("Failed to add XP", e);
+            }
         }
     };
 
@@ -946,7 +955,10 @@ export default function DeckPage() {
                 </header>
 
                 <main className="flex-1 flex flex-col items-center justify-center perspective-1000 w-full max-w-2xl mx-auto">
-                    <div className="relative w-full aspect-[4/3] sm:aspect-[3/2] cursor-pointer group" onClick={() => setIsFlipped(!isFlipped)}>
+                    <div className="relative w-full aspect-[4/3] sm:aspect-[3/2] cursor-pointer group" onClick={() => {
+                        setIsFlipped(!isFlipped);
+                        if (!isFlipped) setFlippedIndices(prev => new Set(prev).add(currentIndex));
+                    }}>
                         <div className={`absolute inset-0 w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? "rotate-y-180" : ""}`}>
                             {/* Front */}
                             <div className="absolute inset-0 backface-hidden bg-white dark:bg-[#1e1e1e] rounded-3xl shadow-xl flex flex-col items-center justify-center p-8 border border-neutral-200 dark:border-neutral-800">
@@ -1123,7 +1135,7 @@ export default function DeckPage() {
                                 onChange={(e) => setWritingInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word)}
                                 disabled={isAnswerChecked}
-                                placeholder="Type what you hear..."
+                                placeholder="単語を入力..."
                                 className={`w-full p-4 text-2xl font-bold text-center bg-neutral-50 dark:bg-black border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
                                     ? isCorrect
                                         ? 'border-green-500 bg-green-50 dark:bg-green-950/20 text-green-600'

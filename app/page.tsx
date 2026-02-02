@@ -1365,7 +1365,7 @@ export default function Home() {
         {
           session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
             <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
-              <Link href="/admin" className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors">
+              <Link href="/sys-ctrl-99" className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors">
                 Admin
               </Link>
             </div>

@@ -108,12 +108,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                         </button>
                     </div>
                 )}
-                {session && role === 'admin' && (
-                    <Link href="/sys-ctrl-99" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-400 group">
-                        <span>📊</span>
-                        <span>Admin</span>
-                    </Link>
-                )}
+
             </div>
 
             {/* Right Side: Stats & User Actions */}
