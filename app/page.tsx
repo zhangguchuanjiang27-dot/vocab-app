@@ -8,6 +8,29 @@ import Link from "next/link";
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
 
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+  useDroppable,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 // 型定義
 type WordCard = {
   id?: string;
@@ -22,6 +45,7 @@ type WordCard = {
 type Deck = {
   id: string;
   title: string;
+  order: number;
   createdAt: string;
   words: WordCard[];
   folderId?: string | null;
@@ -172,42 +196,86 @@ export default function Home() {
     setExpandedFolderIds(newSet);
   };
 
-  // --- Drag and Drop Logic ---
-  const handleDragStart = (e: React.DragEvent, deckId: string) => {
-    e.dataTransfer.setData("deckId", deckId);
-    e.dataTransfer.effectAllowed = "move";
+  // --- Drag and Drop (dnd-kit) Logic ---
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
   };
 
-  const handleDragOver = (e: React.DragEvent, folderId: string | 'ROOT') => {
-    e.preventDefault(); // これがないとdropイベントが発火しない
-    e.dataTransfer.dropEffect = "move";
-    if (dragOverFolderId !== folderId) {
-      setDragOverFolderId(folderId);
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    // Case 1: Dropped into a Folder (overId is a Folder ID)
+    const isOverFolder = folders.some(f => f.id === overId);
+
+    if (isOverFolder) {
+      await moveDeckToFolder(activeId, overId);
+      return;
+    }
+
+    // Case 2: Dropped into Root Area (overId is 'ROOT')
+    if (overId === 'ROOT') {
+      await moveDeckToFolder(activeId, null);
+      return;
+    }
+
+    // Case 3: Reordering or Cross-Folder Move via Deck Drop
+    if (activeId !== overId) {
+      const activeDeck = savedDecks.find(d => d.id === activeId);
+      const overDeck = savedDecks.find(d => d.id === overId);
+
+      if (activeDeck && overDeck) {
+        // If dropping on a deck in a DIFFERENT folder, treat as Move
+        if (activeDeck.folderId !== overDeck.folderId) {
+          await moveDeckToFolder(activeId, overDeck.folderId ?? null); // If overDeck is in root (null), move to null.
+          return;
+        }
+
+        // Same folder: Reorder
+        setSavedDecks((items) => {
+          const oldIndex = items.findIndex((item) => item.id === activeId);
+          const newIndex = items.findIndex((item) => item.id === overId);
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+
+          saveOrder(newOrder);
+          return newOrder;
+        });
+      }
     }
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    // 親子要素を行き来する際のちらつき防止のため、あえて厳密には消さない、
-    // またはDrop時にリセットする運用でシンプルにする
-  };
-
-  const handleDrop = async (e: React.DragEvent, folderId: string | 'ROOT') => {
-    e.preventDefault();
-    setDragOverFolderId(null);
-    const deckId = e.dataTransfer.getData("deckId");
-
-    if (!deckId) return;
-
-    // 移動処理 ('ROOT' の場合は null にする)
-    await moveDeckToFolder(deckId, folderId === 'ROOT' ? null : folderId);
+  const saveOrder = async (decks: Deck[]) => {
+    // Create minimal payload: [{id, order}]
+    const orderData = decks.map((d, index) => ({ id: d.id, order: index }));
+    try {
+      await fetch("/api/decks/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: orderData })
+      });
+    } catch (e) { console.error(e); }
   };
 
   const moveDeckToFolder = async (deckId: string, folderId: string | null) => {
     try {
-      // Optimistic Update (UIを先に更新)
+      // Optimistic Update
       setSavedDecks(prev => prev.map(d => d.id === deckId ? { ...d, folderId } : d));
 
-      // フォルダへの移動なら開く
+      // Open folder if moved into one
       if (folderId) {
         setExpandedFolderIds(prev => {
           const next = new Set(prev);
@@ -222,16 +290,38 @@ export default function Home() {
         body: JSON.stringify({ folderId })
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to move deck");
-      }
-
-      // 念のため再取得
-      fetchDecks();
+      if (!res.ok) throw new Error("Failed to move deck");
+      // fetchDecks(); // No need to fetch if optimistic is correct, but safer to keep synced eventually
     } catch (e) {
       console.error(e);
       alert("移動に失敗しました");
-      fetchDecks(); // ロールバック
+      fetchDecks();
+    }
+  };
+
+  // --- Folder Renaming State ---
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [tempFolderName, setTempFolderName] = useState("");
+
+  const startRenameFolder = (id: string, name: string) => {
+    setEditingFolderId(id);
+    setTempFolderName(name);
+  };
+
+  const saveRenameFolder = async (id: string, newName: string) => {
+    if (!newName.trim()) return;
+    try {
+      const res = await fetch(`/api/folders/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName }),
+      });
+      if (res.ok) {
+        setEditingFolderId(null);
+        fetchFolders();
+      }
+    } catch (e) {
+      alert("変更に失敗しました");
     }
   };
 
@@ -1106,114 +1196,61 @@ export default function Home() {
                       <p>保存された単語帳はありません。</p>
                     </div>
                   ) : (
-                    <div className="space-y-8">
-                      {/* Folders Section */}
-                      {folders.length > 0 && (
-                        <div className="space-y-3">
-                          {folders.map(folder => {
-                            const isExpanded = expandedFolderIds.has(folder.id);
-                            // このフォルダに入っているデッキを抽出
-                            const folderDecks = savedDecks.filter(d => d.folderId === folder.id);
-                            const isDragOver = dragOverFolderId === folder.id;
-
-                            return (
-                              <div
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <div className="space-y-8">
+                        {/* Folders Section */}
+                        {folders.length > 0 && (
+                          <div className="space-y-3">
+                            {folders.map(folder => (
+                              <FolderRow
                                 key={folder.id}
-                                className={`rounded-2xl border transition-all duration-200 overflow-hidden
-                                    ${isDragOver
-                                    ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
-                                    : 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800'
-                                  }
-                                `}
-                                onDragOver={(e) => handleDragOver(e, folder.id)}
-                                onDrop={(e) => handleDrop(e, folder.id)}
-                                onDragLeave={handleDragLeave}
-                              >
-                                {/* Header */}
-                                <div
-                                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors"
-                                  onClick={() => toggleFolder(folder.id)}
-                                >
-                                  <div className="flex items-center gap-3 pointer-events-none">
-                                    <span className={`text-xl transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-                                    <span className="text-2xl">📂</span>
-                                    <span className="font-bold text-lg">{folder.name}</span>
-                                    <span className="ml-2 text-xs font-bold text-neutral-400 bg-white dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-100 dark:border-neutral-700">
-                                      {folderDecks.length}
-                                    </span>
-                                  </div>
-                                  <button
-                                    onClick={(e) => handleDeleteFolder(folder.id, e)}
-                                    className="text-neutral-300 hover:text-red-500 p-2"
-                                    title="フォルダを削除"
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                  </button>
-                                </div>
-
-                                {/* Body */}
-                                {isExpanded && (
-                                  <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
-                                    {folderDecks.length === 0 ? (
-                                      <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>
-                                    ) : (
-                                      folderDecks.map((deck) => (
-                                        <div
-                                          key={deck.id}
-                                          draggable
-                                          onDragStart={(e) => handleDragStart(e, deck.id)}
-                                          className="group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all cursor-move active:cursor-grabbing"
-                                          onClick={() => handleDeckClick(deck.id)}
-                                        >
-                                          <h3 className="font-bold text-md mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
-                                          <div className="flex items-center gap-3 pointer-events-none">
-                                            <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
-                                          </div>
-                                        </div>
-                                      ))
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Root Decks Section */}
-                      <div
-                        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 rounded-3xl transition-all duration-300 min-h-[100px]
-                            ${dragOverFolderId === 'ROOT'
-                            ? 'bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-400 ring-dashed p-4'
-                            : ''
-                          }
-                        `}
-                        onDragOver={(e) => handleDragOver(e, 'ROOT')}
-                        onDrop={(e) => handleDrop(e, 'ROOT')}
-                      >
-                        {savedDecks.filter(d => !d.folderId).length === 0 && (
-                          <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
-                            <span className="text-4xl mb-2">📥</span>
-                            <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
+                                folder={folder}
+                                folderDecks={savedDecks.filter(d => d.folderId === folder.id)}
+                                isExpanded={expandedFolderIds.has(folder.id)}
+                                toggleFolder={toggleFolder}
+                                deleteFolder={handleDeleteFolder}
+                                startRenameFolder={startRenameFolder}
+                                saveRenameFolder={saveRenameFolder}
+                                onDeckClick={handleDeckClick}
+                              />
+                            ))}
                           </div>
                         )}
-                        {savedDecks.filter(d => !d.folderId).map((deck) => (
-                          <div
-                            key={deck.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, deck.id)}
-                            className="group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all cursor-move active:cursor-grabbing"
-                            onClick={() => handleDeckClick(deck.id)}
+
+                        {/* Root Decks Section */}
+                        <RootDropArea>
+                          <SortableContext
+                            items={savedDecks.filter(d => !d.folderId).map(d => d.id)}
+                            strategy={rectSortingStrategy}
                           >
-                            <h3 className="font-bold text-md mb-2 pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight">{deck.title}</h3>
-                            <div className="flex items-center gap-3 pointer-events-none">
-                              <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
-                              <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
-                            </div>
-                          </div>
-                        ))}
+                            {savedDecks.filter(d => !d.folderId).length === 0 && (
+                              <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
+                                <span className="text-4xl mb-2">📥</span>
+                                <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
+                              </div>
+                            )}
+                            {savedDecks.filter(d => !d.folderId).map(deck => (
+                              <SortableDeckItem key={deck.id} deck={deck} onClick={handleDeckClick} />
+                            ))}
+                          </SortableContext>
+                        </RootDropArea>
                       </div>
-                    </div>
+
+                      <DragOverlay dropAnimation={{
+                        sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } })
+                      }}>
+                        {activeId ? (
+                          <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl shadow-2xl border border-indigo-500 opacity-80 w-[300px]">
+                            <h3 className="font-bold">{savedDecks.find(d => d.id === activeId)?.title}</h3>
+                          </div>
+                        ) : null}
+                      </DragOverlay>
+                    </DndContext>
                   )}
                 </div>
               ) : (
@@ -1376,5 +1413,168 @@ export default function Home() {
         }
       </main >
     </div >
+  );
+}
+
+
+// --- Sortable Components ---
+function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string) => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: deck.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={`group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500' : ''}`}
+      onClick={(e) => {
+        // Prevent click if dragging (handled by dnd-kit usually, but safety check)
+        if (!isDragging) onClick(deck.id);
+      }}
+    >
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="font-bold text-md pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight select-none">
+          {deck.title}
+        </h3>
+        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+          {/* Drag Handle Icon */}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 pointer-events-none select-none">
+        <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+        <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
+      </div>
+    </div>
+  );
+}
+
+function FolderRow({
+  folder,
+  folderDecks,
+  isExpanded,
+  toggleFolder,
+  deleteFolder,
+  onDeckClick,
+  startRenameFolder,
+  saveRenameFolder
+}: {
+  folder: Folder;
+  folderDecks: Deck[];
+  isExpanded: boolean;
+  toggleFolder: (id: string) => void;
+  deleteFolder: (id: string, e: any) => void;
+  onDeckClick: (id: string) => void;
+  startRenameFolder: (id: string, name: string) => void;
+  saveRenameFolder: (id: string, name: string) => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: folder.id });
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(folder.name);
+
+  useEffect(() => setName(folder.name), [folder.name]);
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-2xl border transition-all duration-200 overflow-hidden mb-3
+          ${isOver
+          ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
+          : 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800'
+        }
+      `}
+    >
+      <div
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors"
+        onClick={() => toggleFolder(folder.id)}
+      >
+        <div className="flex items-center gap-3">
+          <span className={`text-xl transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+          <span className="text-2xl">📂</span>
+
+          {isEditing ? (
+            <div className="flex gap-2 items-center" onClick={e => e.stopPropagation()}>
+              <input
+                autoFocus
+                value={name}
+                onChange={e => setName(e.target.value)}
+                className="px-2 py-1 rounded bg-white dark:bg-black border border-indigo-500 outline-none text-sm"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveRenameFolder(folder.id, name);
+                    setIsEditing(false);
+                  }
+                }}
+              />
+              <button onClick={() => { saveRenameFolder(folder.id, name); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded">Save</button>
+              <button onClick={() => { setIsEditing(false); setName(folder.name); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-2 py-1 rounded">Cancel</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group/title">
+              <span className="font-bold text-lg">{folder.name}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); setName(folder.name); setIsEditing(true); }}
+                className="opacity-0 group-hover/title:opacity-100 text-neutral-400 hover:text-indigo-500 p-1"
+              >
+                ✏️
+              </button>
+            </div>
+          )}
+          <span className="ml-2 text-xs font-bold text-neutral-400 bg-white dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-100 dark:border-neutral-700">
+            {folderDecks.length}
+          </span>
+        </div>
+        <button
+          onClick={(e) => deleteFolder(folder.id, e)}
+          className="text-neutral-300 hover:text-red-500 p-2"
+          title="フォルダを削除"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+      </div>
+
+      {isExpanded && (
+        <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
+          <SortableContext items={folderDecks.map(d => d.id)} strategy={rectSortingStrategy}>
+            {folderDecks.length === 0 && <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>}
+            {folderDecks.map((deck) => (
+              <SortableDeckItem key={deck.id} deck={deck} onClick={onDeckClick} />
+            ))}
+          </SortableContext>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RootDropArea({ children }: { children: React.ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: 'ROOT' });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 rounded-3xl transition-all duration-300 min-h-[100px]
+          ${isOver
+          ? 'bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-400 ring-dashed p-4'
+          : ''
+        }
+      `}
+    >
+      {children}
+    </div>
   );
 }

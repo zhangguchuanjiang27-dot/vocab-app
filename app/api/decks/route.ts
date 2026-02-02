@@ -30,7 +30,10 @@ export async function GET() {
     const decks = await prisma.deck.findMany({
       where: { userId: userId }, // 取得したIDを使用
       include: { words: true },
-      orderBy: { createdAt: 'desc' }
+      orderBy: [
+        { order: 'asc' },
+        { createdAt: 'desc' }
+      ]
     });
     return NextResponse.json(decks);
   } catch (err) {

@@ -101,6 +101,7 @@ model VerificationToken {
 model Deck {
     id        String   @id @default(cuid())
     title     String
+    order     Int      @default(0)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     userId    String
