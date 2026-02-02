@@ -1364,7 +1364,7 @@ export default function Home() {
         {/* Hidden Admin Link */}
         {
           session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
-            <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity">
+            <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center opacity-20 hover:opacity-100 transition-opacity relative z-50">
               <Link href="/sys-ctrl-99" className="text-[10px] font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full transition-colors">
                 Admin
               </Link>
