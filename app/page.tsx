@@ -1423,6 +1423,7 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -1439,8 +1440,6 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
     <div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={`group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500' : ''}`}
       onClick={(e) => {
         // Prevent click if dragging (handled by dnd-kit usually, but safety check)
@@ -1451,7 +1450,13 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
         <h3 className="font-bold text-md pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight select-none">
           {deck.title}
         </h3>
-        <div className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500">
+        <div
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 p-2 -m-2 touch-none"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Drag Handle Icon */}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>
         </div>
