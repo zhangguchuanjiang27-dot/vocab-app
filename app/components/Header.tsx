@@ -89,7 +89,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
             <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
                 <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-1 sm:gap-2">
                     <img src="/logo.png" alt="Voca Logo" className="w-9 h-9 sm:w-8 sm:h-8 object-contain flex-shrink-0" />
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300 hidden sm:inline">Voca</span>
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">Voca</span>
                 </Link>
 
                 {session && (
@@ -109,7 +109,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                     </div>
                 )}
                 {session && role === 'admin' && (
-                    <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-400 group">
+                    <Link href="/sys-ctrl-99" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-400 group">
                         <span>📊</span>
                         <span>Admin</span>
                     </Link>

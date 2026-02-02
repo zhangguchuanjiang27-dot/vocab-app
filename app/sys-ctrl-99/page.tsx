@@ -34,7 +34,7 @@ type Inquiry = {
     } | null;
 };
 
-export default function AdminPage() {
+export default function SecretDashboardPage() {
     // ... existing code ...
 
     const [activeTab, setActiveTab] = useState<'users' | 'inquiries'>('users');
