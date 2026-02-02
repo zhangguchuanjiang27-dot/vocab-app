@@ -94,22 +94,22 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
 
                 {session && (
                     <div className="flex items-center gap-2 sm:gap-2">
-                        <Link href="/ranking" className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group">
+                        <Link href="/ranking" className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-900 transition-colors group">
                             <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-1">👑</span>
-                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">ランキング</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-400 ml-1">ランキング</span>
                         </Link>
 
                         <button
                             onClick={() => setShowContactModal(true)}
-                            className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors group"
+                            className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-900 transition-colors group"
                         >
                             <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-0.5">💌</span>
-                            <span className="hidden sm:inline text-sm font-bold text-neutral-600 dark:text-neutral-400 ml-1">サポート</span>
+                            <span className="hidden sm:inline text-sm font-bold text-neutral-400 ml-1">サポート</span>
                         </button>
                     </div>
                 )}
                 {session && role === 'admin' && (
-                    <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-600 dark:text-neutral-400 group">
+                    <Link href="/admin" className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-neutral-900 transition-colors text-sm font-bold text-neutral-400 group">
                         <span>📊</span>
                         <span>Admin</span>
                     </Link>
@@ -122,7 +122,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                     <>
                         {/* Streak Badge */}
                         {streak !== null && (
-                            <div className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-900 text-orange-600 dark:text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
+                            <div className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-950/30 border-orange-900 text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
                                 <span className={`${streakUpdated ? "animate-bounce" : ""} text-base sm:text-lg leading-none`}>🔥</span>
                                 <span className="leading-none pt-0.5">
                                     {streak}
@@ -135,16 +135,16 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                         <div className={`
                             hidden md:flex items-center px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase
                             ${plan === 'pro'
-                                ? 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
                                 : plan === 'basic'
-                                    ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
-                                    : 'bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                    : 'bg-neutral-800 text-neutral-400 border-neutral-700'
                             }
                         `}>
                             {plan || 'FREE'}
                         </div>
 
-                        <div className="flex items-center gap-1.5 px-2 py-1 sm:gap-2 sm:px-3 sm:py-1.5 bg-neutral-100 dark:bg-neutral-900 rounded-full border border-neutral-200 dark:border-neutral-800 relative group/wallet whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 px-2 py-1 sm:gap-2 sm:px-3 sm:py-1.5 bg-neutral-900 rounded-full border border-neutral-800 relative group/wallet whitespace-nowrap">
                             <span className="text-base sm:text-lg leading-none">🪙</span>
                             <span className="font-bold font-mono text-xs sm:text-sm leading-none pt-0.5">
                                 {plan === 'unlimited' ? "無制限" : initialCredits}
@@ -152,7 +152,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
 
                             {/* Days Remaining Tooltip/Badge */}
                             {plan && daysRemaining !== null && (
-                                <div className="hidden sm:flex ml-1 px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 rounded text-[9px] font-bold text-neutral-500 dark:text-neutral-400 items-center gap-1 group-hover/wallet:scale-105 transition-transform">
+                                <div className="hidden sm:flex ml-1 px-1.5 py-0.5 bg-neutral-800 rounded text-[9px] font-bold text-neutral-400 items-center gap-1 group-hover/wallet:scale-105 transition-transform">
                                     <span className="opacity-70">あと</span>
                                     <span className={`${daysRemaining <= 3 ? 'text-red-500 animate-pulse' : ''}`}>{daysRemaining}日</span>
                                 </div>
@@ -162,12 +162,12 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 追加
                             </Link>
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-neutral-200 dark:border-neutral-800">
+                        <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-neutral-800">
                             <Link href="/profile" className="flex-shrink-0 block">
                                 {session.user?.image ? (
-                                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform block" />
+                                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-800 hover:scale-110 transition-transform block" />
                                 ) : (
-                                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-300 border border-neutral-200 dark:border-neutral-800 hover:scale-110 transition-transform">
+                                    <div className="w-8 h-8 rounded-full bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-300 border border-neutral-800 hover:scale-110 transition-transform">
                                         {session.user?.name?.[0] || "U"}
                                     </div>
                                 )}
@@ -182,14 +182,14 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
                                 </svg>
                                 {/* Desktop Text */}
-                                <span className="hidden sm:block text-xs font-bold text-neutral-500 group-hover:text-black dark:group-hover:text-white transition-colors">
+                                <span className="hidden sm:block text-xs font-bold text-neutral-500 group-hover:text-white transition-colors">
                                     ログアウト
                                 </span>
                             </button>
                         </div>
                     </>
                 ) : (
-                    <Link href="/api/auth/signin" className="text-sm font-bold bg-black dark:bg-white text-white dark:text-black px-4 py-2 rounded-full hover:opacity-80 transition-opacity">
+                    <Link href="/api/auth/signin" className="text-sm font-bold bg-white text-black px-4 py-2 rounded-full hover:opacity-80 transition-opacity">
                         ログイン
                     </Link>
                 )}
@@ -198,10 +198,10 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
             {/* Contact Modal */}
             {showContactModal && (
                 <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-neutral-900 w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 relative mt-60">
+                    <div className="bg-neutral-900 w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-neutral-800 relative mt-60">
                         <button
                             onClick={() => setShowContactModal(false)}
-                            className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 p-2"
+                            className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-200 p-2"
                         >
                             ✕
                         </button>
@@ -211,22 +211,22 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
 
                         <form onSubmit={handleContactSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">メールアドレス</label>
+                                <label className="block text-xs font-bold text-neutral-300 mb-1">メールアドレス</label>
                                 <input
                                     type="email"
                                     required
                                     value={contactEmail}
                                     onChange={(e) => setContactEmail(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
                                     placeholder="your@email.com"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">種類</label>
+                                <label className="block text-xs font-bold text-neutral-300 mb-1">種類</label>
                                 <select
                                     value={contactType}
                                     onChange={(e) => setContactType(e.target.value)}
-                                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm cursor-pointer"
+                                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm cursor-pointer"
                                 >
                                     <option value="bug">不具合報告 (Bug)</option>
                                     <option value="feature">機能リクエスト (Feature Request)</option>
@@ -234,13 +234,13 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">内容</label>
+                                <label className="block text-xs font-bold text-neutral-300 mb-1">内容</label>
                                 <textarea
                                     required
                                     value={contactMessage}
                                     onChange={(e) => setContactMessage(e.target.value)}
                                     rows={4}
-                                    className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm"
+                                    className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm"
                                     placeholder="詳細をご記入ください..."
                                 ></textarea>
                             </div>
@@ -248,7 +248,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                                 <button
                                     type="button"
                                     onClick={() => setShowContactModal(false)}
-                                    className="flex-1 py-3 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-xl font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors text-sm"
+                                    className="flex-1 py-3 bg-neutral-800 text-neutral-300 rounded-xl font-bold hover:bg-neutral-700 transition-colors text-sm"
                                 >
                                     キャンセル
                                 </button>
@@ -268,16 +268,16 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
             {/* Logout Confirmation Modal */}
             {showLogoutModal && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-neutral-200 dark:border-neutral-800 scale-100 animate-in zoom-in-95 duration-200 mt-24">
-                        <h3 className="text-lg font-bold text-center mb-2 text-neutral-900 dark:text-white">ログアウトしますか？</h3>
-                        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300 text-center mb-6 leading-relaxed">
+                    <div className="bg-neutral-900 rounded-2xl shadow-xl w-full max-w-sm p-6 border border-neutral-800 scale-100 animate-in zoom-in-95 duration-200 mt-24">
+                        <h3 className="text-lg font-bold text-center mb-2 text-white">ログアウトしますか？</h3>
+                        <p className="text-sm font-medium text-neutral-300 text-center mb-6 leading-relaxed">
                             アカウントからログアウトします。<br className="hidden sm:block" />
                             次回利用時は再ログインが必要です。
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowLogoutModal(false)}
-                                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                                className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition-colors"
                             >
                                 キャンセル
                             </button>

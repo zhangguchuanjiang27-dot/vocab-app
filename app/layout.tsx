@@ -84,14 +84,14 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-white dark:bg-black text-neutral-900 dark:text-neutral-100 min-h-screen flex flex-col`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-black text-neutral-100 min-h-screen flex flex-col`}>
         <Providers>
           {/* Server Component から呼び出す Client Component として Header を実装 */}
           {/* Client Componentを作成していないため、一旦 layout.tsx 内で完結しているこのナビゲーションバーを
                 そのまま使うが、ストリークを表示するために、
                 StreakDisplay という小さな Client Component を作ってここに埋め込むのが一番手軽。
             */}
-          <nav className="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-black/80 backdrop-blur-md sticky top-0 z-50">
+          <nav className="border-b border-neutral-800 bg-black/80 backdrop-blur-md sticky top-0 z-50">
             {/* ... nav content ... */}
             {/* 実際の実装: 既存のlayoutのnavをcomponents/Header.tsxに移設するよう指示し、それをインポート配置する。*/}
             {/* しかしファイル数が増えるので、簡易的に StreakBadge コンポーネントを作って配置する。 */}
@@ -109,7 +109,7 @@ export default async function RootLayout({
             {children}
           </main>
 
-          <footer className="py-8 text-center text-xs text-neutral-400 border-t border-neutral-100 dark:border-neutral-900 mt-12 bg-neutral-50 dark:bg-neutral-950">
+          <footer className="py-8 text-center text-xs text-neutral-400 border-t border-neutral-900 mt-12 bg-neutral-950">
             <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
               <p>© 2026 Voca All rights reserved.</p>
               <div className="flex gap-4">

@@ -526,7 +526,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-[#050505] text-neutral-900 dark:text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 overflow-x-hidden relative">
+    <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 overflow-x-hidden relative">
 
       {/* 🌌 Ambient Background Glow */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
@@ -551,11 +551,11 @@ export default function Home() {
       {/* Create Folder Modal */}
       {showCreateFolderModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
+          <div className="bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-800">
             <h3 className="text-xl font-bold mb-4">新規フォルダ作成</h3>
             <input
               type="text"
-              className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-100 dark:bg-neutral-800 border-none focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-800 border-none focus:ring-2 focus:ring-indigo-500 outline-none"
               placeholder="フォルダ名 (例: TOEIC, 旅行)"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
@@ -564,7 +564,7 @@ export default function Home() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowCreateFolderModal(false)}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-bold text-neutral-500 hover:bg-neutral-800 transition-colors"
               >
                 キャンセル
               </button>
@@ -583,7 +583,7 @@ export default function Home() {
       {/* Add To Deck Modal */}
       {showAddToDeckModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-neutral-200 dark:border-neutral-800">
+          <div className="bg-neutral-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-neutral-800">
             <h3 className="text-xl font-bold mb-4">どの単語帳に追加しますか？</h3>
             <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-2 mb-4">
               {savedDecks.length === 0 ? (
@@ -593,7 +593,7 @@ export default function Home() {
                   <button
                     key={deck.id}
                     onClick={() => handleAddToExistingDeck(deck.id, deck.title)}
-                    className="flex justify-between items-center p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-left group"
+                    className="flex justify-between items-center p-4 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors text-left group"
                   >
                     <span className="font-bold">{deck.title}</span>
                     <span className="text-xs text-neutral-400 group-hover:text-indigo-500">
@@ -605,7 +605,7 @@ export default function Home() {
             </div>
             <button
               onClick={() => setShowAddToDeckModal(false)}
-              className="w-full py-3 rounded-xl bg-neutral-200 dark:bg-neutral-800 font-bold text-sm hover:opacity-80 transition-opacity"
+              className="w-full py-3 rounded-xl bg-neutral-800 font-bold text-sm hover:opacity-80 transition-opacity"
             >
               キャンセル
             </button>
@@ -616,22 +616,22 @@ export default function Home() {
       {/* Subscription Modal */}
       {showSubscriptionModal && (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200 backdrop-blur-sm">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-neutral-200 dark:border-neutral-800 overflow-hidden relative">
+          <div className="bg-neutral-900 w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-neutral-800 overflow-hidden relative">
             <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
             <div className="relative z-10 text-center mb-8">
               <h3 className="text-3xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Upgrade Plan</h3>
-              <p className="text-neutral-500 dark:text-neutral-400">
+              <p className="text-neutral-400">
                 AI単語生成をもっと自由に。プランを選んでアップグレード。
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-4 relative z-10 mb-8">
               {/* Basic Plan */}
-              <div className="p-6 rounded-2xl border-2 border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/50 dark:bg-emerald-900/10 hover:border-emerald-500 transition-colors flex flex-col">
+              <div className="p-6 rounded-2xl border-2 border-emerald-900/30 bg-emerald-900/10 hover:border-emerald-500 transition-colors flex flex-col">
                 <div className="mb-4">
-                  <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1">Basic Plan</div>
-                  <div className="text-3xl font-black text-neutral-900 dark:text-white">¥300<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Basic Plan</div>
+                  <div className="text-3xl font-black text-white">¥300<span className="text-sm font-normal text-neutral-500">/mo</span></div>
                 </div>
                 <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
                   <li className="flex items-center gap-2">
@@ -644,18 +644,18 @@ export default function Home() {
                 <button
                   onClick={() => handleSubscription('basic')}
                   disabled={subscriptionLoading}
-                  className="w-full py-3 bg-white dark:bg-neutral-800 border-2 border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+                  className="w-full py-3 bg-neutral-800 border-2 border-emerald-500 text-emerald-400 rounded-xl font-bold hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
                 >
                   {subscriptionLoading ? "処理中..." : "Basicを選択"}
                 </button>
               </div>
 
               {/* Pro Plan */}
-              <div className="p-6 rounded-2xl border-2 border-indigo-100 dark:border-indigo-900/30 bg-indigo-50/50 dark:bg-indigo-900/10 hover:border-indigo-500 transition-all scale-105 shadow-lg flex flex-col relative overflow-hidden">
+              <div className="p-6 rounded-2xl border-2 border-indigo-900/30 bg-indigo-900/10 hover:border-indigo-500 transition-all scale-105 shadow-lg flex flex-col relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">POPULAR</div>
                 <div className="mb-4">
-                  <div className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">Pro Plan</div>
-                  <div className="text-3xl font-black text-neutral-900 dark:text-white">¥980<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+                  <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Pro Plan</div>
+                  <div className="text-3xl font-black text-white">¥980<span className="text-sm font-normal text-neutral-500">/mo</span></div>
                 </div>
                 <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
                   <li className="flex items-center gap-2 font-bold">
@@ -680,7 +680,7 @@ export default function Home() {
 
             <button
               onClick={() => setShowSubscriptionModal(false)}
-              className="w-full py-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 font-bold transition-colors text-sm"
+              className="w-full py-4 text-neutral-400 hover:text-neutral-200 font-bold transition-colors text-sm"
             >
               閉じる
             </button>
@@ -707,7 +707,7 @@ export default function Home() {
               </div>
 
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4 delay-100">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/30 border border-indigo-800 text-indigo-300 text-xs font-bold mb-8 animate-in fade-in slide-in-from-bottom-4 delay-100">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
@@ -715,9 +715,9 @@ export default function Home() {
                 New: AI Sentence Generation
               </div>
 
-              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-16 bg-clip-text text-transparent bg-neutral-900 dark:bg-white animate-in fade-in slide-in-from-bottom-8 duration-700 leading-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>
+              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter mb-16 bg-clip-text text-transparent bg-white animate-in fade-in slide-in-from-bottom-8 duration-700 leading-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>
                 Learn Words for<br />
-                <span className="text-indigo-600 dark:text-indigo-400 inline-block min-h-[1.2em]">
+                <span className="text-indigo-400 inline-block min-h-[1.2em]">
                   <Typewriter
                     options={{
                       strings: ['Business.', 'Travel.', 'Science.', 'Life.', 'Everything.'],
@@ -730,7 +730,7 @@ export default function Home() {
                 </span>
               </h1>
 
-              <p className="text-xl sm:text-2xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+              <p className="text-xl sm:text-2xl text-neutral-400 max-w-2xl mx-auto mb-12 leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
                 AIがあなたのためだけに単語帳を作成。<br className="hidden sm:block" />
                 意味、例文、音声、すべてが一瞬で手に入ります。
               </p>
@@ -738,7 +738,7 @@ export default function Home() {
               <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 z-10 relative">
                 <button
                   onClick={() => signIn("google")}
-                  className="group relative px-8 py-4 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-3 overflow-hidden"
+                  className="group relative px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:shadow-2xl hover:shadow-indigo-500/20 transition-all active:scale-95 flex items-center gap-3 overflow-hidden"
                 >
                   <span className="relative z-10 flex items-center gap-2">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
