@@ -19,6 +19,7 @@ export async function PUT(req: Request) {
             items.map((item: any) =>
                 prisma.deck.update({
                     where: { id: item.id, userId: session.user.id },
+                    // @ts-ignore
                     data: { order: item.order },
                 })
             )

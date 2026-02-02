@@ -31,6 +31,7 @@ export async function GET() {
       where: { userId: userId }, // 取得したIDを使用
       include: { words: true },
       orderBy: [
+        // @ts-ignore
         { order: 'asc' },
         { createdAt: 'desc' }
       ]
