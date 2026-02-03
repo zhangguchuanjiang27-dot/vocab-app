@@ -3,13 +3,13 @@ import Link from "next/link";
 
 export default function TermsPage() {
     return (
-        <div className="max-w-3xl mx-auto px-6 py-24 text-neutral-900 dark:text-neutral-100">
-            <h1 className="text-3xl font-black mb-8 dark:text-white">利用規約</h1>
-            <div className="space-y-6 text-sm sm:text-base leading-relaxed text-neutral-800 dark:text-neutral-200">
+        <div className="max-w-3xl mx-auto px-6 py-24 text-neutral-100">
+            <h1 className="text-3xl font-black mb-8 text-white">利用規約</h1>
+            <div className="space-y-6 text-sm sm:text-base leading-relaxed text-neutral-300">
                 <p className="font-bold mb-8">この利用規約（以下，「本規約」といいます。）は，「Voca」（以下，「本サービス」といいます。）の利用条件を定めるものです。本サービスを利用する皆さま（以下，「ユーザー」といいます。）には，本規約に従って，本サービスをご利用いただきます。</p>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第1条（適用）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第1条（適用）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>本規約は，ユーザーと本サービス運営者（以下，「運営者」といいます。）との間の本サービスの利用に関わる一切の関係に適用されるものとします。</li>
                         <li>運営者は本サービスに関し，本規約のほか，ご利用にあたってのルール等，各種の定め（以下，「個別規定」といいます。）をすることがあります。これら個別規定はその名称のいかんに関わらず，本規約の一部を構成するものとします。</li>
@@ -18,7 +18,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第2条（利用登録）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第2条（利用登録）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>本サービスにおいては，登録希望者が本規約に同意の上，当社の定める方法によって利用登録を申請し，運営者がこれを承認することによって，利用登録が完了するものとします。</li>
                         <li>運営者は，利用登録の申請者に以下の事由があると判断した場合，利用登録の申請を承認しないことがあり，その理由については一切の開示義務を負わないものとします。
@@ -32,7 +32,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第3条（ユーザーIDおよびパスワードの管理）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第3条（ユーザーIDおよびパスワードの管理）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>ユーザーは，自己の責任において，本サービスのユーザーID（Googleアカウント等）およびパスワードを適切に管理するものとします。</li>
                         <li>ユーザーは，いかなる場合にも，ユーザーIDおよびパスワードを第三者に譲渡または貸与し，もしくは第三者と共用することはできません。</li>
@@ -41,7 +41,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第4条（利用料金および支払方法）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第4条（利用料金および支払方法）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>ユーザーは，本サービスの有料部分の対価として，運営者が別途定め，本ウェブサイトに表示する利用料金を，運営者が指定する方法（Stripe決済等）により支払うものとします。</li>
                         <li>有料プランは自動更新されます。ユーザーが期間満了前に解約手続きを行わない限り，契約は自動的に更新され，利用料金が請求されます。</li>
@@ -50,7 +50,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第5条（AI生成機能に関する特記事項）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第5条（AI生成機能に関する特記事項）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>本サービスは，人工知能（以下「AI」といいます）技術を利用してコンテンツを生成します。</li>
                         <li>ユーザーは，AIの特性上，生成される情報が必ずしも正確性，完全性，最新性，適法性を欠いていないことを保証するものではないことを理解し，同意するものとします。</li>
@@ -60,7 +60,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第6条（禁止事項）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第6条（禁止事項）</h3>
                     <p>ユーザーは，本サービスの利用にあたり，以下の行為をしてはなりません。</p>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                         <li>法令または公序良俗に違反する行為</li>
@@ -79,7 +79,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第7条（本サービスの提供の停止等）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第7条（本サービスの提供の停止等）</h3>
                     <p>運営者は，以下のいずれかの事由があると判断した場合，ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。</p>
                     <ul className="list-disc pl-5 mt-2 space-y-1">
                         <li>本サービスにかかるコンピュータシステムの保守点検または更新を行う場合</li>
@@ -90,7 +90,7 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第8条（利用制限および登録抹消）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第8条（利用制限および登録抹消）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>運営者は，ユーザーが以下のいずれかに該当する場合には，事前の通知なく，ユーザーに対して，本サービスの全部もしくは一部の利用を制限し，またはユーザーとしての登録を抹消することができるものとします。
                             <ul className="list-disc pl-5 mt-1 space-y-1">
@@ -105,12 +105,12 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第9条（退会）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第9条（退会）</h3>
                     <p>ユーザーは，運営者の定める退会手続により，本サービスから退会できるものとします。</p>
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第10条（保証の否認および免責事項）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第10条（保証の否認および免責事項）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>運営者は，本サービスに事実上または法律上の瑕疵（安全性，信頼性，正確性，完全性，有効性，特定の目的への適合性，セキュリティなどに関する欠陥，エラーやバグ，権利侵害などを含みます。）がないことを明示的にも黙示的にも保証しておりません。</li>
                         <li>運営者は，本サービスに起因してユーザーに生じたあらゆる損害について、運営者の故意又は重過失による場合を除き、一切の責任を負いません。</li>
@@ -119,22 +119,22 @@ export default function TermsPage() {
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第11条（サービス内容の変更等）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第11条（サービス内容の変更等）</h3>
                     <p>運営者は，ユーザーに通知することなく，本サービスの内容を変更しまたは本サービスの提供を中止することができるものとし，これによってユーザーに生じた損害について一切の責任を負いません。</p>
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第12条（利用規約の変更）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第12条（利用規約の変更）</h3>
                     <p>運営者は，必要と判断した場合には，ユーザーに通知することなくいつでも本規約を変更することができるものとします。なお，本規約の変更後，本サービスの利用を開始した場合には，当該ユーザーは変更後の規約に同意したものとみなします。</p>
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第13条（個人情報の取扱い）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第13条（個人情報の取扱い）</h3>
                     <p>運営者は，本サービスの利用によって取得する個人情報については，運営者「プライバシーポリシー」に従い適切に取り扱うものとします。</p>
                 </section>
 
                 <section>
-                    <h3 className="text-xl font-bold mt-8 mb-4 text-neutral-900 dark:text-white">第14条（準拠法・裁判管轄）</h3>
+                    <h3 className="text-xl font-bold mt-8 mb-4 text-white">第14条（準拠法・裁判管轄）</h3>
                     <ol className="list-decimal pl-5 space-y-2">
                         <li>本規約の解釈にあたっては，日本法を準拠法とします。</li>
                         <li>本サービスに関して紛争が生じた場合には，東京地方裁判所を第一審の専属的合意管轄裁判所とします。</li>
@@ -142,7 +142,7 @@ export default function TermsPage() {
                 </section>
             </div>
 
-            <div className="mt-12 pt-12 border-t border-neutral-200 dark:border-neutral-800">
+            <div className="mt-12 pt-12 border-t border-neutral-800">
                 <Link href="/" className="text-indigo-600 font-bold hover:underline">← ホームに戻る</Link>
             </div>
         </div>

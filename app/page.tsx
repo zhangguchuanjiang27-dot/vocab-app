@@ -902,22 +902,22 @@ export default function Home() {
                 <div className="text-center max-w-2xl mx-auto px-6 relative">
                   {activeDemo === 'generate' ? (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400">
+                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
                         AIが、面倒な「単語帳作り」を終わらせます
                       </h3>
-                      <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed font-medium">
+                      <p className="text-neutral-400 leading-relaxed font-medium">
                         覚えたい単語を入力するだけ。AIが文脈を理解し、<br className="hidden sm:block" />
-                        最適な日本語訳・例文・音声を<span className="text-indigo-500 dark:text-indigo-400 font-bold">一瞬でセットアップ</span>します。<br />
+                        最適な日本語訳・例文・音声を<span className="text-indigo-400 font-bold">一瞬でセットアップ</span>します。<br />
                         もう辞書を引く必要はありません。
                       </p>
                     </div>
                   ) : (
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 to-teal-500 dark:from-emerald-400 dark:to-teal-400">
+                      <h3 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-teal-400">
                         「見るだけ」の暗記は、もう古い
                       </h3>
-                      <p className="text-neutral-500 dark:text-neutral-400 leading-relaxed font-medium">
-                        フラッシュカードはもちろん、<span className="text-emerald-500 dark:text-emerald-400 font-bold">ライティングテストや書き取り</span>も搭載。<br />
+                      <p className="text-neutral-400 leading-relaxed font-medium">
+                        フラッシュカードはもちろん、<span className="text-emerald-400 font-bold">ライティングテストや書き取り</span>も搭載。<br />
                         実際に「書いて」「聞いて」出力することで、<br className="hidden sm:block" />
                         使える英語として脳に定着させます。
                       </p>
@@ -1012,18 +1012,18 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">1</div>
+                <div className="relative p-8 rounded-3xl bg-neutral-900 border border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-neutral-800 border-4 border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">1</div>
                   <h3 className="font-bold text-lg mt-4 mb-2">単語を入力</h3>
                   <p className="text-sm text-neutral-500 leading-relaxed">覚えたい単語や文章をテキストエリアに入力するだけ。複数まとめてもOK。</p>
                 </div>
-                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">2</div>
+                <div className="relative p-8 rounded-3xl bg-neutral-900 border border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-neutral-800 border-4 border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">2</div>
                   <h3 className="font-bold text-lg mt-4 mb-2">AIが瞬時に生成</h3>
                   <p className="text-sm text-neutral-500 leading-relaxed">最適な日本語訳、実用的な例文、発音データをAIが自動でセットアップします。</p>
                 </div>
-                <div className="relative p-8 rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800 text-center shadow-sm">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-white dark:bg-neutral-800 border-4 border-indigo-50 dark:border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">3</div>
+                <div className="relative p-8 rounded-3xl bg-neutral-900 border border-neutral-800 text-center shadow-sm">
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-neutral-800 border-4 border-neutral-900 rounded-full flex items-center justify-center text-xl font-black text-indigo-500 shadow-sm">3</div>
                   <h3 className="font-bold text-lg mt-4 mb-2">学習スタート</h3>
                   <p className="text-sm text-neutral-500 leading-relaxed">フラッシュカード、穴埋めテスト、書き取りテストで確実に記憶に定着させます。</p>
                 </div>
@@ -1068,7 +1068,7 @@ export default function Home() {
             </section>
 
             {/* Contact Form Section */}
-            <section className="py-12 px-6 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800">
+            <section className="py-12 px-6 bg-neutral-900 border-t border-neutral-800">
               <div className="max-w-lg mx-auto">
                 <div className="text-center mb-6">
                   <h2 className="text-xl font-bold mb-1">お問い合わせ</h2>
@@ -1076,22 +1076,22 @@ export default function Home() {
                 </div>
                 <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">メールアドレス</label>
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">メールアドレス</label>
                     <input
                       type="email"
                       required
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
                       placeholder="your@email.com"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">種類</label>
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">種類</label>
                     <select
                       value={contactType}
                       onChange={(e) => setContactType(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-sm"
                     >
                       <option value="bug">不具合報告 (Bug)</option>
                       <option value="feature">機能リクエスト (Feature Request)</option>
@@ -1099,20 +1099,20 @@ export default function Home() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300 mb-1">内容</label>
+                    <label className="block text-xs font-bold text-neutral-300 mb-1">内容</label>
                     <textarea
                       required
                       value={contactMessage}
                       onChange={(e) => setContactMessage(e.target.value)}
                       rows={3}
-                      className="w-full px-3 py-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm"
+                      className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none text-sm"
                       placeholder="詳細をご記入ください..."
                     ></textarea>
                   </div>
                   <button
                     type="submit"
                     disabled={isSendingContact}
-                    className="w-full py-2.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+                    className="w-full py-2.5 bg-white text-black rounded-lg font-bold hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
                   >
                     {isSendingContact ? "送信中..." : "送信する"}
                   </button>
@@ -1128,7 +1128,7 @@ export default function Home() {
             {/* Gamification Stats */}
             <div className="flex flex-col gap-2">
               <Link href="/profile" className="block group">
-                <div className="flex items-center gap-3 sm:gap-6 bg-white dark:bg-neutral-900 px-4 py-2.5 sm:px-6 sm:py-3 rounded-full border border-neutral-200 dark:border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
+                <div className="flex items-center gap-3 sm:gap-6 bg-neutral-900 px-4 py-2.5 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="relative">
                       <span className="text-xl sm:text-2xl">⭐</span>
@@ -1137,14 +1137,14 @@ export default function Home() {
                       <div className="flex justify-between items-end mb-1">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">Lv.</span>
-                          <span className="text-sm font-black text-neutral-900 dark:text-white leading-none">{getLevelInfo(xp).level}</span>
+                          <span className="text-sm font-black text-white leading-none">{getLevelInfo(xp).level}</span>
                         </div>
                         <p className="text-[10px] text-indigo-500 font-bold leading-none tracking-tight">
-                          {getLevelInfo(xp).xpInCurrentLevel} <span className="text-neutral-300 dark:text-neutral-600 font-normal mx-0.5">/</span> {getLevelInfo(xp).xpRequiredForNext} <span className="text-[8px] opacity-70">XP</span>
+                          {getLevelInfo(xp).xpInCurrentLevel} <span className="text-neutral-600 font-normal mx-0.5">/</span> {getLevelInfo(xp).xpRequiredForNext} <span className="text-[8px] opacity-70">XP</span>
                         </p>
                       </div>
                       {/* Progress Bar */}
-                      <div className="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden shadow-inner">
+                      <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden shadow-inner">
                         <div
                           className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
                           style={{ width: `${getLevelInfo(xp).progress}%` }}
@@ -1153,14 +1153,14 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="w-px h-6 bg-neutral-200 dark:bg-neutral-800 hidden sm:block"></div>
+                  <div className="w-px h-6 bg-neutral-800 hidden sm:block"></div>
 
                   <div className="flex items-center gap-2">
                     <span className="text-lg sm:text-xl">🪙</span>
                     <div>
                       <p className="text-[8px] sm:text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5">コイン</p>
                       <div className="flex items-center gap-2">
-                        <p className="font-bold text-sm sm:text-base text-neutral-900 dark:text-neutral-100 leading-none">
+                        <p className="font-bold text-sm sm:text-base text-neutral-100 leading-none">
                           {userPlan === 'unlimited' ? "無制限" : (credits ?? "...")}
                         </p>
                       </div>
@@ -1179,7 +1179,7 @@ export default function Home() {
 
             <button
               onClick={() => setShowSaved(!showSaved)}
-              className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300'}`}
+              className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
             >
               {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
             </button>
@@ -1191,7 +1191,7 @@ export default function Home() {
           session && (
             <>
               {showSaved ? (
-                <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-4">
+                <div className="bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-800 animate-in fade-in slide-in-from-top-4">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
                       保存した単語帳
@@ -1258,7 +1258,7 @@ export default function Home() {
                         sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } })
                       }}>
                         {activeId ? (
-                          <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl shadow-2xl border border-indigo-500 opacity-80 w-[300px]">
+                          <div className="p-4 bg-neutral-800 rounded-xl shadow-2xl border border-indigo-500 opacity-80 w-[300px]">
                             <h3 className="font-bold">{savedDecks.find(d => d.id === activeId)?.title}</h3>
                           </div>
                         ) : null}
@@ -1270,13 +1270,13 @@ export default function Home() {
                 <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
                   {/* Left: Input */}
                   <div className="flex flex-col gap-4 sticky top-8">
-                    <div className="bg-white dark:bg-neutral-900 p-5 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm">
+                    <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 shadow-sm">
                       <div className="mb-6">
                         <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
                           単語・フレーズを入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(1行に1つ入力)</span>
                         </label>
                         <textarea
-                          className="w-full h-[200px] p-3 text-base bg-neutral-50 dark:bg-black border border-neutral-200 dark:border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed overflow-x-auto"
+                          className="w-full h-[200px] p-3 text-base bg-black border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed overflow-x-auto text-neutral-100 placeholder:text-neutral-600"
                           wrap="off"
                           placeholder={"apple\ntake off\nclimate change"}
                           value={wordInput}
@@ -1290,7 +1290,7 @@ export default function Home() {
                         className={`w-full py-4 rounded-xl font-bold text-sm transition-all relative overflow-hidden group
                           ${loading
                             ? "bg-neutral-100 text-neutral-400"
-                            : "bg-neutral-900 dark:bg-white text-white dark:text-black shadow-[0_0_20px_rgba(0,0,0,0.1)] dark:shadow-[0_0_25px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98]"
+                            : "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98]"
                           }
                         `}
                       >
@@ -1321,17 +1321,17 @@ export default function Home() {
                   {/* Right: Output List */}
                   <div className="min-h-[500px]">
                     {words.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center border border-dashed border-neutral-200 dark:border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-50/50 dark:bg-neutral-900/30 relative overflow-hidden group">
+                      <div className="h-full flex flex-col items-center justify-center border border-dashed border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-900/30 relative overflow-hidden group">
 
                         {/* 🃏 Floating Cards Visual (Empty State) */}
                         <div className="absolute inset-0 pointer-events-none opacity-30 select-none overflow-hidden">
-                          <div className="absolute top-[20%] right-[10%] bg-white dark:bg-neutral-800 p-3 rounded-xl shadow-lg rotate-12 animate-float delay-0 scale-75 blur-[1px]">
-                            <div className="w-16 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full mb-2"></div>
-                            <div className="w-8 h-2 bg-neutral-100 dark:bg-neutral-700/50 rounded-full"></div>
+                          <div className="absolute top-[20%] right-[10%] bg-neutral-800 p-3 rounded-xl shadow-lg rotate-12 animate-float delay-0 scale-75 blur-[1px]">
+                            <div className="w-16 h-2 bg-neutral-700 rounded-full mb-2"></div>
+                            <div className="w-8 h-2 bg-neutral-700/50 rounded-full"></div>
                           </div>
-                          <div className="absolute bottom-[30%] left-[10%] bg-white dark:bg-neutral-800 p-4 rounded-xl shadow-lg -rotate-6 animate-float delay-1000 scale-90 blur-[2px]">
-                            <div className="w-20 h-2.5 bg-neutral-200 dark:bg-neutral-700 rounded-full mb-2"></div>
-                            <div className="w-12 h-2.5 bg-neutral-100 dark:bg-neutral-700/50 rounded-full"></div>
+                          <div className="absolute bottom-[30%] left-[10%] bg-neutral-800 p-4 rounded-xl shadow-lg -rotate-6 animate-float delay-1000 scale-90 blur-[2px]">
+                            <div className="w-20 h-2.5 bg-neutral-700 rounded-full mb-2"></div>
+                            <div className="w-12 h-2.5 bg-neutral-700/50 rounded-full"></div>
                           </div>
                           <div className="absolute top-[10%] left-[20%] bg-indigo-500/10 p-2 rounded-lg rotate-[-12deg] animate-pulse">
                             <span className="text-2xl">✨</span>
@@ -1339,10 +1339,10 @@ export default function Home() {
                         </div>
 
                         <div className="relative z-10">
-                          <div className="w-16 h-16 bg-white dark:bg-neutral-800 rounded-2xl flex items-center justify-center text-3xl shadow-xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-500">
+                          <div className="w-16 h-16 bg-neutral-800 rounded-2xl flex items-center justify-center text-3xl shadow-xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-500">
                             🚀
                           </div>
-                          <p className="whitespace-pre-line leading-relaxed font-bold text-neutral-500 dark:text-neutral-400">
+                          <p className="whitespace-pre-line leading-relaxed font-bold text-neutral-400">
                             まずは単語・フレーズを入力して、{"\n"}
                             あなただけの学習リストを作りましょう！
                           </p>
@@ -1351,7 +1351,7 @@ export default function Home() {
                     ) : (
                       <div className="flex flex-col gap-6">
                         {/* Toolbar */}
-                        <div className="bg-white dark:bg-neutral-900 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
+                        <div className="bg-neutral-900 p-4 rounded-xl border border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
                           <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
                             <button onClick={handleClearList} className="text-xs font-bold text-red-500 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors">クリア</button>
                             <input
@@ -1359,11 +1359,11 @@ export default function Home() {
                               value={deckTitle}
                               onChange={(e) => setDeckTitle(e.target.value)}
                               placeholder="単語帳に名前をつける..."
-                              className="flex-1 bg-neutral-100 dark:bg-neutral-800 px-4 py-2 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:font-normal placeholder:text-neutral-400 transition-all border-none"
+                              className="flex-1 bg-neutral-800 px-4 py-2 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/50 placeholder:font-normal placeholder:text-neutral-400 transition-all border-none"
                             />
                           </div>
                           <div className="flex gap-2 w-full sm:w-auto">
-                            <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-200 dark:border-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors">
+                            <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors">
                               + 既存に追加
                             </button>
                             <button onClick={handleSaveDeck} className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
@@ -1373,24 +1373,24 @@ export default function Home() {
                         </div>
 
                         {/* Words List */}
-                        <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
+                        <div className="bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm overflow-hidden">
                           {words.map((card, idx) => (
-                            <div key={idx} className="group relative p-6 border-b border-neutral-100 dark:border-neutral-800 last:border-0 hover:bg-neutral-50/50 transition-colors">
+                            <div key={idx} className="group relative p-6 border-b border-neutral-800 last:border-0 hover:bg-neutral-800/50 transition-colors">
                               <button onClick={() => handleRemoveWord(idx)} className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
 
                               <div className="flex items-baseline gap-4 mb-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xl font-bold text-neutral-900 dark:text-neutral-100" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                  <span className="text-xl font-bold text-neutral-100" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
                                   <button
                                     onClick={() => speak(card.word)}
-                                    className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                    className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-800 transition-colors shrink-0"
                                     title="Play word"
                                   >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                                   </button>
                                 </div>
 
-                                <span className="text-neutral-600 dark:text-neutral-300 font-medium ml-auto sm:ml-0" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</span>
+                                <span className="text-neutral-300 font-medium ml-auto sm:ml-0" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{card.meaning}</span>
                               </div>
 
 
@@ -1453,14 +1453,14 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative p-5 rounded-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500' : ''}`}
+      className={`group relative p-5 rounded-xl bg-neutral-900 border border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500' : ''}`}
       onClick={(e) => {
         // Prevent click if dragging (handled by dnd-kit usually, but safety check)
         if (!isDragging) onClick(deck.id);
       }}
     >
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-bold text-md pr-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors leading-tight select-none">
+        <h3 className="font-bold text-md pr-2 group-hover:text-indigo-400 transition-colors leading-tight select-none">
           {deck.title}
         </h3>
         <div
@@ -1475,7 +1475,7 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
         </div>
       </div>
       <div className="flex items-center gap-3 pointer-events-none select-none">
-        <p className="text-[10px] text-neutral-500 font-mono bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
+        <p className="text-[10px] text-neutral-500 font-mono bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
         <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
       </div>
     </div>
@@ -1512,13 +1512,13 @@ function FolderRow({
       ref={setNodeRef}
       className={`rounded-2xl border transition-all duration-200 overflow-hidden mb-3
           ${isOver
-          ? 'bg-indigo-100 dark:bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
-          : 'bg-neutral-50 dark:bg-neutral-900/50 border-neutral-200 dark:border-neutral-800'
+          ? 'bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
+          : 'bg-neutral-900/50 border-neutral-800'
         }
       `}
     >
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors"
+        className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors"
         onClick={() => toggleFolder(folder.id)}
       >
         <div className="flex items-center gap-3">
@@ -1531,7 +1531,7 @@ function FolderRow({
                 autoFocus
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="px-2 py-1 rounded bg-white dark:bg-black border border-indigo-500 outline-none text-sm"
+                className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     saveRenameFolder(folder.id, name);
@@ -1553,7 +1553,7 @@ function FolderRow({
               </button>
             </div>
           )}
-          <span className="ml-2 text-xs font-bold text-neutral-400 bg-white dark:bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-100 dark:border-neutral-700">
+          <span className="ml-2 text-xs font-bold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
             {folderDecks.length}
           </span>
         </div>
@@ -1587,7 +1587,7 @@ function RootDropArea({ children }: { children: React.ReactNode }) {
       ref={setNodeRef}
       className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 rounded-3xl transition-all duration-300 min-h-[100px]
           ${isOver
-          ? 'bg-indigo-50/50 dark:bg-indigo-900/20 ring-2 ring-indigo-400 ring-dashed p-4'
+          ? 'bg-indigo-900/20 ring-2 ring-indigo-400 ring-dashed p-4'
           : ''
         }
       `}
