@@ -55,19 +55,24 @@ export default async function RootLayout({
   let subscriptionPeriodEnd: Date | null = null;
   let role: string = 'user';
   if (session?.user?.id) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        credits: true,
-        subscriptionPlan: true,
-        subscriptionPeriodEnd: true,
-        role: true
-      }
-    }) as any;
-    credits = user?.credits ?? 0;
-    plan = user?.subscriptionPlan ?? null;
-    subscriptionPeriodEnd = user?.subscriptionPeriodEnd;
-    role = user?.role ?? 'user';
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          credits: true,
+          subscriptionPlan: true,
+          subscriptionPeriodEnd: true,
+          role: true
+        }
+      }) as any;
+      credits = user?.credits ?? 0;
+      plan = user?.subscriptionPlan ?? null;
+      subscriptionPeriodEnd = user?.subscriptionPeriodEnd;
+      role = user?.role ?? 'user';
+    } catch (e) {
+      console.error("Failed to fetch user data in layout:", e);
+      // DBエラー時もアプリが落ちないように、デフォルト値のまま続行させる
+    }
   }
 
   // クライアントサイドでのストリーク取得用のコンポーネントを差し込むか、
