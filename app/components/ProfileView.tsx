@@ -336,8 +336,8 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     className={`
                                         relative group p-6 rounded-2xl border transition-all duration-300
                                         ${isUnlocked
-                                            ? "bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1"
-                                            : "bg-neutral-100 dark:bg-neutral-900/50 border-transparent grayscale opacity-60"
+                                            ? "bg-neutral-900 border-neutral-800 hover:border-indigo-500 shadow-xl shadow-black/50 hover:-translate-y-1"
+                                            : "bg-neutral-900/30 border-neutral-900 grayscale opacity-40"
                                         }
                                     `}
                                 >
