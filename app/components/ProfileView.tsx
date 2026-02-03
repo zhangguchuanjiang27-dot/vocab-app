@@ -323,7 +323,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
 
                 <main>
                     <div className="flex items-end justify-between mb-8">
-                        <h2 className="text-2xl font-bold dark:text-white">バッジコレクション</h2>
+                        <h2 className="text-2xl font-bold text-white">バッジコレクション</h2>
                         <div className="text-sm font-bold text-neutral-400">{user.badges.length} / {allBadges.length} 獲得済み</div>
                     </div>
 
@@ -345,7 +345,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         {badge.icon}
                                     </div>
                                     <div className="text-center">
-                                        <h3 className={`font-bold text-sm mb-1 ${isUnlocked ? "text-neutral-900 dark:text-neutral-100" : "text-neutral-500"}`}>
+                                        <h3 className={`font-bold text-sm mb-1 ${isUnlocked ? "text-white" : "text-neutral-500"}`}>
                                             {badge.displayName}
                                         </h3>
                                         <p className="text-[10px] text-neutral-400 leading-tight">
