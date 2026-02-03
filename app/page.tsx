@@ -1125,10 +1125,10 @@ export default function Home() {
             {/* Footer Removed as requested */}
           </div>
         ) : (
-          <div className="flex flex-row justify-between items-center pt-2 sm:pt-4 gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center pt-2 sm:pt-4 gap-3 sm:gap-4">
 
             {/* Gamification Stats */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
               <Link href="/profile" className="block group">
                 <div className="flex items-center gap-2 sm:gap-6 bg-neutral-900 px-3 py-2 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
                   <div className="flex items-center gap-2 sm:gap-3">
@@ -1181,14 +1181,9 @@ export default function Home() {
 
             <button
               onClick={() => setShowSaved(!showSaved)}
-              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
+              className={`w-full sm:w-auto px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
             >
-              {showSaved ? "閉じる" : (
-                <>
-                  <span className="sm:hidden">📂 保存リスト</span>
-                  <span className="hidden sm:inline">📂 保存した単語帳を開く</span>
-                </>
-              )}
+              {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
             </button>
           </div>
         )
