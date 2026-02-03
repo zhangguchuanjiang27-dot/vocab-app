@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GoogleAnalytics } from '@next/third-parties/google';
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -120,8 +120,19 @@ export default async function RootLayout({
             </div>
           </footer>
         </Providers>
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-JDF6ZRF07L"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-JDF6ZRF07L');
+          `}
+        </Script>
       </body>
-      <GoogleAnalytics gaId="G-JDF6ZRF07L" />
     </html>
   );
 }
