@@ -54,6 +54,7 @@ export default async function RootLayout({
   let plan: string | null = null;
   let subscriptionPeriodEnd: Date | null = null;
   let role: string = 'user';
+  let userImage: string | null = null;
   if (session?.user?.id) {
     try {
       const user = await prisma.user.findUnique({
@@ -62,13 +63,15 @@ export default async function RootLayout({
           credits: true,
           subscriptionPlan: true,
           subscriptionPeriodEnd: true,
-          role: true
+          role: true,
+          image: true
         }
       }) as any;
       credits = user?.credits ?? 0;
       plan = user?.subscriptionPlan ?? null;
       subscriptionPeriodEnd = user?.subscriptionPeriodEnd;
       role = user?.role ?? 'user';
+      userImage = user?.image ?? null;
     } catch (e) {
       console.error("Failed to fetch user data in layout:", e);
       // DBエラー時もアプリが落ちないように、デフォルト値のまま続行させる
@@ -108,6 +111,7 @@ export default async function RootLayout({
               plan={plan}
               subscriptionPeriodEnd={subscriptionPeriodEnd ? subscriptionPeriodEnd.toISOString() : null}
               role={role}
+              userImage={userImage}
             />
           </nav>
 

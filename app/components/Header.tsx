@@ -11,9 +11,10 @@ type HeaderProps = {
     plan?: string | null;
     subscriptionPeriodEnd?: string | null;
     role?: string;
+    userImage?: string | null;
 };
 
-export default function Header({ initialCredits, session, plan, subscriptionPeriodEnd, role }: HeaderProps) {
+export default function Header({ initialCredits, session, plan, subscriptionPeriodEnd, role, userImage }: HeaderProps) {
     const [streak, setStreak] = useState<number | null>(null);
     const [streakUpdated, setStreakUpdated] = useState(false);
 
@@ -159,8 +160,8 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-neutral-800">
                             <Link href="/profile" className="flex-shrink-0 block">
-                                {session.user?.image ? (
-                                    <img src={session.user.image} alt="User" className="w-8 h-8 rounded-full border border-neutral-800 hover:scale-110 transition-transform block" />
+                                {userImage || session.user?.image ? (
+                                    <img src={userImage || session.user.image || ""} alt="User" className="w-8 h-8 rounded-full border border-neutral-800 hover:scale-110 transition-transform block" />
                                 ) : (
                                     <div className="w-8 h-8 rounded-full bg-indigo-900 flex items-center justify-center text-xs font-bold text-indigo-300 border border-neutral-800 hover:scale-110 transition-transform">
                                         {session.user?.name?.[0] || "U"}
