@@ -35,7 +35,7 @@ import { Providers } from "./providers";
 import Header from "./components/Header"; // Adjust import path
 
 export const metadata: Metadata = {
-  title: "Voca - AI Flashcards",
+  title: "Voca - AI Wordbook",
   description: "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
 };
 
