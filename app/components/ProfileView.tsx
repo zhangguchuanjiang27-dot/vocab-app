@@ -75,23 +75,23 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
     };
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-black p-6 sm:p-12 font-sans">
+        <div className="min-h-screen bg-[#050505] text-neutral-100 p-4 sm:p-12 font-sans">
             <div className="max-w-4xl mx-auto">
                 <header className="mb-12">
                     <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
                         ← アプリに戻る
                     </Link>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-8 bg-white dark:bg-neutral-900 p-8 rounded-3xl border border-neutral-200 dark:border-neutral-800 shadow-sm relative overflow-hidden">
+                    <div className="flex flex-row items-center gap-4 sm:gap-8 bg-neutral-900 p-5 sm:p-8 rounded-3xl border border-neutral-800 shadow-sm relative overflow-hidden">
                         {/* Background Decoration */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
 
                         {/* Avatar */}
                         <div className="relative shrink-0">
                             {image ? (
-                                <img src={image} alt={name || "User"} className="w-24 h-24 rounded-full border-4 border-white dark:border-neutral-800 shadow-lg object-cover" />
+                                <img src={image} alt={name || "User"} className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-neutral-800 shadow-lg object-cover" />
                             ) : (
-                                <div className="w-24 h-24 rounded-full bg-indigo-100 dark:bg-indigo-900 border-4 border-white dark:border-neutral-800 shadow-lg flex items-center justify-center text-4xl">
+                                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-indigo-900 border-4 border-neutral-800 shadow-lg flex items-center justify-center text-2xl sm:text-4xl">
                                     👤
                                 </div>
                             )}
@@ -102,7 +102,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                         </div>
 
                         {/* Info */}
-                        <div className="text-center sm:text-left flex-1 min-w-0 z-10">
+                        <div className="text-left flex-1 min-w-0 z-10">
                             {isEditing ? (
                                 <div className="space-y-4 mb-4">
                                     <div>
@@ -184,8 +184,8 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="flex items-center justify-center sm:justify-start gap-4 mb-2">
-                                        <h1 className="text-3xl font-black text-neutral-900 dark:text-white truncate">{user.name}</h1>
+                                    <div className="flex items-center justify-start gap-4 mb-1 sm:mb-2">
+                                        <h1 className="text-xl sm:text-3xl font-black text-white truncate">{user.name}</h1>
 
                                         {/* Plan Badge */}
                                         <div className={`
@@ -211,7 +211,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             </svg>
                                         </button>
                                     </div>
-                                    <p className="text-neutral-500 dark:text-neutral-400 font-medium mb-4">{user.email}</p>
+                                    <p className="text-neutral-400 font-medium mb-3 sm:mb-4 text-xs sm:text-sm">{user.email}</p>
                                     {user.stripeCustomerId && (
                                         <button
                                             onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'basic' : 'pro')}
@@ -239,25 +239,25 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                             {/* Stats */}
                             <div className="grid grid-cols-3 gap-4 w-full">
                                 {/* XP Card */}
-                                <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-1">
-                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">合計 XP</div>
-                                    <div className="text-xl sm:text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">{user.xp?.toLocaleString()}</div>
+                                <div className="bg-neutral-800/50 p-3 sm:p-4 rounded-2xl border border-neutral-800 flex flex-col items-center justify-center gap-1">
+                                    <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider">合計 XP</div>
+                                    <div className="text-base sm:text-2xl font-black font-mono text-indigo-400">{user.xp?.toLocaleString()}</div>
                                 </div>
 
                                 {/* Coins Card */}
-                                <div className="relative bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl border border-transparent hover:border-emerald-200 dark:hover:border-emerald-900 transition-colors flex flex-col items-center justify-center gap-1">
+                                <div className="relative bg-neutral-800/50 p-3 sm:p-4 rounded-2xl border border-neutral-800 hover:border-emerald-500/30 transition-colors flex flex-col items-center justify-center gap-1">
                                     <div className="flex items-center gap-2">
                                         <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">コイン</div>
                                     </div>
 
-                                    <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                                    <div className="text-base sm:text-2xl font-black font-mono text-emerald-400">
                                         {user.subscriptionPlan === 'unlimited' ? "∞" : user.credits.toLocaleString()}
                                     </div>
 
                                     {/* Subscription Badge */}
                                     {user.subscriptionPeriodEnd && (
                                         <div className="absolute top-2 right-2">
-                                            <div className="text-[9px] font-bold text-neutral-500 bg-white dark:bg-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm border border-neutral-200 dark:border-neutral-600">
+                                            <div className="text-[9px] font-bold text-neutral-300 bg-neutral-700 px-1.5 py-0.5 rounded-md shadow-sm border border-neutral-600">
                                                 あと{Math.ceil((new Date(user.subscriptionPeriodEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}日
                                             </div>
                                         </div>
@@ -271,9 +271,9 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                 </div>
 
                                 {/* Decks Card */}
-                                <div className="bg-neutral-100 dark:bg-neutral-800 p-4 rounded-2xl flex flex-col items-center justify-center gap-1">
+                                <div className="bg-neutral-800/50 p-3 sm:p-4 rounded-2xl border border-neutral-800 flex flex-col items-center justify-center gap-1">
                                     <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">単語帳</div>
-                                    <div className="text-xl sm:text-2xl font-black font-mono text-amber-600 dark:text-amber-400">{user._count.decks}</div>
+                                    <div className="text-base sm:text-2xl font-black font-mono text-amber-400">{user._count.decks}</div>
                                 </div>
                             </div>
 

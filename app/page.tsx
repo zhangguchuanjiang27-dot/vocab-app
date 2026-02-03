@@ -715,66 +715,68 @@ export default function Home() {
 
       {/* Subscription Modal */}
       {showSubscriptionModal && (
-        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200 backdrop-blur-sm">
-          <div className="bg-neutral-900 w-full max-w-2xl rounded-3xl p-8 shadow-2xl border border-neutral-800 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-300 backdrop-blur-xl">
+          <div className="bg-[#050505] w-full max-w-2xl rounded-[2.5rem] p-8 sm:p-12 shadow-2xl border border-neutral-800 overflow-hidden relative">
+            {/* Background Gradients (Aurora Effect) inside Modal */}
+            <div className="absolute top-[-10%] left-[-10%] w-[300px] h-[300px] bg-purple-500/10 blur-[80px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[300px] h-[300px] bg-indigo-500/10 blur-[80px] rounded-full pointer-events-none"></div>
 
-            <div className="relative z-10 text-center mb-8">
-              <h3 className="text-3xl font-black mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">Upgrade Plan</h3>
-              <p className="text-neutral-400">
+            <div className="relative z-10 text-center mb-10">
+              <h3 className="text-3xl sm:text-4xl font-black mb-3 text-white" style={{ fontFamily: 'var(--font-merriweather)' }}>Upgrade Plan</h3>
+              <p className="text-neutral-400 text-sm sm:text-base">
                 AI単語生成をもっと自由に。プランを選んでアップグレード。
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 relative z-10 mb-8">
+            <div className="grid md:grid-cols-2 gap-6 relative z-10 mb-10">
               {/* Basic Plan */}
-              <div className="p-6 rounded-2xl border-2 border-emerald-900/30 bg-emerald-900/10 hover:border-emerald-500 transition-colors flex flex-col">
-                <div className="mb-4">
-                  <div className="text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">Basic Plan</div>
-                  <div className="text-3xl font-black text-white">¥300<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+              <div className="p-6 rounded-3xl border border-neutral-800 bg-neutral-900/50 hover:border-emerald-500/50 transition-all flex flex-col group">
+                <div className="mb-6">
+                  <div className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-2">Basic Plan</div>
+                  <div className="text-4xl font-black text-white">¥300<span className="text-sm font-normal text-neutral-500"> / 月</span></div>
                 </div>
-                <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
-                  <li className="flex items-center gap-2">
-                    <span className="text-emerald-500 text-lg">✓</span> 毎月 <span className="font-bold text-white">500</span> クレジット付与
+                <ul className="text-sm space-y-3 mb-8 flex-1 text-left">
+                  <li className="flex items-center gap-3 text-neutral-300">
+                    <span className="text-emerald-500 font-bold">✓</span> <span className="font-bold text-white">500</span> クレジット付与 / 月
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-emerald-500 text-lg">✓</span> 広告なしで集中学習
+                  <li className="flex items-center gap-3 text-neutral-300">
+                    <span className="text-emerald-500 font-bold">✓</span> 広告なしで集中学習
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-emerald-500 text-lg">✓</span> 基本的な機能へアクセス
+                  <li className="flex items-center gap-3 text-neutral-300">
+                    <span className="text-emerald-500 font-bold">✓</span> 基本的な機能へアクセス
                   </li>
                 </ul>
                 <button
                   onClick={() => handleSubscription('basic')}
                   disabled={subscriptionLoading}
-                  className="w-full py-3 bg-neutral-800 border-2 border-emerald-500 text-emerald-400 rounded-xl font-bold hover:bg-emerald-900/20 transition-colors disabled:opacity-50"
+                  className="w-full py-4 bg-neutral-800 text-white rounded-2xl font-bold hover:bg-neutral-700 transition-all disabled:opacity-50 active:scale-95"
                 >
                   {subscriptionLoading ? "処理中..." : "Basicを選択"}
                 </button>
               </div>
 
               {/* Pro Plan */}
-              <div className="p-6 rounded-2xl border-2 border-indigo-900/30 bg-indigo-900/10 hover:border-indigo-500 transition-all scale-105 shadow-lg flex flex-col relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl">POPULAR</div>
-                <div className="mb-4">
-                  <div className="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-1">Pro Plan</div>
-                  <div className="text-3xl font-black text-white">¥980<span className="text-sm font-normal text-neutral-500">/mo</span></div>
+              <div className="p-6 rounded-3xl border border-indigo-500/30 bg-indigo-500/5 hover:border-indigo-500 transition-all shadow-xl flex flex-col relative overflow-hidden group">
+                <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-black px-4 py-1.5 rounded-bl-2xl tracking-widest">RECOMMENDED</div>
+                <div className="mb-6">
+                  <div className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-2">Pro Plan</div>
+                  <div className="text-4xl font-black text-white">¥980<span className="text-sm font-normal text-neutral-500"> / 月</span></div>
                 </div>
-                <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
-                  <li className="flex items-center gap-2 font-bold">
-                    <span className="text-indigo-500 text-lg">✓</span> 毎月 <span className="text-white">2000</span> クレジット付与
+                <ul className="text-sm space-y-3 mb-8 flex-1 text-left">
+                  <li className="flex items-center gap-3 text-neutral-300 font-bold">
+                    <span className="text-indigo-500 font-bold text-lg">✓</span> <span className="text-white">2000</span> クレジット付与 / 月
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-indigo-500 text-lg">✓</span> 全機能へのフルアクセス
+                  <li className="flex items-center gap-3 text-neutral-300">
+                    <span className="text-indigo-500 font-bold text-lg">✓</span> 全機能へのフルアクセス
                   </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-indigo-500 text-lg">✓</span> 優先サポート & 新機能先行体験
+                  <li className="flex items-center gap-3 text-neutral-300 font-bold text-indigo-300">
+                    <span className="text-indigo-500 font-bold text-lg">✓</span> AI 優先処理 & 速度向上
                   </li>
                 </ul>
                 <button
                   onClick={() => handleSubscription('pro')}
                   disabled={subscriptionLoading}
-                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50"
+                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 transition-all disabled:opacity-50 active:scale-95"
                 >
                   {subscriptionLoading ? "処理中..." : "Proを選択"}
                 </button>
@@ -783,9 +785,9 @@ export default function Home() {
 
             <button
               onClick={() => setShowSubscriptionModal(false)}
-              className="w-full py-4 text-neutral-400 hover:text-neutral-200 font-bold transition-colors text-sm"
+              className="w-full py-2 text-neutral-500 hover:text-white font-bold transition-colors text-sm"
             >
-              閉じる
+              戻る
             </button>
           </div>
         </div>
@@ -1123,17 +1125,17 @@ export default function Home() {
             {/* Footer Removed as requested */}
           </div>
         ) : (
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center pt-4 gap-4">
+          <div className="flex flex-row justify-between items-center pt-2 sm:pt-4 gap-2 sm:gap-4">
 
             {/* Gamification Stats */}
             <div className="flex flex-col gap-2">
               <Link href="/profile" className="block group">
-                <div className="flex items-center gap-3 sm:gap-6 bg-neutral-900 px-4 py-2.5 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
+                <div className="flex items-center gap-2 sm:gap-6 bg-neutral-900 px-3 py-2 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="relative">
                       <span className="text-xl sm:text-2xl">⭐</span>
                     </div>
-                    <div className="flex flex-col min-w-[100px] sm:min-w-[140px]">
+                    <div className="flex flex-col min-w-[80px] sm:min-w-[140px]">
                       <div className="flex justify-between items-end mb-1">
                         <div className="flex items-baseline gap-1">
                           <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">Lv.</span>
@@ -1179,9 +1181,14 @@ export default function Home() {
 
             <button
               onClick={() => setShowSaved(!showSaved)}
-              className={`px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
+              className={`px-3 sm:px-5 py-2 sm:py-2.5 rounded-full font-bold text-xs sm:text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
             >
-              {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
+              {showSaved ? "閉じる" : (
+                <>
+                  <span className="sm:hidden">📂 保存リスト</span>
+                  <span className="hidden sm:inline">📂 保存した単語帳を開く</span>
+                </>
+              )}
             </button>
           </div>
         )

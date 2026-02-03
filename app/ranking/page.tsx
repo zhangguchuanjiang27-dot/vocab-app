@@ -59,7 +59,7 @@ export default function RankingPage() {
 
     if (status === 'unauthenticated') {
         return (
-            <div className="min-h-screen bg-neutral-50 dark:bg-black p-6 flex flex-col items-center justify-center text-center font-sans">
+            <div className="min-h-screen bg-[#050505] p-6 flex flex-col items-center justify-center text-center font-sans text-white">
                 <h1 className="text-3xl font-black mb-4">👑 ワードマスター ランキング</h1>
                 <p className="text-neutral-500 mb-8">ランキングを見るにはログインが必要です。</p>
                 <Link href="/api/auth/signin" className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
@@ -91,7 +91,7 @@ export default function RankingPage() {
     const myRank = rankings.findIndex(u => u.id === session?.user?.id) + 1;
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-black p-6 sm:p-12 font-sans">
+        <div className="min-h-screen bg-[#050505] p-6 sm:p-12 font-sans text-neutral-100">
             <div className="max-w-2xl mx-auto">
                 <header className="mb-8 text-center">
                     <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
@@ -107,14 +107,14 @@ export default function RankingPage() {
                 </header>
 
                 {/* Tabs */}
-                <div className="flex p-1 bg-neutral-200 dark:bg-neutral-900 rounded-xl mb-8">
+                <div className="flex p-1 bg-neutral-900 rounded-xl mb-8">
                     {(['weekly', 'monthly', 'yearly', 'lifetime'] as Period[]).map((p) => (
                         <button
                             key={p}
                             onClick={() => setPeriod(p)}
                             className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${period === p
-                                ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
-                                : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                                ? "bg-neutral-800 text-white shadow-sm"
+                                : "text-neutral-500 hover:text-neutral-300"
                                 }`}
                         >
                             {getPeriodLabel(p)}
@@ -126,9 +126,9 @@ export default function RankingPage() {
                 {session && !loading && (
                     <>
                         {isPublicRanking === false ? (
-                            <div className="mb-8 p-6 bg-white dark:bg-neutral-900 border-2 border-dashed border-indigo-200 dark:border-indigo-800 rounded-3xl text-center">
+                            <div className="mb-8 p-6 bg-neutral-900 border-2 border-dashed border-indigo-800 rounded-3xl text-center">
                                 <span className="text-3xl block mb-2">👋</span>
-                                <h2 className="font-bold text-neutral-900 dark:text-white mb-1">ランキングに参加しませんか？</h2>
+                                <h2 className="font-bold text-white mb-1">ランキングに参加しませんか？</h2>
                                 <p className="text-sm text-neutral-500 mb-4">
                                     現在はランキングに表示されない設定になっています。<br />
                                     プロフィールから「公開ランキングに参加する」をオンにしましょう！
@@ -162,7 +162,7 @@ export default function RankingPage() {
                 )}
 
                 {/* Ranking List */}
-                <div className="bg-white dark:bg-neutral-900 rounded-3xl border border-neutral-200 dark:border-neutral-800 overflow-hidden shadow-sm">
+                <div className="bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden shadow-sm">
                     {loading ? (
                         <div className="p-12 text-center text-neutral-400">
                             Loading ranking...
