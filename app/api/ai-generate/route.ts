@@ -45,6 +45,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ words: [] });
     }
 
+    // 初期の概算チェック (Normalizationでの課金を防ぐため)
+    if (!isUnlimited && userCredits < rawLines.length) {
+      return NextResponse.json(
+        {
+          error: `クレジットが不足しています。${rawLines.length}語生成するには${rawLines.length}クレジット必要ですが、残り${userCredits}クレジットです。`,
+          type: "credit_limit"
+        },
+        { status: 403 }
+      );
+    }
+
     // Step 0: 入力テキストをAIで解析し、各行を「原形（辞書形）」に正規化する
     const normalizationPrompt = `
       あなたは言語学のエキスパートです。

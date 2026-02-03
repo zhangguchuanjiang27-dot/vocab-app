@@ -513,7 +513,17 @@ export default function Home() {
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to generate vocabulary");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        if (response.status === 403 && errorData.type === "credit_limit") {
+          alert(errorData.error || "クレジットが不足しています。");
+          setShowSubscriptionModal(true);
+          return;
+        }
+
+        throw new Error(errorData.error || "Failed to generate vocabulary");
+      }
 
       const data = await response.json();
       if (data.words) {
@@ -725,10 +735,13 @@ export default function Home() {
                 </div>
                 <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
                   <li className="flex items-center gap-2">
-                    <span className="text-emerald-500">✓</span> 毎月 500 クレジット
+                    <span className="text-emerald-500 text-lg">✓</span> 毎月 <span className="font-bold text-white">500</span> クレジット付与
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-emerald-500">✓</span> 広告なし
+                    <span className="text-emerald-500 text-lg">✓</span> 広告なしで集中学習
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-500 text-lg">✓</span> 基本的な機能へアクセス
                   </li>
                 </ul>
                 <button
@@ -749,13 +762,13 @@ export default function Home() {
                 </div>
                 <ul className="text-sm space-y-2 mb-6 flex-1 text-left">
                   <li className="flex items-center gap-2 font-bold">
-                    <span className="text-indigo-500">✓</span> 無制限に使い放題
+                    <span className="text-indigo-500 text-lg">✓</span> 毎月 <span className="text-white">2000</span> クレジット付与
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-indigo-500">✓</span> 全機能へのアクセス
+                    <span className="text-indigo-500 text-lg">✓</span> 全機能へのフルアクセス
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="text-indigo-500">✓</span> 優先サポート
+                    <span className="text-indigo-500 text-lg">✓</span> 優先サポート & 新機能先行体験
                   </li>
                 </ul>
                 <button
