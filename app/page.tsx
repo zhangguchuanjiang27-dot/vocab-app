@@ -1526,12 +1526,12 @@ function FolderRow({
           <span className="text-2xl">📂</span>
 
           {isEditing ? (
-            <div className="flex gap-2 items-center" onClick={e => e.stopPropagation()}>
+            <div className="flex gap-2 items-center overflow-x-auto max-w-[50vw] sm:max-w-none py-1 no-scrollbar" onClick={e => e.stopPropagation()}>
               <input
                 autoFocus
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm"
+                className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm min-w-[120px]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     saveRenameFolder(folder.id, name);
@@ -1539,17 +1539,24 @@ function FolderRow({
                   }
                 }}
               />
-              <button onClick={() => { saveRenameFolder(folder.id, name); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded">Save</button>
-              <button onClick={() => { setIsEditing(false); setName(folder.name); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-2 py-1 rounded">Cancel</button>
+              <button onClick={() => { saveRenameFolder(folder.id, name); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded whitespace-nowrap">Save</button>
+              <button onClick={() => { setIsEditing(false); setName(folder.name); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-3 py-1.5 rounded whitespace-nowrap">Cancel</button>
             </div>
           ) : (
-            <div className="flex items-center gap-2 group/title">
-              <span className="font-bold text-lg">{folder.name}</span>
+            <div className="flex items-center gap-1 group/title" onClick={(e) => e.stopPropagation()}>
+              <span className="font-bold text-lg text-neutral-200 group-hover/title:text-white transition-colors">{folder.name}</span>
               <button
-                onClick={(e) => { e.stopPropagation(); setName(folder.name); setIsEditing(true); }}
-                className="opacity-0 group-hover/title:opacity-100 text-neutral-400 hover:text-indigo-500 p-1"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setName(folder.name);
+                  setIsEditing(true);
+                }}
+                className="text-neutral-500 hover:text-indigo-400 p-1.5 rounded-md transition-colors hover:bg-neutral-800"
+                title="名前を変更"
               >
-                ✏️
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
               </button>
             </div>
           )}
