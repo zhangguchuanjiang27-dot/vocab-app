@@ -1768,16 +1768,16 @@ export default function DeckPage() {
                                                                                         <div className="flex items-start gap-4">
                                                                                             <button
                                                                                                 onClick={() => speak(ex.text)}
-                                                                                                className="mt-1 flex items-center justify-center w-10 h-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
+                                                                                                className="mt-1 flex items-center justify-center w-10 h-10 bg-neutral-800 border border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
                                                                                                 title="Listen to example"
                                                                                             >
                                                                                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                                                                                             </button>
                                                                                             <div className="flex-1 min-w-0">
-                                                                                                <div className="text-base sm:text-lg text-neutral-800 dark:text-neutral-100 font-serif leading-tight mb-1">
+                                                                                                <div className="text-base sm:text-lg text-neutral-100 font-serif leading-tight mb-1">
                                                                                                     {ex.text}
                                                                                                 </div>
-                                                                                                <div className="text-sm text-neutral-500 dark:text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
+                                                                                                <div className="text-sm text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
                                                                                                     {ex.translation}
                                                                                                 </div>
                                                                                             </div>
@@ -1847,9 +1847,9 @@ export default function DeckPage() {
                                                                                         };
                                                                                         return (
                                                                                             <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
-                                                                                                <div className="font-bold text-indigo-600 dark:text-indigo-400">{s.word}</div>
-                                                                                                <div className="text-xs text-neutral-500 flex items-start gap-2">
-                                                                                                    <span className="shrink-0 bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
+                                                                                                <div className="font-bold text-indigo-400">{s.word}</div>
+                                                                                                <div className="text-xs text-neutral-400 flex items-start gap-2">
+                                                                                                    <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
                                                                                                     <span>{s.meaning}</span>
                                                                                                 </div>
                                                                                             </li>
@@ -1879,9 +1879,9 @@ export default function DeckPage() {
                                                                                         };
                                                                                         return (
                                                                                             <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
-                                                                                                <div className="font-bold text-purple-600 dark:text-purple-400">{d.word}</div>
-                                                                                                <div className="text-xs text-neutral-500 flex items-start gap-2">
-                                                                                                    <span className="shrink-0 bg-neutral-100 dark:bg-neutral-800 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
+                                                                                                <div className="font-bold text-purple-400">{d.word}</div>
+                                                                                                <div className="text-xs text-neutral-400 flex items-start gap-2">
+                                                                                                    <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
                                                                                                     <span>{d.meaning}</span>
                                                                                                 </div>
                                                                                             </li>
