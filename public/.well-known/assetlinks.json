@@ -1,0 +1,14 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "net.voca_app.www.twa",
+            "sha256_cert_fingerprints": [
+                "8F:96:D0:F0:81:19:7F:C0:37:8B:C0:08:CB:DF:BC:FF:56:E0:85:81:CD:5F:E2:19:71:BB:1E:32:53:56:14:26"
+            ]
+        }
+    }
+]
