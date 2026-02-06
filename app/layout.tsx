@@ -37,6 +37,18 @@ import Header from "./components/Header"; // Adjust import path
 export const metadata: Metadata = {
   title: "Voca - AI Wordbook",
   description: "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
+  manifest: "/manifest.json",
+  themeColor: "#050505",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Voca"
+  }
 };
 
 // ナビゲーション用のクライアントコンポーネントを別途作ったほうが綺麗ですが、

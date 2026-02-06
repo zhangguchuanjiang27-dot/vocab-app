@@ -1,0 +1,22 @@
+{
+    "name": "Voca - AI Wordbook",
+    "short_name": "Voca",
+    "description": "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#050505",
+    "theme_color": "#050505",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
