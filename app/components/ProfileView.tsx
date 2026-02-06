@@ -95,7 +95,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                     👤
                                 </div>
                             )}
-                            <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full border-2 border-white dark:border-neutral-800 flex items-center gap-1">
+                            <div className="absolute -bottom-2 -right-2 bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full border-2 border-neutral-800 flex items-center gap-1">
                                 <span>⭐</span>
                                 <span>{level}</span>
                             </div>
@@ -111,7 +111,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             type="text"
                                             value={name}
                                             onChange={(e) => setName(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-black text-lg font-bold"
+                                            className="w-full px-4 py-2 rounded-xl border border-neutral-800 bg-black text-lg font-bold"
                                             placeholder="ニックネームを入力"
                                         />
                                     </div>
@@ -119,7 +119,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">プロフィール画像</label>
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-2">
-                                                <label className="cursor-pointer px-4 py-2 bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-xl text-xs font-bold text-neutral-600 dark:text-neutral-300 transition-colors flex items-center gap-2">
+                                                <label className="cursor-pointer px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-xl text-xs font-bold text-neutral-300 transition-colors flex items-center gap-2">
                                                     <span>📁 ファイルを選択</span>
                                                     <input
                                                         type="file"
@@ -145,7 +145,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-start gap-3 p-4 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                                    <div className="flex items-start gap-3 p-4 bg-indigo-950/30 rounded-2xl border border-indigo-900/50">
                                         <div className="pt-0.5">
                                             <input
                                                 type="checkbox"
@@ -156,8 +156,8 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             />
                                         </div>
                                         <label htmlFor="isPublicRanking" className="text-sm cursor-pointer">
-                                            <span className="block font-bold text-indigo-900 dark:text-indigo-300">公開ランキングに参加する</span>
-                                            <span className="block text-xs text-indigo-700/70 dark:text-indigo-400/70 mt-0.5">
+                                            <span className="block font-bold text-indigo-300">公開ランキングに参加する</span>
+                                            <span className="block text-xs text-indigo-400/70 mt-0.5">
                                                 チェックを入れると、あなたのユーザー名、アイコン、獲得単語数がランキングに表示されます。
                                             </span>
                                         </label>
@@ -176,7 +176,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                                 setName(user.name || "");
                                                 setImage(user.image || "");
                                             }}
-                                            className="px-6 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-xl font-bold"
+                                            className="px-6 py-2 bg-neutral-800 text-neutral-400 rounded-xl font-bold"
                                         >
                                             キャンセル
                                         </button>
@@ -191,10 +191,10 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                         <div className={`
                                             px-3 py-1 rounded-full border text-xs font-black tracking-widest uppercase
                                             ${user.subscriptionPlan === 'pro'
-                                                ? 'bg-indigo-100 text-indigo-600 border-indigo-200 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
+                                                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
                                                 : user.subscriptionPlan === 'basic'
-                                                    ? 'bg-emerald-100 text-emerald-600 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
-                                                    : 'bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700'
+                                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                                                    : 'bg-neutral-800 text-neutral-400 border-neutral-700'
                                             }
                                         `}>
                                             {user.subscriptionPlan || 'FREE'}
@@ -223,12 +223,12 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
 
                                     <div className="flex items-center gap-2 mt-2 mb-6">
                                         {user.isPublicRanking ? (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/30 text-emerald-400 text-[10px] font-bold">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                                 ランキング公開中
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 text-[10px] font-bold">
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-400 text-[10px] font-bold">
                                                 🔒 ランキング非公開
                                             </span>
                                         )}
@@ -279,7 +279,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
 
                             {/* Dev Tools (Local Development Only) */}
                             {process.env.NODE_ENV === 'development' && (
-                                <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl">
+                                <div className="mt-8 p-4 bg-amber-950/20 border border-amber-900/50 rounded-2xl">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-3 flex items-center gap-2">
                                         <span>🛠️</span> Dev Tools (Local Only)
                                     </div>

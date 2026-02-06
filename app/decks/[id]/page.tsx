@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -102,6 +102,11 @@ export default function DeckPage() {
     // モード管理: 'list' (一覧) | 'flashcard' (学習) | 'writing_test' (テスト) | 'dictation' (書き取り)
     const [mode, setMode] = useState<'list' | 'flashcard' | 'writing_test' | 'dictation'>('list');
 
+    // Challenge Type: 'word' (単語のみ) | 'fill-in' (穴埋め) | 'full' (全文)
+    const [challengeType, setChallengeType] = useState<'word' | 'fill-in' | 'full'>('word');
+    // For Mode Selection Modal
+    const [selectingModeFor, setSelectingModeFor] = useState<'writing_test' | 'dictation' | null>(null);
+
     // Writing Test State
     const [writingInput, setWritingInput] = useState("");
     const [isAnswerChecked, setIsAnswerChecked] = useState(false);
@@ -128,18 +133,43 @@ export default function DeckPage() {
         return active.length > 0 ? active : source;
     };
 
+    // Active Example Memo for Writing/Fill-in Test
+    // Using useMemo instead of useEffect to avoid flash of previous content on card switch
+    const activeExample = useMemo(() => {
+        const words = getSessionWords();
+        const card = words[currentIndex];
+        if (!card) return null;
+
+        const candidates = [
+            { text: card.example, translation: card.example_jp },
+            ...(card.otherExamples || [])
+        ].filter(ex => ex && ex.text && ex.translation && (challengeType === 'word' || ex.text.toLowerCase().includes(card.word.toLowerCase())));
+
+        if (candidates.length > 0) {
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+        return { text: card.example, translation: card.example_jp };
+    }, [currentIndex, isRandomMode, reviewWords, deck?.id, challengeType, includeMastered, shuffledWords, includeMastered]);
+
     // Dictation Mode Auto-Speak
     useEffect(() => {
         if (mode === 'dictation' && !isFinished) {
             const words = getSessionWords();
             const currentCard = words[currentIndex];
             if (currentCard) {
+                // Determine text to speak based on challenge type
+                let textToSpeak = currentCard.word;
+                if (challengeType !== 'word') {
+                    // Use activeExample if available (same as text displayed in answer)
+                    textToSpeak = activeExample?.text || currentCard.example;
+                }
+
                 // Delay slightly to ensure UI is ready and feels natural
-                const timer = setTimeout(() => speak(currentCard.word), 600);
+                const timer = setTimeout(() => speak(textToSpeak), 600);
                 return () => clearTimeout(timer);
             }
         }
-    }, [mode, currentIndex, isFinished]);
+    }, [mode, currentIndex, isFinished, challengeType, activeExample]);
 
     // List Item Detail State
     const [expandedListItems, setExpandedListItems] = useState<Record<string, boolean>>({});
@@ -147,6 +177,8 @@ export default function DeckPage() {
     // XP Tracking States
     const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
     const [sessionCorrectCount, setSessionCorrectCount] = useState(0);
+
+    // ActiveExample moved up
 
     // Copy/Move Feature State
     const [showMoveModal, setShowMoveModal] = useState(false);
@@ -727,7 +759,9 @@ export default function DeckPage() {
 
 
 
-    const handleRestart = (isReviewMistakes = false) => {
+    const handleRestart = (isReviewMistakes = false, newChallengeType?: 'word' | 'fill-in' | 'full') => {
+        if (newChallengeType) setChallengeType(newChallengeType);
+
         if (isReviewMistakes && deck) {
             const missed = (isRandomMode ? shuffledWords : deck.words).filter(w => w.id && wrongWordIds.has(w.id));
             setReviewWords(missed);
@@ -770,9 +804,24 @@ export default function DeckPage() {
         setSessionCorrectCount(0);
     };
 
-    const handleCheckAnswer = (cardId: string | undefined, correctWord: string) => {
-        const input = writingInput.trim().toLowerCase();
-        const expected = correctWord.trim().toLowerCase();
+    const normalizeText = (text: string) => {
+        return text
+            .toLowerCase()
+            .replace(/[.,!?;:"'’]/g, '') // Remove punctuation
+            .replace(/\s+/g, ' ') // Collapse spaces
+            .trim();
+    };
+
+    const handleCheckAnswer = (cardId: string | undefined, correctWord: string, correctExample?: string) => {
+        const input = normalizeText(writingInput);
+        let expected = "";
+
+        if (challengeType === 'full' && correctExample) {
+            expected = normalizeText(correctExample);
+        } else {
+            expected = normalizeText(correctWord);
+        }
+
         const correct = input === expected;
 
         setIsCorrect(correct);
@@ -790,7 +839,12 @@ export default function DeckPage() {
                     return next;
                 });
             }
-            speak(correctWord);
+            // Speak the answer (Word or Sentence)
+            if (challengeType !== 'word' && correctExample) {
+                speak(correctExample);
+            } else {
+                speak(correctWord);
+            }
             setSessionCorrectCount(prev => prev + 1);
         }
     };
@@ -899,7 +953,7 @@ export default function DeckPage() {
                 <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6">
                     <div className="text-center space-y-6 animate-in zoom-in duration-300">
                         <div className="text-6xl mb-4">🎉</div>
-                        <h1 className="text-3xl font-bold dark:text-white">お疲れ様でした！</h1>
+                        <h1 className="text-3xl font-bold text-white">お疲れ様でした！</h1>
                         <p className="text-neutral-500">"{deck.title}" の学習が終了しました。</p>
                         {earnedXp > 0 && (
                             <div className="animate-bounce mt-4 inline-block px-6 py-2 bg-yellow-400 text-yellow-900 font-black rounded-full shadow-lg transform rotate-[-2deg]">
@@ -918,7 +972,7 @@ export default function DeckPage() {
                                     <span>↺</span> もう一度学習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-neutral-800 border border-neutral-700 rounded-full font-bold hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
@@ -954,9 +1008,9 @@ export default function DeckPage() {
         return (
             <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 flex flex-col">
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
-                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ 閉じる</button>
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-white transition font-bold text-sm">✕ 閉じる</button>
                     <div className="text-center">
-                        <h1 className="font-bold text-lg dark:text-white/90">{reviewWords ? 'Mistake Review' : deck.title}</h1>
+                        <h1 className="font-bold text-lg text-white/90">{reviewWords ? 'Mistake Review' : deck.title}</h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
                     </div>
                     <div className="w-20"></div>
@@ -1069,7 +1123,7 @@ export default function DeckPage() {
                 <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6">
                     <div className="text-center space-y-6 animate-in zoom-in duration-300">
                         <div className="text-6xl mb-4">🎧</div>
-                        <h1 className="text-3xl font-bold dark:text-white">ディクテーション終了！</h1>
+                        <h1 className="text-3xl font-bold text-white">ディクテーション終了！</h1>
                         <p className="text-neutral-500">"{deck.title}" の書き取り練習が完了しました。</p>
                         {earnedXp > 0 && (
                             <div className="animate-bounce mt-4 inline-block px-6 py-2 bg-yellow-400 text-yellow-900 font-black rounded-full shadow-lg transform rotate-[-2deg]">
@@ -1083,7 +1137,7 @@ export default function DeckPage() {
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-neutral-800 border border-neutral-700 rounded-full font-bold hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
@@ -1098,9 +1152,9 @@ export default function DeckPage() {
         return (
             <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 flex flex-col">
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
-                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ キャンセル</button>
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-white transition font-bold text-sm">✕ キャンセル</button>
                     <div className="text-center">
-                        <h1 className="font-bold text-lg dark:text-white/90">ディクテーション練習</h1>
+                        <h1 className="font-bold text-lg text-white/90">Dictation</h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
                     </div>
                     <div className="w-20"></div>
@@ -1110,35 +1164,77 @@ export default function DeckPage() {
                     <div className="w-full bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-12 border border-neutral-800 flex flex-col items-center relative overflow-hidden">
 
                         {/* Audio Visualizer / Button */}
-                        <div className="mb-10 text-center relative group">
-                            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
-                            <button
-                                onClick={() => speak(currentCard.word)}
-                                className="relative w-32 h-32 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-indigo-500/40 hover:scale-105 active:scale-95 transition-all group-hover:bg-indigo-500"
-                            >
-                                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                            </button>
-                            <p className="mt-6 text-sm font-bold text-neutral-400 uppercase tracking-widest">お聞きください</p>
-                        </div>
+                        {/* Question Display (Fill-in) or Audio Visualizer (Word/Full) */}
+                        {challengeType === 'fill-in' && activeExample ? (
+                            <div className="mb-10 w-full text-left space-y-6">
+                                {/* Japanese */}
+
+                                {/* English (Fill-in) */}
+                                <div className="space-y-1">
+                                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">ENGLISH</span>
+                                    <div className="p-5 bg-neutral-800/50 rounded-2xl text-xl sm:text-2xl font-serif text-neutral-300 leading-relaxed relative group">
+                                        <button
+                                            onClick={() => speak(activeExample.text)}
+                                            className="absolute top-4 right-4 p-3 bg-indigo-600/20 text-indigo-400 rounded-full hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+                                            title="Play Audio"
+                                        >
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                        </button>
+                                        {(() => {
+                                            const normalizedText = activeExample.text;
+                                            const normalizedWord = currentCard.word;
+                                            const parts = normalizedText.split(new RegExp(`(${normalizedWord})`, 'gi'));
+
+                                            // Fallback if split fails (shouldn't happen with regex unless special chars issue)
+                                            if (parts.length === 1 && !parts[0].toLowerCase().includes(normalizedWord.toLowerCase())) {
+                                                return <span>{activeExample.text} <span className="text-neutral-500 text-sm">(Term not found in example)</span></span>
+                                            }
+
+                                            return parts.map((part, i) => (
+                                                part.toLowerCase() === normalizedWord.toLowerCase() ? (
+                                                    <span key={i} className="inline-block min-w-[3ch] text-indigo-500 border-b-2 border-indigo-500/50 px-1 mx-1 font-mono bg-indigo-500/10 rounded">
+                                                        [{' '.repeat(part.length)}]
+                                                    </span>
+                                                ) : (
+                                                    <span key={i}>{part}</span>
+                                                )
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="mb-12 text-center relative group py-8">
+                                <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full scale-150 animate-pulse"></div>
+                                <button
+                                    onClick={() => speak(challengeType !== 'word' && activeExample ? activeExample.text : currentCard.word)}
+                                    className="relative w-48 h-48 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-indigo-500/40 hover:scale-105 active:scale-95 transition-all group-hover:bg-indigo-500"
+                                >
+                                    <svg className="ml-2" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                </button>
+                            </div>
+                        )}
 
                         {/* Hint Display */}
-                        <div className="mb-8 h-8 flex items-center justify-center">
-                            {showHint ? (
-                                <div className="text-center animate-in fade-in slide-in-from-bottom-2">
-                                    <p className="text-sm font-bold text-neutral-400 mb-1">First letter:</p>
-                                    <p className="text-4xl font-black text-indigo-500 font-mono">{currentCard.word.charAt(0)}...</p>
-                                </div>
-                            ) : (
-                                !isAnswerChecked && (
-                                    <button
-                                        onClick={() => setShowHint(true)}
-                                        className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full"
-                                    >
-                                        <span>💡</span> ヒントを見る
-                                    </button>
-                                )
-                            )}
-                        </div>
+                        {challengeType !== 'full' && (
+                            <div className="mb-8 h-8 flex items-center justify-center">
+                                {showHint ? (
+                                    <div className="text-center animate-in fade-in slide-in-from-bottom-2">
+                                        <p className="text-sm font-bold text-neutral-400 mb-1">最初の文字:</p>
+                                        <p className="text-4xl font-black text-indigo-500 font-mono">{currentCard.word.charAt(0)}...</p>
+                                    </div>
+                                ) : (
+                                    !isAnswerChecked && (
+                                        <button
+                                            onClick={() => setShowHint(true)}
+                                            className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1 bg-neutral-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full"
+                                        >
+                                            <span>💡</span> ヒントを見る
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        )}
 
                         <div className="w-full max-w-md space-y-6 z-10">
                             <input
@@ -1146,10 +1242,10 @@ export default function DeckPage() {
                                 type="text"
                                 value={writingInput}
                                 onChange={(e) => setWritingInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word)}
+                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
                                 disabled={isAnswerChecked}
-                                placeholder="単語を入力..."
-                                className={`w-full p-4 text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
+                                placeholder={challengeType === 'full' ? "全文を入力..." : "単語を入力..."}
+                                className={`w-full p-4 text-xl sm:text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
                                     ? isCorrect
                                         ? 'border-green-500 bg-green-950/20 text-green-600'
                                         : 'border-red-500 bg-red-950/20 text-red-600'
@@ -1162,8 +1258,18 @@ export default function DeckPage() {
                                     {!isCorrect && (
                                         <div>
                                             <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">正解:</p>
-                                            <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
-                                            <p className="text-sm text-neutral-500 mt-2 font-bold">{currentCard.meaning}</p>
+
+                                            {challengeType === 'word' ? (
+                                                <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
+                                            ) : (
+                                                <div className="text-left bg-neutral-800 p-4 rounded-xl">
+                                                    <p className="text-lg text-indigo-400 font-serif mb-2 font-bold">{activeExample?.text || currentCard.example}</p>
+                                                    <p className="text-sm text-neutral-400 font-bold mb-2">{activeExample?.translation || currentCard.example_jp}</p>
+                                                    <p className="text-sm text-neutral-500 border-t border-neutral-700 pt-2">{currentCard.word} ({currentCard.meaning})</p>
+                                                </div>
+                                            )}
+
+                                            {challengeType === 'word' && <p className="text-sm text-neutral-500 mt-2 font-bold">{currentCard.meaning}</p>}
                                         </div>
                                     )}
                                     {isCorrect && (
@@ -1188,7 +1294,7 @@ export default function DeckPage() {
                             {!isAnswerChecked && (
                                 <div className="space-y-4 w-full">
                                     <button
-                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word)}
+                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
                                         disabled={!writingInput.trim()}
                                         className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -1216,7 +1322,7 @@ export default function DeckPage() {
                 <div className="min-h-screen flex flex-col items-center justify-center bg-[#050505] p-6">
                     <div className="text-center space-y-6 animate-in zoom-in duration-300">
                         <div className="text-6xl mb-4">📝</div>
-                        <h1 className="text-3xl font-bold dark:text-white">テスト終了！</h1>
+                        <h1 className="text-3xl font-bold text-white">テスト終了！</h1>
                         <p className="text-neutral-500">"{deck.title}" のテストが完了しました。</p>
                         {earnedXp > 0 && (
                             <div className="animate-bounce mt-4 inline-block px-6 py-2 bg-yellow-400 text-yellow-900 font-black rounded-full shadow-lg transform rotate-[-2deg]">
@@ -1235,7 +1341,7 @@ export default function DeckPage() {
                                     <span>↺</span> もう一度学習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full font-bold hover:bg-neutral-50 dark:hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-neutral-800 border border-neutral-700 rounded-full font-bold hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
@@ -1250,36 +1356,94 @@ export default function DeckPage() {
         return (
             <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 flex flex-col">
                 <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto w-full">
-                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition font-bold text-sm">✕ キャンセル</button>
+                    <button onClick={() => setMode('list')} className="text-neutral-400 hover:text-white transition font-bold text-sm">✕ キャンセル</button>
                     <div className="text-center">
-                        <h1 className="font-bold text-lg dark:text-white/90">{reviewWords ? 'Mistake Review (Writing)' : 'Writing Test'}</h1>
+                        <h1 className="font-bold text-lg text-white/90">
+                            {reviewWords ? 'Mistake Review' : 'Writing'}
+                        </h1>
                         <p className="text-xs text-neutral-400 font-mono mt-1">{currentIndex + 1} / {displayWords.length}</p>
                     </div>
                     <div className="w-20"></div>
-                </header>
+                </header >
 
                 <main className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
                     <div className="w-full bg-[#1e1e1e] rounded-3xl shadow-xl p-8 sm:p-12 border border-neutral-800 flex flex-col items-center">
-                        <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6 border-b border-neutral-100 dark:border-neutral-800 pb-1">この意味を持つ単語は？</span>
-                        <h3 className="text-3xl sm:text-4xl font-bold mb-12 text-center" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
+                        <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6 border-b border-neutral-100 dark:border-neutral-800 pb-1">
+                            {challengeType !== 'word' && currentCard.example_jp ? "日本語に合う英文を完成させてください" : "この意味を持つ単語は？"}
+                        </span>
+
+                        {challengeType !== 'word' && activeExample ? (
+                            <div className="mb-10 w-full max-w-xl text-left space-y-6">
+                                {/* Japanese */}
+                                <div className="space-y-1">
+                                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">日本語</span>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-white leading-relaxed font-serif">
+                                        「{activeExample.translation}」
+                                    </h3>
+                                </div>
+
+                                {/* English (Fill-in) */}
+                                <div className="space-y-1">
+                                    <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">English</span>
+                                    {challengeType === 'fill-in' ? (
+                                        <div className="p-5 bg-neutral-800/50 border border-neutral-700/50 rounded-2xl text-lg sm:text-xl font-serif text-neutral-300 leading-relaxed shadow-inner">
+                                            {(() => {
+                                                const text = activeExample.text;
+                                                const word = currentCard.word;
+                                                const parts = text.split(new RegExp(`(${word})`, 'gi'));
+
+                                                if (parts.length === 1 && !text.toLowerCase().includes(word.toLowerCase())) {
+                                                    // Word not found by regex (maybe conjugation?) - just show blank at end? Or show full text?
+                                                    // Fallback: replace similar words?
+                                                    // Simple fallback:
+                                                    return (
+                                                        <>
+                                                            {text} <span className="text-indigo-400 font-bold ml-2">( {word} )</span>
+                                                        </>
+                                                    )
+                                                }
+
+                                                return parts.map((part, i) =>
+                                                    part.toLowerCase() === word.toLowerCase()
+                                                        ? <span key={i} className="inline-block text-indigo-400 font-black min-w-[60px] text-center bg-indigo-500/10 rounded px-1 mx-1 border-b-2 border-indigo-400"> [ &nbsp;&nbsp; ] </span>
+                                                        : part
+                                                );
+                                            })()}
+                                        </div>
+                                    ) : (
+                                        // Full sentence challenge (just show meaning above, user types sentence)
+                                        // Wait, current UI showed meaning if 'full'. logic in line 1316 was: if example_jp exists.
+                                        // If 'full', we shouldn't show the English text!
+                                        <div className="p-5 bg-neutral-800/50 rounded-2xl text-neutral-500 italic">
+                                            (Translate the above sentence)
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <h3 className="text-3xl sm:text-4xl font-bold mb-12 text-center" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{currentCard.meaning}</h3>
+                        )}
 
                         {/* Hint Display */}
-                        <div className="mb-6 h-8 flex items-center justify-center">
-                            {showHint ? (
-                                <p className="text-xl font-bold text-indigo-500 animate-in fade-in">
-                                    Hint: <span className="font-mono text-2xl">{currentCard.word.charAt(0)}...</span>
-                                </p>
-                            ) : (
-                                !isAnswerChecked && (
-                                    <button
-                                        onClick={() => setShowHint(true)}
-                                        className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1"
-                                    >
-                                        <span>💡</span> ヒントを見る
-                                    </button>
-                                )
-                            )}
-                        </div>
+                        {challengeType !== 'full' && (
+                            <div className="mb-6 h-8 flex items-center justify-center">
+                                {showHint ? (
+                                    <div className="text-center animate-in fade-in slide-in-from-bottom-2">
+                                        <p className="text-sm font-bold text-neutral-400 mb-1">最初の文字:</p>
+                                        <p className="text-4xl font-black text-indigo-500 font-mono">{currentCard.word.charAt(0)}...</p>
+                                    </div>
+                                ) : (
+                                    !isAnswerChecked && (
+                                        <button
+                                            onClick={() => setShowHint(true)}
+                                            className="text-sm font-bold text-neutral-400 hover:text-indigo-500 transition flex items-center gap-1"
+                                        >
+                                            <span>💡</span> ヒントを見る
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        )}
 
                         <div className="w-full max-w-md space-y-6">
                             <input
@@ -1287,10 +1451,10 @@ export default function DeckPage() {
                                 type="text"
                                 value={writingInput}
                                 onChange={(e) => setWritingInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word)}
+                                onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
                                 disabled={isAnswerChecked}
-                                placeholder="単語を入力..."
-                                className={`w-full p-4 text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
+                                placeholder={challengeType === 'full' ? "全文を入力..." : "単語を入力..."}
+                                className={`w-full p-4 text-xl sm:text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
                                     ? isCorrect
                                         ? 'border-green-500 bg-green-950/20 text-green-600'
                                         : 'border-red-500 bg-red-950/20 text-red-600'
@@ -1303,7 +1467,14 @@ export default function DeckPage() {
                                     {!isCorrect && (
                                         <div>
                                             <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-1">正解:</p>
-                                            <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
+                                            {challengeType === 'word' ? (
+                                                <p className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-serif">{currentCard.word}</p>
+                                            ) : (
+                                                <div className="bg-neutral-800 p-4 rounded-xl">
+                                                    <p className="text-lg text-indigo-400 font-serif font-bold mb-2">{activeExample?.text || currentCard.example}</p>
+                                                    <p className="text-sm text-neutral-500 mt-2">{currentCard.word} ({currentCard.meaning})</p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     <div className="flex flex-col items-center gap-2">
@@ -1324,7 +1495,7 @@ export default function DeckPage() {
                             {!isAnswerChecked && (
                                 <div className="space-y-4 w-full">
                                     <button
-                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word)}
+                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
                                         disabled={!writingInput.trim()}
                                         className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -1341,7 +1512,7 @@ export default function DeckPage() {
                         </div>
                     </div>
                 </main>
-            </div>
+            </div >
         );
     }
     return (
@@ -1428,10 +1599,10 @@ export default function DeckPage() {
                                 <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-6 py-3.5 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">🎴</span> フラッシュカード
                                 </button>
-                                <button onClick={() => { handleRestart(); setMode('writing_test'); }} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">📝</span> Writingテスト
+                                <button onClick={() => setSelectingModeFor('writing_test')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                    <span className="text-2xl">📝</span> Writing
                                 </button>
-                                <button onClick={() => { handleRestart(); setMode('dictation'); }} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
+                                <button onClick={() => setSelectingModeFor('dictation')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">🎧</span> Dictation
                                 </button>
 
@@ -1466,7 +1637,7 @@ export default function DeckPage() {
                 <div className="bg-neutral-900 rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
                     {/* Encouragement Message */}
                     <div className="bg-indigo-900/20 px-6 py-2 text-center border-b border-indigo-800">
-                        <p className="text-xs font-bold text-indigo-600 dark:text-indigo-300">💡 覚えた単語には <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 text-white rounded-full text-[8px] mx-1">✓</span> を付けよう！テストに出なくなります。</p>
+                        <p className="text-xs font-bold text-indigo-300">💡 覚えた単語には <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 text-white rounded-full text-[8px] mx-1">✓</span> を付けよう！テストに出なくなります。</p>
                     </div>
 
                     <div className="p-6 border-b border-neutral-800 bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1487,17 +1658,17 @@ export default function DeckPage() {
                                             onChange={handleSelectAll}
                                             className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                         />
-                                        <span className="text-sm font-bold text-neutral-600 dark:text-neutral-400">
+                                        <span className="text-sm font-bold text-neutral-400">
                                             {selectedWordIds.size} 選択中
                                         </span>
                                     </div>
 
                                     {selectedWordIds.size > 0 && (
                                         <div className="flex items-center gap-2">
-                                            <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors flex items-center gap-1">
+                                            <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-900/30 text-red-400 border border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-900/50 transition-colors flex items-center gap-1">
                                                 <span>🗑️</span> 一括削除
                                             </button>
-                                            <button onClick={() => setShowMoveModal(true)} className="px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors flex items-center gap-1">
+                                            <button onClick={() => setShowMoveModal(true)} className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 border border-indigo-800 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-900/50 transition-colors flex items-center gap-1">
                                                 <span>📤</span> 移動/コピー
                                             </button>
                                         </div>
@@ -1508,7 +1679,7 @@ export default function DeckPage() {
                                             setIsSelectionMode(false);
                                             setSelectedWordIds(new Set());
                                         }}
-                                        className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 rounded-lg text-xs font-bold hover:bg-neutral-300 dark:hover:bg-neutral-700 transition ml-2"
+                                        className="px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg text-xs font-bold hover:bg-neutral-700 transition ml-2"
                                     >
                                         キャンセル
                                     </button>
@@ -1590,7 +1761,7 @@ export default function DeckPage() {
                                         {/* Primary Example fields removed for modernization */}
 
                                         {/* 追加の例文の編集セクション */}
-                                        <div className="space-y-4 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                        <div className="space-y-4 pt-4 border-t border-neutral-800">
                                             <div className="flex items-center justify-between">
                                                 <label className="block text-xs font-bold text-neutral-400 uppercase">追加の例文</label>
                                                 <button
@@ -1625,7 +1796,7 @@ export default function DeckPage() {
                                                                 newExamples[i].role = e.target.value;
                                                                 setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                             }}
-                                                            className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black font-bold"
+                                                            className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black font-bold"
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1639,7 +1810,7 @@ export default function DeckPage() {
                                                                     setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                                 }}
                                                                 rows={2}
-                                                                className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black"
+                                                                className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
                                                             ></textarea>
                                                         </div>
                                                         <div>
@@ -1652,7 +1823,7 @@ export default function DeckPage() {
                                                                     setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                                 }}
                                                                 rows={2}
-                                                                className="w-full p-1.5 text-xs border border-neutral-200 dark:border-neutral-700 rounded bg-white dark:bg-black"
+                                                                className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
                                                             ></textarea>
                                                         </div>
                                                     </div>
@@ -1661,19 +1832,19 @@ export default function DeckPage() {
                                         </div>
 
                                         {/* Synonyms Edit */}
-                                        <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                        <div className="pt-4 border-t border-neutral-800">
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">類義語 (Synonyms)</label>
                                             {editFormData.synonyms.map((s, i) => (
                                                 <div key={i} className="flex gap-2 mb-2 items-center">
                                                     <input value={s.word} onChange={e => {
                                                         const n = [...editFormData.synonyms]; n[i].word = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="w-1/3 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Word" />
+                                                    }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
                                                     <input value={s.partOfSpeech} onChange={e => {
                                                         const n = [...editFormData.synonyms]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="w-1/4 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="POS" />
+                                                    }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
                                                     <input value={s.meaning} onChange={e => {
                                                         const n = [...editFormData.synonyms]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="flex-1 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Meaning" />
+                                                    }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
                                                     <button onClick={() => {
                                                         const n = editFormData.synonyms.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, synonyms: n });
                                                     }} className="text-red-400 hover:text-red-600">×</button>
@@ -1683,19 +1854,19 @@ export default function DeckPage() {
                                         </div>
 
                                         {/* Derivatives Edit */}
-                                        <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                                        <div className="pt-4 border-t border-neutral-800">
                                             <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">派生語 (Derivatives)</label>
                                             {editFormData.derivatives.map((d, i) => (
                                                 <div key={i} className="flex gap-2 mb-2 items-center">
                                                     <input value={d.word} onChange={e => {
                                                         const n = [...editFormData.derivatives]; n[i].word = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="w-1/3 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Word" />
+                                                    }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
                                                     <input value={d.partOfSpeech} onChange={e => {
                                                         const n = [...editFormData.derivatives]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="w-1/4 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="POS" />
+                                                    }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
                                                     <input value={d.meaning} onChange={e => {
                                                         const n = [...editFormData.derivatives]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="flex-1 p-1 text-xs border rounded bg-white dark:bg-black" placeholder="Meaning" />
+                                                    }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
                                                     <button onClick={() => {
                                                         const n = editFormData.derivatives.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, derivatives: n });
                                                     }} className="text-red-400 hover:text-red-600">×</button>
@@ -1704,7 +1875,7 @@ export default function DeckPage() {
                                             <button onClick={() => setEditFormData({ ...editFormData, derivatives: [...editFormData.derivatives, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
                                         </div>
                                         <div className="flex justify-end gap-2 mt-2">
-                                            <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
+                                            <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
                                             <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold text-sm">保存</button>
                                         </div>
                                     </div>
@@ -1716,7 +1887,7 @@ export default function DeckPage() {
                                                     <span className="text-xl sm:text-2xl font-black font-serif tracking-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
                                                     <button
                                                         onClick={() => speak(card.word)}
-                                                        className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
+                                                        className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-800 transition-colors shrink-0"
                                                         title="Play word"
                                                     >
                                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
@@ -1748,7 +1919,7 @@ export default function DeckPage() {
                                                                             <div className="mb-4 flex justify-end">
                                                                                 <button
                                                                                     onClick={() => card.id && handleGenerateDetails(card.id, true)}
-                                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors border border-indigo-200 dark:border-indigo-800"
+                                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-900/60 transition-colors border border-indigo-800"
                                                                                 >
                                                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
                                                                                     再生成 (🪙1)
@@ -1756,10 +1927,10 @@ export default function DeckPage() {
                                                                             </div>
                                                                             <div className="mt-4 space-y-6">
                                                                                 {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
-                                                                                    <div key={i} className="relative pl-4 border-l-2 border-indigo-400 dark:border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                                                                                    <div key={i} className="relative pl-4 border-l-2 border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
                                                                                         {ex.role && (
                                                                                             <div className="mb-2">
-                                                                                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-900/50">
+                                                                                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-950/40 text-indigo-400 rounded-md border border-indigo-900/50">
                                                                                                     {ex.role}
                                                                                                 </span>
                                                                                             </div>
@@ -1793,7 +1964,7 @@ export default function DeckPage() {
                                                     ) : (
                                                         <button
                                                             onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                            className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/10 rounded-full w-fit"
+                                                            className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-900/10 rounded-full w-fit"
                                                         >
                                                             <span>🪄</span> 例文を生成
                                                         </button>
@@ -1801,14 +1972,14 @@ export default function DeckPage() {
 
                                                     {/* Synonyms & Derivatives Section */}
                                                     {expandedListItems[card.id!] && (
-                                                        <div className="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2">
+                                                        <div className="mt-8 pt-6 border-t border-neutral-800 animate-in fade-in slide-in-from-top-2">
 
                                                             {/* Generate Button if missing or empty */}
                                                             {(!card.synonyms || card.synonyms.length === 0) && (!card.derivatives || card.derivatives.length === 0) ? (
                                                                 <div className="pb-4">
                                                                     <button
                                                                         onClick={() => card.id && handleGenerateExtras(card.id, 'all', false)}
-                                                                        className="w-full py-3 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/10 dark:to-purple-900/10 text-indigo-600 dark:text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-100/50 hover:to-purple-100/50 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/20 transition-all flex items-center justify-center gap-2 border border-indigo-100/50 dark:border-indigo-800/30 shadow-sm"
+                                                                        className="w-full py-3 bg-gradient-to-r from-indigo-900/10 to-purple-900/10 text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-900/20 hover:to-purple-900/20 transition-all flex items-center justify-center gap-2 border border-indigo-800/30 shadow-sm"
                                                                     >
                                                                         <span>✨</span> 類義語・派生語を生成 (1コイン)
                                                                     </button>
@@ -1818,7 +1989,7 @@ export default function DeckPage() {
                                                                     <div className="flex justify-end mb-4">
                                                                         <button
                                                                             onClick={() => card.id && handleGenerateExtras(card.id, 'all', true)}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-full text-[10px] font-bold hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors border border-neutral-200 dark:border-neutral-700"
+                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-neutral-400 rounded-full text-[10px] font-bold hover:bg-neutral-700 transition-colors border border-neutral-700"
                                                                         >
                                                                             <span>↻</span> 類義語・派生語を再生成 (🪙1)
                                                                         </button>
@@ -1935,7 +2106,7 @@ export default function DeckPage() {
                                 <span>📤</span> 移動 / コピー
                             </h3>
                             <p className="text-neutral-500 text-sm">
-                                選択した <span className="font-bold text-neutral-900 dark:text-white">{selectedWordIds.size}</span> 件の単語を操作します。
+                                選択した <span className="font-bold text-white">{selectedWordIds.size}</span> 件の単語を操作します。
                             </p>
                         </div>
 
@@ -1978,7 +2149,99 @@ export default function DeckPage() {
 
                         <button
                             onClick={() => setShowMoveModal(false)}
-                            className="mt-2 text-neutral-400 font-bold text-sm hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
+                            className="mt-2 text-neutral-400 font-bold text-sm hover:text-neutral-200 transition-colors"
+                        >
+                            キャンセル
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mode Selection Modal */}
+            {selectingModeFor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-800 flex flex-col gap-6">
+                        <div className="text-center">
+                            <h3 className="text-2xl font-black mb-2 text-white">
+                                {selectingModeFor === 'dictation' ? 'Dictation Mode' : 'Writing Mode'}
+                            </h3>
+                            <p className="text-neutral-400 text-sm">出題形式を選んでください</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* Word Only */}
+                            <button
+                                onClick={() => {
+                                    handleRestart(false, 'word');
+                                    setMode(selectingModeFor);
+                                    setSelectingModeFor(null);
+                                }}
+                                className="w-full p-4 rounded-xl border-2 border-neutral-700 hover:border-indigo-500 bg-neutral-800/50 hover:bg-neutral-800 transition-all group text-left relative overflow-hidden"
+                            >
+                                <div className="relative z-10">
+                                    <div className="font-bold text-lg text-white mb-1">単語のみ</div>
+                                    <div className="text-xs text-neutral-400">
+                                        {selectingModeFor === 'dictation'
+                                            ? "音声を聞いて単語を書き取る基本モード"
+                                            : "意味を見て単語を入力する基本モード"}
+                                    </div>
+                                </div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                    🍎
+                                </div>
+                            </button>
+
+                            {/* Fill-in */}
+                            <button
+                                onClick={() => {
+                                    handleRestart(false, 'fill-in');
+                                    setMode(selectingModeFor);
+                                    setSelectingModeFor(null);
+                                }}
+                                className="w-full p-4 rounded-xl border-2 border-indigo-500/50 hover:border-indigo-400 bg-indigo-900/10 hover:bg-indigo-900/20 transition-all group text-left relative overflow-hidden"
+                            >
+                                <div className="relative z-10">
+                                    <div className="font-bold text-lg text-indigo-300 mb-1">例文穴埋め</div>
+                                    <div className="text-xs text-indigo-200/60">
+                                        {selectingModeFor === 'dictation'
+                                            ? "例文を聞いて空欄の単語を書き取る"
+                                            : "日本語訳を見て空欄の単語を埋める"}
+                                    </div>
+                                </div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                    🧩
+                                </div>
+                            </button>
+
+                            {/* Full Sentence */}
+                            <button
+                                onClick={() => {
+                                    handleRestart(false, 'full');
+                                    setMode(selectingModeFor);
+                                    setSelectingModeFor(null);
+                                }}
+                                className="w-full p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-400 bg-amber-900/10 hover:bg-amber-900/20 transition-all group text-left relative overflow-hidden"
+                            >
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <div className="font-bold text-lg text-amber-500">例文全文</div>
+                                        <span className="text-[10px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded">HARD</span>
+                                    </div>
+                                    <div className="text-xs text-amber-200/60">
+                                        {selectingModeFor === 'dictation'
+                                            ? "読み上げられた例文をすべて書き取る"
+                                            : "日本語訳を見て英文をすべて書く"}
+                                    </div>
+                                </div>
+                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                    🔥
+                                </div>
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setSelectingModeFor(null)}
+                            className="mt-2 text-neutral-500 hover:text-white font-bold text-sm transition-colors py-2"
                         >
                             キャンセル
                         </button>

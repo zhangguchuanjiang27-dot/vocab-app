@@ -1199,7 +1199,7 @@ export default function Home() {
                     </h2>
                     <button
                       onClick={() => setShowCreateFolderModal(true)}
-                      className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                      className="text-sm font-bold text-indigo-400 hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
                     >
                       <span className="text-lg">+</span> フォルダ作成
                     </button>
@@ -1243,7 +1243,7 @@ export default function Home() {
                             strategy={rectSortingStrategy}
                           >
                             {savedDecks.filter(d => !d.folderId).length === 0 && (
-                              <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-200 dark:border-neutral-800 rounded-2xl">
+                              <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-800 rounded-2xl">
                                 <span className="text-4xl mb-2">📥</span>
                                 <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
                               </div>
@@ -1418,7 +1418,7 @@ export default function Home() {
             <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center relative z-[9999] pointer-events-auto">
               <Link
                 href="/sys-ctrl-99"
-                className="opacity-20 hover:opacity-100 transition-opacity text-xs font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-200 dark:border-neutral-800 px-6 py-3 rounded-full cursor-pointer bg-neutral-900/50 backdrop-blur-sm"
+                className="opacity-20 hover:opacity-100 transition-opacity text-xs font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-800 px-6 py-3 rounded-full cursor-pointer bg-neutral-900/50 backdrop-blur-sm"
               >
                 Admin
               </Link>

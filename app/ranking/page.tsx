@@ -62,7 +62,7 @@ export default function RankingPage() {
             <div className="min-h-screen bg-[#050505] p-6 flex flex-col items-center justify-center text-center font-sans text-white">
                 <h1 className="text-3xl font-black mb-4">👑 ワードマスター ランキング</h1>
                 <p className="text-neutral-500 mb-8">ランキングを見るにはログインが必要です。</p>
-                <Link href="/api/auth/signin" className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
+                <Link href="/api/auth/signin" className="bg-white text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
                     ログインしてランキングを見る
                 </Link>
                 <Link href="/" className="mt-8 text-sm text-neutral-400 hover:text-neutral-600">
@@ -172,27 +172,27 @@ export default function RankingPage() {
                             データがありません
                         </div>
                     ) : (
-                        <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                        <div className="divide-y divide-neutral-800">
                             {rankings.map((user, index) => {
                                 const rank = index + 1;
                                 const isMe = session?.user?.id === user.id;
 
                                 return (
-                                    <div key={user.id} className={`flex items-center gap-4 p-4 ${isMe ? "bg-indigo-50 dark:bg-indigo-900/10" : ""}`}>
+                                    <div key={user.id} className={`flex items-center gap-4 p-4 ${isMe ? "bg-indigo-900/10" : ""}`}>
                                         <div className="w-12 flex justify-center items-center shrink-0">
                                             {getMedal(rank)}
                                         </div>
 
                                         <div className="shrink-0">
                                             {user.image ? (
-                                                <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full border border-neutral-200 dark:border-neutral-800" />
+                                                <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full border border-neutral-800" />
                                             ) : (
-                                                <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-lg">👤</div>
+                                                <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center text-lg">👤</div>
                                             )}
                                         </div>
 
                                         <div className="flex-1 min-w-0">
-                                            <div className={`font-bold truncate ${isMe ? "text-indigo-600 dark:text-indigo-400" : ""}`}>
+                                            <div className={`font-bold truncate ${isMe ? "text-indigo-400" : ""}`}>
                                                 {isMe ? (user.name || "Unknown") : (user.name?.split(' ')[0] || "Unknown")} {isMe && "(You)"}
                                             </div>
                                         </div>

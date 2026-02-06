@@ -46,7 +46,7 @@ export default function CheckoutPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="animate-spin h-8 w-8 border-4 border-indigo-500 rounded-full border-t-transparent"></div>
       </div>
     );
