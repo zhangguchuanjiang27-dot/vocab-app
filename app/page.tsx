@@ -98,6 +98,11 @@ export default function Home() {
   // フォルダ用ステート
   const [folders, setFolders] = useState<Folder[]>([]);
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [showCreateEmptyDeckModal, setShowCreateEmptyDeckModal] = useState(false);
+  const [isCreatingEmptyDeck, setIsCreatingEmptyDeck] = useState(false);
+  const [newEmptyDeckTitle, setNewEmptyDeckTitle] = useState("");
   const [newFolderName, setNewFolderName] = useState("");
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
@@ -154,7 +159,8 @@ export default function Home() {
   };
 
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim() || isCreatingFolder) return;
+    setIsCreatingFolder(true);
     try {
       const res = await fetch("/api/folders", {
         method: "POST",
@@ -169,6 +175,32 @@ export default function Home() {
     } catch (e) {
       console.error(e);
       alert("フォルダ作成に失敗しました");
+    } finally {
+      setIsCreatingFolder(false);
+    }
+  };
+
+  const handleCreateEmptyDeck = async () => {
+    if (!newEmptyDeckTitle.trim() || isCreatingEmptyDeck) return;
+    setIsCreatingEmptyDeck(true);
+    try {
+      const res = await fetch("/api/decks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newEmptyDeckTitle, words: [] }),
+      });
+      if (res.ok) {
+        setNewEmptyDeckTitle("");
+        setShowCreateEmptyDeckModal(false);
+        fetchDecks();
+      } else {
+        alert("単語帳作成に失敗しました");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("単語帳作成に失敗しました");
+    } finally {
+      setIsCreatingEmptyDeck(false);
     }
   };
 
@@ -493,11 +525,12 @@ export default function Home() {
   const handleGenerate = async () => {
     if (!wordInput.trim()) return;
 
-    // 行数チェック（合計10行制限）
-    const lineCount = wordInput.split("\n").filter(line => line.trim() !== "").length;
+    // 行数チェック（合計50行制限）
+    const lines = wordInput.split("\n").filter(line => line.trim() !== "");
+    const lineCount = lines.length;
 
-    if (lineCount > 10) {
-      alert(`一度に生成できるのは最大10項目までです。\n現在の入力: ${lineCount}項目\n\n品質を保つため、10項目以下に分割して入力してください。`);
+    if (lineCount > 50) {
+      alert(`一度に生成できるのは最大50項目までです。\n現在の入力: ${lineCount}項目\n\n品質を保つため、50項目以下に分割して入力してください。`);
       return;
     }
 
@@ -505,40 +538,66 @@ export default function Home() {
     setError("");
 
     try {
-      const response = await fetch("/api/ai-generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: wordInput,
-        }),
-      });
+      const BATCH_SIZE = 5;
+      let allGeneratedWords: any[] = [];
+      let lastError: any = null;
+      let processedLinesCount = 0;
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      for (let i = 0; i < lines.length; i += BATCH_SIZE) {
+        const batchLines = lines.slice(i, i + BATCH_SIZE);
+        const batchInput = batchLines.join("\n");
 
-        if (response.status === 403 && errorData.type === "credit_limit") {
-          alert(errorData.error || "クレジットが不足しています。");
-          setShowSubscriptionModal(true);
-          return;
+        try {
+          const response = await fetch("/api/ai-generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: batchInput }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            if (response.status === 403 && errorData.type === "credit_limit") {
+              alert(errorData.error || "クレジットが不足しています。");
+              setShowSubscriptionModal(true);
+              lastError = new Error("Credit limit reached");
+            } else {
+              lastError = new Error(errorData.error || "Failed to generate vocabulary");
+            }
+            break;
+          }
+
+          const data = await response.json();
+          if (data.words && Array.isArray(data.words)) {
+            allGeneratedWords = [...allGeneratedWords, ...data.words];
+            processedLinesCount += batchLines.length;
+          } else {
+            lastError = new Error("Invalid response format");
+            break;
+          }
+        } catch (fetchErr) {
+          lastError = fetchErr;
+          break;
         }
-
-        throw new Error(errorData.error || "Failed to generate vocabulary");
       }
 
-      const data = await response.json();
-      if (data.words) {
-        // 既存のリストに追加（追記モード）
-        setWords((prev) => [...prev, ...data.words]);
-        setWordInput("");
-
-        // クレジットとXPを再取得
+      if (allGeneratedWords.length > 0) {
+        setWords((prev) => [...prev, ...allGeneratedWords]);
+        const remainingLines = lines.slice(processedLinesCount);
+        setWordInput(remainingLines.join("\n"));
         fetchCredits();
-      } else {
-        throw new Error("Invalid response format");
+      } else if (lastError) {
+        throw lastError;
+      } else if (processedLinesCount === lines.length) {
+        setWordInput("");
       }
-    } catch (err) {
+
+      if (lastError && allGeneratedWords.length > 0) {
+        setError("一部の単語生成中にエラーが発生したため中断しました。" + (lastError.message ? ` (${lastError.message})` : ""));
+      }
+
+    } catch (err: any) {
       console.error(err);
-      setError("AI生成中にエラーが発生しました。");
+      setError("AI生成中にエラーが発生しました。" + (err.message || ""));
     } finally {
       setLoading(false);
     }
@@ -648,6 +707,38 @@ export default function Home() {
         </div>
       )}
 
+      {/* Create Empty Deck Modal */}
+      {showCreateEmptyDeckModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-neutral-900 w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-neutral-800">
+            <h3 className="text-xl font-bold mb-4">新規単語帳作成</h3>
+            <input
+              type="text"
+              className="w-full px-4 py-2 mb-4 rounded-lg bg-neutral-800 border-none focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="単語帳名 (例: TOEIC 800)"
+              value={newEmptyDeckTitle}
+              onChange={(e) => setNewEmptyDeckTitle(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowCreateEmptyDeckModal(false)}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-neutral-500 hover:bg-neutral-800 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleCreateEmptyDeck}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                disabled={!newEmptyDeckTitle.trim() || isCreatingEmptyDeck}
+              >
+                {isCreatingEmptyDeck ? "作成中..." : "作成"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Folder Modal */}
       {showCreateFolderModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -670,10 +761,10 @@ export default function Home() {
               </button>
               <button
                 onClick={handleCreateFolder}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
-                disabled={!newFolderName.trim()}
+                className="px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                disabled={!newFolderName.trim() || isCreatingFolder}
               >
-                作成
+                {isCreatingFolder ? "作成中..." : "作成"}
               </button>
             </div>
           </div>
@@ -1197,12 +1288,53 @@ export default function Home() {
                     <h2 className="text-2xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
                       保存した単語帳
                     </h2>
-                    <button
-                      onClick={() => setShowCreateFolderModal(true)}
-                      className="text-sm font-bold text-indigo-400 hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <span className="text-lg">+</span> フォルダ作成
-                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowCreateMenu(!showCreateMenu)}
+                        className="relative p-2 text-indigo-400 hover:bg-indigo-900/30 rounded-lg transition-colors flex items-center justify-center"
+                        title="作成メニュー"
+                      >
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path>
+                          <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        <div className="absolute top-0.5 right-0.5 bg-indigo-500 text-white rounded-full p-0.5 shadow-sm border-2 border-neutral-900">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                          </svg>
+                        </div>
+                      </button>
+
+                      {showCreateMenu && (
+                        <>
+                          <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowCreateMenu(false)}
+                          ></div>
+                          <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                            <button
+                              onClick={() => {
+                                setShowCreateMenu(false);
+                                setShowCreateFolderModal(true);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3 border-b border-neutral-800"
+                            >
+                              <span className="text-xl">📁</span> フォルダ作成
+                            </button>
+                            <button
+                              onClick={() => {
+                                setShowCreateMenu(false);
+                                setShowCreateEmptyDeckModal(true);
+                              }}
+                              className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3"
+                            >
+                              <span className="text-xl">📝</span> 空の単語帳を作成
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {savedDecks.length === 0 && folders.length === 0 ? (
@@ -1313,7 +1445,7 @@ export default function Home() {
                         {!loading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>}
                       </button>
                       <p className="mt-3 text-[10px] text-neutral-400 text-center leading-tight">
-                        ※一度に合計10項目まで生成可能です
+                        ※一度に合計50項目まで生成可能です
                       </p>
                       {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
                     </div>

@@ -1581,7 +1581,7 @@ export default function DeckPage() {
                             <div className="flex items-center gap-2 bg-neutral-800 p-1 rounded-xl w-fit self-center sm:self-start mb-2">
                                 <button
                                     onClick={() => setIsRandomMode(false)}
-                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isRandomMode ? 'bg-neutral-700 shadow-sm text-white' : 'text-neutral-500 hover:text-neutral-400'}`}
+                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-400'}`}
                                 >
                                     🔢 順序通り
                                 </button>
@@ -1596,7 +1596,7 @@ export default function DeckPage() {
                                 </button>
                             </div>
                             <div className="flex flex-wrap gap-3 justify-center sm:justify-start items-center">
-                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-6 py-3.5 bg-indigo-600 text-white text-lg font-bold rounded-full shadow-lg hover:bg-indigo-700 hover:shadow-indigo-500/30 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3">
+                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
                                     <span className="text-2xl">🎴</span> フラッシュカード
                                 </button>
                                 <button onClick={() => setSelectingModeFor('writing_test')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
@@ -1728,8 +1728,8 @@ export default function DeckPage() {
                                         className={`pt-1.5 transition-opacity ${card.isMastered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
                                         title={card.isMastered ? "マスター済み (学習対象から除外)" : "未マスター"}
                                     >
-                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${card.isMastered ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300'}`}>
-                                            {card.isMastered && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${card.isMastered ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300'}`}>
+                                            {card.isMastered && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
                                         </div>
                                     </button>
                                 )}

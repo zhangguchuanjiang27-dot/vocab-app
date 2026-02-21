@@ -152,25 +152,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ words: [] });
     }
 
-    // 2. キャッシュ(辞書)を検索
+    // 2. キャッシュ機能を廃止したため、全単語をAPIで生成対象とする
+    const missingWords = uniqueWords;
+    const foundWordsData: any[] = [];
 
-    const cachedEntries = await prisma.dictionaryEntry.findMany({
-      where: {
-        word: { in: uniqueWords }
-      }
-    });
-
-    // キャッシュにあった単語データ
-
-
-    const foundWordsData = cachedEntries.map((entry: any) => entry.data);
-    const foundWordsSet = new Set(cachedEntries.map((entry: any) => entry.word));
-
-    // 3. キャッシュになかった単語を特定
-    const missingWords = uniqueWords.filter(w => !foundWordsSet.has(w));
-
-    // APIに投げる用のテキスト（オリジナル表記に戻す）
-    const missingWordsText = missingWords.map(w => normalizedWordsMap.get(w)).join("\n");
+    // APIに投げるテキスト（配列形式のJSON文字列にする）
+    const missingWordsText = JSON.stringify(missingWords);
 
     let newWordsData: any[] = [];
 
@@ -187,10 +174,12 @@ export async function POST(req: Request) {
 
       const prompt = `
           あなたは英語学習用の「単語カード生成AI」です。
-          入力された英単語リストから、学習に最適なデータをJSON形式で生成してください。
+          入力された英単語リスト（JSON配列）から、学習に最適なデータをJSON形式で生成してください。
           
           【出力ルール】
-          1. **入力ごとに1つのオブジェクト**を作成し、配列で返す。
+          1. **入力された配列の要素ごとに1つのオブジェクト**を作成し、配列で返す。
+             - 入力がN個の要素なら、出力の "words" 配列も必ずN個にしてください。
+             - **入力要素にスペースが含まれている場合（フレーズや熟語）も、絶対に単語ごとに分割せず、1つの項目として扱ってください。**
           2. **partOfSpeech (品詞)**: 文脈で最も主要な品詞を1文字で出力（動, 名, 形, 副, 熟, 他）。
           3. **meaning (意味)**: 
              - 日本語訳のみを記述（英単語・カタカナ英語は禁止）。
@@ -198,16 +187,16 @@ export async function POST(req: Request) {
              - 形式: "【動】作る、創造する 【名】創作物"
           
           【良い出力例】
-          入力: ["create", "ditch"]
+          入力: ["create", "not off the top of my head"]
           出力:
           {
             "words": [
               { "word": "create", "partOfSpeech": "動", "meaning": "【動】作る、創造する" },
-              { "word": "ditch", "partOfSpeech": "名", "meaning": "【名】水路、溝 【動】見捨てる、着陸水させる" }
+              { "word": "not off the top of my head", "partOfSpeech": "熟", "meaning": "【熟】ぱっと思いつく限りでは〜ない、すぐには思い出せない" }
             ]
           }
 
-          【対象リスト】
+          【対象リスト】（JSON配列形式）
           ${missingWordsText}
         `;
 
@@ -242,94 +231,99 @@ export async function POST(req: Request) {
         otherExamples: []
       }));
 
-      // Step 2: Generate specific examples for new words
+      // Step 2: Generate specific examples for new words (Processed in chunks to avoid omission)
       if (newWordsData.length > 0) {
-        try {
-          const examplesPrompt = `
-                  以下の単語と意味のリストをもとに、**それぞれの意味（日本語）に対応する例文**を1つずつ作成してください。
-        
-                  【入力データ】
-                  ${JSON.stringify(newWordsData, null, 2)}
-        
-                  【作成ルール】
-                  1. **意味の完全分割**: "meaning" に複数の意味が含まれている場合（例: "【動】作る、創造する"）、**必ずそれぞれの意味ごとに個別の項目を作成**してください。
-                     ❌ 絶対にやってはいけない: role: "動詞(作る、創造する)" のようにまとめること。
-                     ✅ 正しい出力: role: "動詞(作る)" と role: "動詞(創造する)" の2つの項目に分ける。
+        const CHUNK_SIZE = 5;
+        const processedWordsData: any[] = [];
 
-                  2. **roleの形式**: 必ず **「品詞(単一の意味)」** としてください。
-                     ※品詞は (動詞、名詞、形容詞、副詞、熟語、他) のように、略さず正式名称で書いてください。
-                     例: "名詞(首都)", "動詞(作る)", "形容詞(重要な)"
-                     
-                  3. **網羅性**: 入力データのすべての主要な意味・品詞に対して、例文を生成してください。
+        for (let i = 0; i < newWordsData.length; i += CHUNK_SIZE) {
+          const chunkData = newWordsData.slice(i, i + CHUNK_SIZE);
 
-                  4. **品質**: 自然で実用的な英語（10-15語以上）。
-                  
-                  5. **和訳の制約**: 和訳には **絶対に英単語やカタカナ英語を含めないでください**。完全に日本語（漢字・ひらがな・カタカナ）のみで記述してください。
-                  
-                  【出力形式】
-                  {
-                    "details": [
-                      {
-                        "word": "create",
-                        "otherExamples": [
-                          { "role": "動詞(作る)", "text": "She decided to create a new recipe for dinner.", "translation": "彼女は夕食のために新しいレシピを作ることに決めました。" },
-                          { "role": "動詞(創造する)", "text": "The artist aims to create unique pieces of art.", "translation": "その芸術家はユニークな作品を創造することを目指しています。" }
-                        ]
-                      }
-                    ]
-                  }
-                `;
+          try {
+            const examplesPrompt = `
+                    以下の単語と意味のリストをもとに、**それぞれの意味（日本語）に対応する例文**を1つずつ作成してください。
+          
+                    【入力データ】
+                    ${JSON.stringify(chunkData, null, 2)}
+          
+                    【作成ルール】
+                    1. **意味の完全分割**: "meaning" に複数の意味が含まれている場合（例: "【動】作る、創造する"）、**必ずそれぞれの意味ごとに個別の項目を作成**してください。
+                       ❌ 絶対にやってはいけない: role: "動詞(作る、創造する)" のようにまとめること。
+                       ✅ 正しい出力: role: "動詞(作る)" と role: "動詞(創造する)" の2つの項目に分ける。
 
-          const response2 = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-            },
-            body: JSON.stringify({
-              model: "gpt-4o-mini",
-              messages: [
-                { role: "system", content: "You are a helpful assistant that adds examples to JSON data." },
-                { role: "user", content: examplesPrompt },
-              ],
-              response_format: { type: "json_object" },
-            }),
-          });
+                    2. **roleの形式**: 必ず **「品詞(単一の意味)」** としてください。
+                       ※品詞は (動詞、名詞、形容詞、副詞、熟語、他) のように、略さず正式名称で書いてください。
+                       例: "名詞(首都)", "動詞(作る)", "形容詞(重要な)"
+                       
+                    3. **網羅性**: 入力データのすべての主要な意味・品詞に対して、例文を生成してください。
 
-          if (response2.ok) {
-            const data2 = await response2.json();
-            const parsed2 = JSON.parse(data2.choices[0].message.content || "{}");
+                    4. **品質**: 自然で実用的な英語（10-15語以上）。
+                    
+                    5. **和訳の制約**: 和訳には **絶対に英単語やカタカナ英語を含めないでください**。完全に日本語（漢字・ひらがな・カタカナ）のみで記述してください。
+                    
+                    【出力形式】
+                    {
+                      "details": [
+                        {
+                          "word": "create",
+                          "otherExamples": [
+                            { "role": "動詞(作る)", "text": "She decided to create a new recipe for dinner.", "translation": "彼女は夕食のために新しいレシピを作ることに決めました。" },
+                            { "role": "動詞(創造する)", "text": "The artist aims to create unique pieces of art.", "translation": "その芸術家はユニークな作品を創造することを目指しています。" }
+                          ]
+                        }
+                      ]
+                    }
+                  `;
 
-            // Merge examples into the result
-            if (parsed2.details && Array.isArray(parsed2.details)) {
-              const examplesMap = new Map(parsed2.details.map((d: any) => [d.word, d.otherExamples]));
+            const response2 = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                  { role: "system", content: "You are a helpful assistant that adds examples to JSON data." },
+                  { role: "user", content: examplesPrompt },
+                ],
+                response_format: { type: "json_object" },
+              }),
+            });
 
-              newWordsData = newWordsData.map((w: any) => {
-                const examples = examplesMap.get(w.word) || [];
-                return {
-                  ...w,
-                  otherExamples: examples
-                };
-              });
+            if (response2.ok) {
+              const data2 = await response2.json();
+              const parsed2 = JSON.parse(data2.choices[0].message.content || "{}");
+
+              // Merge examples into the result
+              if (parsed2.details && Array.isArray(parsed2.details)) {
+                const examplesMap = new Map(parsed2.details.map((d: any) => [d.word, d.otherExamples]));
+
+                chunkData.forEach((w: any) => {
+                  const examples = examplesMap.get(w.word) || [];
+                  processedWordsData.push({
+                    ...w,
+                    otherExamples: examples
+                  });
+                });
+              } else {
+                chunkData.forEach((w: any) => processedWordsData.push(w));
+              }
+            } else {
+              chunkData.forEach((w: any) => processedWordsData.push(w));
             }
+          } catch (error) {
+            console.error("Step 2 (Examples) Error on chunk:", error);
+            // In case of error, still try to proceed without examples for this chunk
+            chunkData.forEach((w: any) => processedWordsData.push(w));
           }
-        } catch (error) {
-          console.error("Step 2 (Examples) Error:", error);
         }
+
+        // Update newWordsData with the sequentially processed data
+        newWordsData = processedWordsData;
       }
 
-      // 5. 新しく生成されたデータをキャッシュに保存
-      for (const wordData of newWordsData) {
-
-        await prisma.dictionaryEntry.upsert({
-          where: { word: wordData.word.toLowerCase() },
-          update: { data: wordData },
-          create: {
-            word: wordData.word.toLowerCase(),
-            data: wordData
-          }
-        }).catch((e: any) => console.error("Failed to cache word:", wordData.word, e));
-      }
+      // 5. キャッシュ機能廃止のため、DBへの保存処理を削除
     }
 
     // 6. 最終結果のマージ
