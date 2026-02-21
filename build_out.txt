@@ -1,0 +1,17 @@
+﻿
+> vocab-app@0.1.0 build
+> prisma generate && prisma db push --accept-data-loss && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+笨・Generated Prisma Client (v5.19.0) to .\node_modules\@prisma\client in 161ms
+
+Start by importing your Prisma Client (See: http://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "postgres", schema "public" at "db.prisma.io:5432"
+

@@ -186,10 +186,25 @@ export default function DeckPage() {
     const [moveAction, setMoveAction] = useState<'copy' | 'move'>('copy');
     const [myDecks, setMyDecks] = useState<{ id: string, title: string }[]>([]);
     const [credits, setCredits] = useState(0);
+    const [plan, setPlan] = useState<string | null>(null);
 
     useEffect(() => {
         if (session?.user) {
-            fetch("/api/user/credits").then(r => r.json()).then(d => setCredits(d.credits || 0));
+            fetch("/api/user/credits")
+                .then(async r => {
+                    if (!r.ok) {
+                        const text = await r.text();
+                        throw new Error(`HTTP error! status: ${r.status}, body: ${text}`);
+                    }
+                    return r.json();
+                })
+                .then(d => {
+                    setCredits(d.credits || 0);
+                })
+                .catch(e => {
+                    console.error("Failed to fetch credits:", e);
+                    setCredits(0);
+                });
         }
     }, [session]);
 
@@ -1600,10 +1615,10 @@ export default function DeckPage() {
                                     <span className="text-2xl">🎴</span> フラッシュカード
                                 </button>
                                 <button onClick={() => setSelectingModeFor('writing_test')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">📝</span> Writing
+                                    <span className="text-2xl">📝</span> ライティング
                                 </button>
                                 <button onClick={() => setSelectingModeFor('dictation')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">🎧</span> Dictation
+                                    <span className="text-2xl">🎧</span> ディクテーション
                                 </button>
 
                                 <div className="flex items-center gap-2 ml-2">

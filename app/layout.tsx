@@ -59,7 +59,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch (err) {
+    console.error("Failed to get session in layout, possibly DB issue:", err);
+  }
 
   // ユーザーのクレジット情報を取得（ログイン時のみ）
   let credits = 0;
@@ -121,7 +126,7 @@ export default async function RootLayout({
               initialCredits={credits}
               session={session}
               plan={plan}
-              subscriptionPeriodEnd={subscriptionPeriodEnd ? subscriptionPeriodEnd.toISOString() : null}
+              subscriptionPeriodEnd={subscriptionPeriodEnd ? new Date(subscriptionPeriodEnd).toISOString() : null}
               role={role}
               userImage={userImage}
             />

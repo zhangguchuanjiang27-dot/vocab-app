@@ -834,7 +834,7 @@ export default function Home() {
                     <span className="text-emerald-500 font-bold">✓</span> 広告なしで集中学習
                   </li>
                   <li className="flex items-center gap-3 text-neutral-300">
-                    <span className="text-emerald-500 font-bold">✓</span> 基本的な機能へアクセス
+                    <span className="text-emerald-500 font-bold">✓</span> <span className="text-white font-bold">ライティング機能</span> が利用可能
                   </li>
                 </ul>
                 <button
@@ -858,10 +858,10 @@ export default function Home() {
                     <span className="text-indigo-500 font-bold text-lg">✓</span> <span className="text-white">2000</span> クレジット付与 / 月
                   </li>
                   <li className="flex items-center gap-3 text-neutral-300">
-                    <span className="text-indigo-500 font-bold text-lg">✓</span> 全機能へのフルアクセス
+                    <span className="text-indigo-500 font-bold text-lg">✓</span> <span className="text-white font-bold">ライティング & ディクテーション</span> 機能
                   </li>
                   <li className="flex items-center gap-3 text-neutral-300 font-bold text-indigo-300">
-                    <span className="text-indigo-500 font-bold text-lg">✓</span> AI 優先処理 & 速度向上
+                    <span className="text-indigo-500 font-bold text-lg">✓</span> 全機能へのフルアクセス・AI優先処理
                   </li>
                 </ul>
                 <button
