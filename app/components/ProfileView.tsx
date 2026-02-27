@@ -78,10 +78,6 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
         <div className="min-h-screen bg-[#050505] text-neutral-100 p-4 sm:p-12 font-sans">
             <div className="max-w-4xl mx-auto">
                 <header className="mb-12">
-                    <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
-                        ← アプリに戻る
-                    </Link>
-
                     <div className="flex flex-row items-center gap-4 sm:gap-8 bg-neutral-900 p-5 sm:p-8 rounded-3xl border border-neutral-800 shadow-sm relative overflow-hidden">
                         {/* Background Decoration */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -162,11 +158,11 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                             </span>
                                         </label>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 w-full">
                                         <button
                                             onClick={handleSave}
                                             disabled={loading}
-                                            className="px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50"
+                                            className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 transition-colors disabled:opacity-50 whitespace-nowrap"
                                         >
                                             {loading ? "保存中..." : "変更を保存"}
                                         </button>
@@ -176,7 +172,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                                 setName(user.name || "");
                                                 setImage(user.image || "");
                                             }}
-                                            className="px-6 py-2 bg-neutral-800 text-neutral-400 rounded-xl font-bold"
+                                            className="flex-1 sm:flex-none px-4 sm:px-6 py-2 bg-neutral-800 text-neutral-400 rounded-xl font-bold whitespace-nowrap"
                                         >
                                             キャンセル
                                         </button>
@@ -277,46 +273,7 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                                 </div>
                             </div>
 
-                            {/* Dev Tools (Local Development Only) */}
-                            {process.env.NODE_ENV === 'development' && (
-                                <div className="mt-8 p-4 bg-amber-950/20 border border-amber-900/50 rounded-2xl">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-amber-600 mb-3 flex items-center gap-2">
-                                        <span>🛠️</span> Dev Tools (Local Only)
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <button
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                try {
-                                                    const res = await fetch("/api/debug/admin-setup");
-                                                    if (res.ok) {
-                                                        alert("Admin promoted! Refreshing...");
-                                                        router.refresh();
-                                                    } else {
-                                                        alert("Failed to promote");
-                                                    }
-                                                } catch (e) {
-                                                    alert("Error promoting");
-                                                } finally {
-                                                    setLoading(false);
-                                                }
-                                            }}
-                                            className="px-3 py-1.5 bg-amber-600 text-white text-[10px] font-bold rounded-lg hover:bg-amber-500 transition-colors"
-                                        >
-                                            🚀 Promote to Admin & Set Pro
-                                        </button>
 
-                                        {user.role === 'admin' && (
-                                            <Link
-                                                href="/admin"
-                                                className="px-3 py-1.5 bg-neutral-800 text-white text-[10px] font-bold rounded-lg hover:bg-black transition-colors flex items-center gap-1"
-                                            >
-                                                <span>📊</span> Admin Dashboard
-                                            </Link>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </header>

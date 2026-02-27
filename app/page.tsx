@@ -54,6 +54,7 @@ type Deck = {
 type Folder = {
   id: string;
   name: string;
+  order: number;
   createdAt: string;
   decks?: Deck[];
 };
@@ -94,6 +95,7 @@ export default function Home() {
   const [showAddToDeckModal, setShowAddToDeckModal] = useState(false);
   const [savedDecks, setSavedDecks] = useState<Deck[]>([]);
   const [showSaved, setShowSaved] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // フォルダ用ステート
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -133,6 +135,34 @@ export default function Home() {
       setFolders([]);
     }
   }, [session]);
+
+  // ハッシュやイベントを監視して「保存した単語帳」領域を開く
+  useEffect(() => {
+    const checkHash = () => {
+      if (window.location.hash === "#saved") {
+        setShowSaved(true);
+      }
+    };
+
+    // 初回マウント時
+    checkHash();
+
+    // ハッシュ変更時
+    window.addEventListener("hashchange", checkHash);
+
+    // カスタムイベント監視（BottomNavからの発火等）
+    const handleOpenSaved = () => setShowSaved(true);
+    const handleCloseSaved = () => setShowSaved(false);
+
+    window.addEventListener("open-saved-decks", handleOpenSaved);
+    window.addEventListener("close-saved-decks", handleCloseSaved);
+
+    return () => {
+      window.removeEventListener("hashchange", checkHash);
+      window.removeEventListener("open-saved-decks", handleOpenSaved);
+      window.removeEventListener("close-saved-decks", handleCloseSaved);
+    };
+  }, []);
 
   const fetchDecks = async () => {
     try {
@@ -251,6 +281,25 @@ export default function Home() {
     const activeId = active.id as string;
     const overId = over.id as string;
 
+    const activeIsFolder = folders.some(f => f.id === activeId);
+
+    if (activeIsFolder) {
+      if (activeId !== overId) {
+        const overIsFolder = folders.some(f => f.id === overId);
+        if (overIsFolder) {
+          setFolders((items) => {
+            const oldIndex = items.findIndex((item) => item.id === activeId);
+            const newIndex = items.findIndex((item) => item.id === overId);
+            const newOrder = arrayMove(items, oldIndex, newIndex);
+
+            saveFolderOrder(newOrder);
+            return newOrder;
+          });
+        }
+      }
+      return;
+    }
+
     // Case 1: Dropped into a Folder (overId is a Folder ID)
     const isOverFolder = folders.some(f => f.id === overId);
 
@@ -288,6 +337,17 @@ export default function Home() {
         });
       }
     }
+  };
+
+  const saveFolderOrder = async (order: Folder[]) => {
+    const orderData = order.map((f, index) => ({ id: f.id, order: index }));
+    try {
+      await fetch("/api/folders/reorder", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: orderData })
+      });
+    } catch (e) { console.error(e); }
   };
 
   const saveOrder = async (decks: Deck[]) => {
@@ -496,6 +556,26 @@ export default function Home() {
     }
   };
 
+  // デッキ名変更処理
+  const saveRenameDeck = async (id: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    try {
+      const res = await fetch(`/api/decks/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (res.ok) {
+        fetchDecks(); // リスト再取得
+      } else {
+        alert("変更に失敗しました");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("変更に失敗しました");
+    }
+  };
+
   // デッキ削除処理
   const handleDeleteDeck = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -685,7 +765,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 overflow-x-hidden relative">
+    <div className="flex-1 bg-black text-neutral-100 px-6 pt-6 pb-2 sm:px-12 sm:pt-12 sm:pb-4 font-sans transition-colors duration-300 overflow-x-hidden relative">
 
       {/* 🌌 Ambient Background Glow */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
@@ -1219,7 +1299,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-between items-center pt-2 sm:pt-4 gap-3 sm:gap-4">
 
             {/* Gamification Stats */}
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
+            <div className={`flex flex-col gap-2 w-full sm:w-auto ${showSaved ? 'hidden' : 'flex'}`}>
               <Link href="/profile" className="block group">
                 <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer w-full">
                   {/* Level segment */}
@@ -1269,12 +1349,7 @@ export default function Home() {
               </Link>
             </div>
 
-            <button
-              onClick={() => setShowSaved(!showSaved)}
-              className={`w-full sm:w-auto px-5 py-2.5 rounded-full font-bold text-sm transition-all shadow-sm border ${showSaved ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-neutral-900 border-neutral-800 hover:border-indigo-300'}`}
-            >
-              {showSaved ? "閉じる" : "📂 保存した単語帳を開く"}
-            </button>
+
           </div>
         )
         }
@@ -1283,122 +1358,158 @@ export default function Home() {
           session && (
             <>
               {showSaved ? (
-                <div className="bg-neutral-900 rounded-2xl p-8 shadow-sm border border-neutral-800 animate-in fade-in slide-in-from-top-4">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                <div className="py-4 animate-in fade-in slide-in-from-top-4">
+                  <div className="flex items-center justify-between mb-6 px-2">
+                    <h2 className="text-xl font-bold flex items-center gap-2" style={{ fontFamily: 'var(--font-merriweather)' }}>
                       保存した単語帳
                     </h2>
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowCreateMenu(!showCreateMenu)}
-                        className="relative p-2 text-indigo-400 hover:bg-indigo-900/30 rounded-lg transition-colors flex items-center justify-center"
-                        title="作成メニュー"
-                      >
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9Z"></path>
-                          <polyline points="13 2 13 9 20 9"></polyline>
-                        </svg>
-                        <div className="absolute top-0.5 right-0.5 bg-indigo-500 text-white rounded-full p-0.5 shadow-sm border-2 border-neutral-900">
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                          </svg>
-                        </div>
-                      </button>
-
-                      {showCreateMenu && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setShowCreateMenu(false)}
-                          ></div>
-                          <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                            <button
-                              onClick={() => {
-                                setShowCreateMenu(false);
-                                setShowCreateFolderModal(true);
-                              }}
-                              className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3 border-b border-neutral-800"
-                            >
-                              <span className="text-xl">📁</span> フォルダ作成
-                            </button>
-                            <button
-                              onClick={() => {
-                                setShowCreateMenu(false);
-                                setShowCreateEmptyDeckModal(true);
-                              }}
-                              className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3"
-                            >
-                              <span className="text-xl">📝</span> 空の単語帳を作成
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {savedDecks.length === 0 && folders.length === 0 ? (
-                    <div className="text-center py-12 text-neutral-400">
-                      <p>保存された単語帳はありません。</p>
-                    </div>
-                  ) : (
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                    >
-                      <div className="space-y-8">
-                        {/* Folders Section */}
-                        {folders.length > 0 && (
-                          <div className="space-y-3">
-                            {folders.map(folder => (
-                              <FolderRow
-                                key={folder.id}
-                                folder={folder}
-                                folderDecks={savedDecks.filter(d => d.folderId === folder.id)}
-                                isExpanded={expandedFolderIds.has(folder.id)}
-                                toggleFolder={toggleFolder}
-                                deleteFolder={handleDeleteFolder}
-                                startRenameFolder={startRenameFolder}
-                                saveRenameFolder={saveRenameFolder}
-                                onDeckClick={handleDeckClick}
-                              />
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Root Decks Section */}
-                        <RootDropArea>
-                          <SortableContext
-                            items={savedDecks.filter(d => !d.folderId).map(d => d.id)}
-                            strategy={rectSortingStrategy}
-                          >
-                            {savedDecks.filter(d => !d.folderId).length === 0 && (
-                              <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-800 rounded-2xl">
-                                <span className="text-4xl mb-2">📥</span>
-                                <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
-                              </div>
-                            )}
-                            {savedDecks.filter(d => !d.folderId).map(deck => (
-                              <SortableDeckItem key={deck.id} deck={deck} onClick={handleDeckClick} />
-                            ))}
-                          </SortableContext>
-                        </RootDropArea>
+                    <div className="flex items-center gap-5 mr-2">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => setIsEditMode(!isEditMode)}
+                          className={`w-[46px] h-[46px] rounded-full flex items-center justify-center transition-all ${isEditMode ? 'bg-[#00A896] text-white shadow-[0_0_15px_rgba(0,168,150,0.6)]' : 'bg-[#00A896] text-white hover:opacity-80'}`}
+                          title={isEditMode ? "完了" : "並び替え"}
+                        >
+                          {isEditMode ? (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          ) : (
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="8" y1="6" x2="21" y2="6"></line>
+                              <line x1="8" y1="12" x2="21" y2="12"></line>
+                              <line x1="8" y1="18" x2="21" y2="18"></line>
+                              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                          )}
+                        </button>
+                        <span className="text-[11px] text-neutral-400 font-bold tracking-wider">{isEditMode ? "完了" : "並び替え"}</span>
                       </div>
 
-                      <DragOverlay dropAnimation={{
-                        sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } })
-                      }}>
-                        {activeId ? (
-                          <div className="p-4 bg-neutral-800 rounded-xl shadow-2xl border border-indigo-500 opacity-80 w-[300px]">
-                            <h3 className="font-bold">{savedDecks.find(d => d.id === activeId)?.title}</h3>
-                          </div>
-                        ) : null}
-                      </DragOverlay>
-                    </DndContext>
-                  )}
-                </div>
+                      <div className="relative flex flex-col items-center gap-1.5">
+                        <button
+                          onClick={() => setShowCreateMenu(!showCreateMenu)}
+                          className="w-[46px] h-[46px] bg-[#00A896] text-white rounded-full flex items-center justify-center hover:opacity-80 transition-all"
+                          title="新規作成"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-2 8h-3v3h-2v-3h-3v-2h3V9h2v3h3v2z" />
+                          </svg>
+                        </button>
+                        <span className="text-[11px] text-neutral-400 font-bold tracking-wider">新規作成</span>
+
+                        {showCreateMenu && (
+                          <>
+                            <div
+                              className="fixed inset-0 z-40"
+                              onClick={() => setShowCreateMenu(false)}
+                            ></div>
+                            <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                              <button
+                                onClick={() => {
+                                  setShowCreateMenu(false);
+                                  setShowCreateFolderModal(true);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3 border-b border-neutral-800"
+                              >
+                                <span className="text-xl">📁</span> フォルダ作成
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShowCreateMenu(false);
+                                  setShowCreateEmptyDeckModal(true);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors flex items-center gap-3"
+                              >
+                                <span className="text-xl">📝</span> 空の単語帳を作成
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div >
+                  </div >
+
+                  {
+                    savedDecks.length === 0 && folders.length === 0 ? (
+                      <div className="text-center py-12 text-neutral-400">
+                        <p>保存された単語帳はありません。</p>
+                      </div>
+                    ) : (
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragStart={handleDragStart}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <div className="space-y-8">
+                          {/* Folders Section */}
+                          {folders.length > 0 && (
+                            <SortableContext items={folders.map(f => f.id)} strategy={rectSortingStrategy}>
+                              {folders.map(folder => (
+                                <SortableFolderItem
+                                  key={folder.id}
+                                  folder={folder}
+                                  folderDecks={savedDecks.filter(d => d.folderId === folder.id)}
+                                  isExpanded={expandedFolderIds.has(folder.id)}
+                                  toggleFolder={toggleFolder}
+                                  deleteFolder={handleDeleteFolder}
+                                  startRenameFolder={startRenameFolder}
+                                  saveRenameFolder={saveRenameFolder}
+                                  onDeckClick={handleDeckClick}
+                                  isEditMode={isEditMode}
+                                  onDeleteDeck={handleDeleteDeck}
+                                  saveRenameDeck={saveRenameDeck}
+                                  dragHandler
+                                />
+                              ))}
+                            </SortableContext>
+                          )}
+
+                          {/* Root Decks Section */}
+                          <RootDropArea>
+                            <SortableContext
+                              items={savedDecks.filter(d => !d.folderId).map(d => d.id)}
+                              strategy={rectSortingStrategy}
+                            >
+                              {savedDecks.filter(d => !d.folderId).length === 0 && (
+                                <div className="col-span-full flex flex-col items-center justify-center p-8 text-neutral-400 border-2 border-dashed border-neutral-800 rounded-2xl">
+                                  <span className="text-4xl mb-2">📥</span>
+                                  <p className="text-sm">ここに単語帳をドロップしてフォルダから出す</p>
+                                </div>
+                              )}
+                              {savedDecks.filter(d => !d.folderId).map(deck => (
+                                <SortableDeckItem
+                                  key={deck.id}
+                                  deck={deck}
+                                  onClick={handleDeckClick}
+                                  isEditMode={isEditMode}
+                                  onDelete={handleDeleteDeck}
+                                  saveRenameDeck={saveRenameDeck}
+                                />
+                              ))}
+                            </SortableContext>
+                          </RootDropArea>
+                        </div>
+
+                        <DragOverlay dropAnimation={{
+                          sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } })
+                        }}>
+                          {activeId ? (
+                            <div className="p-4 bg-neutral-800 rounded-xl shadow-2xl border border-indigo-500 opacity-80 w-[300px]">
+                              <h3 className="font-bold">
+                                {savedDecks.find((d) => d.id === activeId)?.title ||
+                                  folders.find((f) => f.id === activeId)?.name}
+                              </h3>
+                            </div>
+                          ) : null}
+                        </DragOverlay>
+                      </DndContext>
+                    )
+                  }
+                </div >
               ) : (
                 <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
                   {/* Left: Input */}
@@ -1452,9 +1563,9 @@ export default function Home() {
                   </div>
 
                   {/* Right: Output List */}
-                  <div className="min-h-[500px]">
+                  <div className="h-full">
                     {words.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center border border-dashed border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-900/30 relative overflow-hidden group">
+                      <div className="min-h-[300px] h-full flex flex-col items-center justify-center border border-dashed border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-900/30 relative overflow-hidden group">
 
                         {/* 🃏 Floating Cards Visual (Empty State) */}
                         <div className="absolute inset-0 pointer-events-none opacity-30 select-none overflow-hidden">
@@ -1538,25 +1649,15 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-              )}
+              )
+              }
             </>
           )
         }
 
 
         {/* Hidden Admin Link */}
-        {
-          session?.user?.email === "zhangguchuanjiang27@gmail.com" && (
-            <div className="max-w-7xl mx-auto mt-12 mb-8 flex justify-center relative z-[9999] pointer-events-auto">
-              <Link
-                href="/sys-ctrl-99"
-                className="opacity-20 hover:opacity-100 transition-opacity text-xs font-bold text-neutral-400 hover:text-indigo-500 uppercase tracking-widest border border-neutral-800 px-6 py-3 rounded-full cursor-pointer bg-neutral-900/50 backdrop-blur-sm"
-              >
-                Admin
-              </Link>
-            </div>
-          )
-        }
+        {/* Removed */}
       </main >
     </div >
   );
@@ -1564,7 +1665,7 @@ export default function Home() {
 
 
 // --- Sortable Components ---
-function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string) => void }) {
+function SortableDeckItem({ deck, onClick, isEditMode, onDelete, saveRenameDeck }: { deck: Deck; onClick: (id: string) => void; isEditMode?: boolean; onDelete?: (id: string, e: any) => void; saveRenameDeck?: (id: string, title: string) => void; }) {
   const {
     attributes,
     listeners,
@@ -1574,6 +1675,12 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
     transition,
     isDragging,
   } = useSortable({ id: deck.id });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState(deck.title);
+  const [showMenu, setShowMenu] = useState(false);
+
+  useEffect(() => setTitle(deck.title), [deck.title]);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -1586,31 +1693,150 @@ function SortableDeckItem({ deck, onClick }: { deck: Deck; onClick: (id: string)
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative p-5 rounded-xl bg-neutral-900 border border-neutral-800 hover:shadow-lg hover:border-indigo-400 transition-all ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500' : ''}`}
+      className={`group relative p-4 flex items-center justify-between rounded-2xl border transition-all 
+        ${showMenu ? 'z-50' : ''}
+        ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500 z-50 bg-neutral-800 border-indigo-500' : 'bg-neutral-800/80 border-neutral-700/50 hover:bg-neutral-800 hover:border-neutral-600 shadow-sm'}
+      `}
       onClick={(e) => {
-        // Prevent click if dragging (handled by dnd-kit usually, but safety check)
-        if (!isDragging) onClick(deck.id);
+        if (!isDragging && !isEditMode && !isEditing && !showMenu) onClick(deck.id);
       }}
     >
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-bold text-md pr-2 group-hover:text-indigo-400 transition-colors leading-tight select-none">
-          {deck.title}
-        </h3>
-        <div
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing text-neutral-300 hover:text-neutral-500 p-2 -m-2 touch-none"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Drag Handle Icon */}
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1" /><circle cx="9" cy="12" r="1" /><circle cx="9" cy="19" r="1" /><circle cx="15" cy="5" r="1" /><circle cx="15" cy="12" r="1" /><circle cx="15" cy="19" r="1" /></svg>
+      <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+        {/* Left Icon (Folder representation) */}
+        <div className="w-12 h-12 bg-sky-500/20 rounded-xl flex items-center justify-center shrink-0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-sky-400">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+
+        {/* Center Content */}
+        <div className="flex flex-col gap-1 w-full min-w-0">
+          {isEditing ? (
+            <div className="flex gap-2 items-center overflow-x-auto max-w-[50vw] sm:max-w-none py-1 no-scrollbar" onClick={e => e.stopPropagation()}>
+              <input
+                autoFocus
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm min-w-[120px]"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveRenameDeck?.(deck.id, title);
+                    setIsEditing(false);
+                  }
+                }}
+              />
+              <button type="button" onClick={() => { saveRenameDeck?.(deck.id, title); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded whitespace-nowrap">保存</button>
+              <button type="button" onClick={() => { setIsEditing(false); setTitle(deck.title); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-3 py-1.5 rounded whitespace-nowrap">戻る</button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group/title" onClick={(e) => e.stopPropagation()}>
+              <h3 className="font-bold text-base text-neutral-100 truncate w-full group-hover/title:text-indigo-300 transition-colors" onClick={() => { if (!isEditMode && !isDragging) onClick(deck.id); }}>
+                {deck.title}
+              </h3>
+            </div>
+          )}
+
+          <div className="flex items-center gap-4 mt-1">
+            <div className="flex items-center gap-1.5 text-neutral-400">
+              <span className="text-[11px] font-bold">{deck.words.length} <span className="font-normal opacity-70">words</span></span>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="flex items-center gap-3 pointer-events-none select-none">
-        <p className="text-[10px] text-neutral-500 font-mono bg-neutral-800 px-2 py-0.5 rounded shadow-sm">{deck.words.length} 語</p>
-        <p className="text-[10px] text-neutral-400">{new Date(deck.createdAt).toLocaleDateString()}</p>
+
+      {/* Right Content */}
+      <div className="relative flex flex-col items-center justify-center gap-2 shrink-0 h-full">
+        {isEditMode ? (
+          <>
+            {/* Drag Handle */}
+            <div
+              ref={setActivatorNodeRef}
+              {...attributes}
+              {...listeners}
+              className="cursor-grab active:cursor-grabbing text-neutral-500 hover:text-white p-2 touch-none opacity-100 transition-opacity"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="9" cy="19" r="1.5" /><circle cx="15" cy="5" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="15" cy="19" r="1.5" /></svg>
+            </div>
+          </>
+        ) : (
+          !isEditing && (
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-2 text-neutral-500 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
+                title="メニュー"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+              </button>
+
+              {showMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}></div>
+                  <div className="absolute right-0 top-10 w-40 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setIsEditing(true);
+                        setTitle(deck.title);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors border-b border-neutral-800 whitespace-nowrap"
+                    >
+                      名前の変更
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        if (onDelete) onDelete(deck.id, e);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-neutral-800 transition-colors whitespace-nowrap"
+                    >
+                      この単語帳を削除
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )
+        )}
       </div>
+    </div>
+  );
+}
+
+// --- Folder Component with Sortable ---
+function SortableFolderItem(props: any) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setSortableNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.folder.id, data: { type: 'Folder' } });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+
+  return (
+    <div ref={setSortableNodeRef} style={style}>
+      <FolderRow
+        {...props}
+        isDragging={isDragging}
+        dragListeners={listeners}
+        dragAttributes={attributes}
+        setActivatorNodeRef={setActivatorNodeRef}
+      />
     </div>
   );
 }
@@ -1623,7 +1849,14 @@ function FolderRow({
   deleteFolder,
   onDeckClick,
   startRenameFolder,
-  saveRenameFolder
+  saveRenameFolder,
+  isEditMode,
+  onDeleteDeck,
+  saveRenameDeck,
+  isDragging,
+  dragListeners,
+  dragAttributes,
+  setActivatorNodeRef
 }: {
   folder: Folder;
   folderDecks: Deck[];
@@ -1633,90 +1866,158 @@ function FolderRow({
   onDeckClick: (id: string) => void;
   startRenameFolder: (id: string, name: string) => void;
   saveRenameFolder: (id: string, name: string) => void;
+  isEditMode?: boolean;
+  onDeleteDeck?: (id: string, e: any) => void;
+  saveRenameDeck?: (id: string, title: string) => void;
+  isDragging?: boolean;
+  dragListeners?: any;
+  dragAttributes?: any;
+  setActivatorNodeRef?: any;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: folder.id });
+  const { setNodeRef, isOver } = useDroppable({ id: folder.id, data: { type: 'Folder' } });
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(folder.name);
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => setName(folder.name), [folder.name]);
 
   return (
     <div
       ref={setNodeRef}
-      className={`rounded-2xl border transition-all duration-200 overflow-hidden mb-3
+      className={`rounded-2xl border transition-all duration-200 mb-3
+          ${showMenu ? 'z-50 relative' : ''}
           ${isOver
           ? 'bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
-          : 'bg-neutral-900/50 border-neutral-800'
+          : isDragging ? 'bg-neutral-800 shadow-2xl ring-2 ring-indigo-500 border-indigo-500 z-50 relative' : 'bg-neutral-800/50 border-neutral-700/50 hover:bg-neutral-800'
         }
       `}
     >
       <div
-        className="p-4 flex items-center justify-between cursor-pointer hover:bg-neutral-800/50 transition-colors"
-        onClick={() => toggleFolder(folder.id)}
+        className="p-4 flex items-center justify-between cursor-pointer group"
+        onClick={() => { if (!isDragging && !isEditing && !showMenu) toggleFolder(folder.id); }}
       >
-        <div className="flex items-center gap-3">
-          <span className={`text-xl transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
-          <span className="text-2xl">📂</span>
+        <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+          {/* Left Icon (Folder representation) */}
+          <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-indigo-400">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+          </div>
 
-          {isEditing ? (
-            <div className="flex gap-2 items-center overflow-x-auto max-w-[50vw] sm:max-w-none py-1 no-scrollbar" onClick={e => e.stopPropagation()}>
-              <input
-                autoFocus
-                value={name}
-                onChange={e => setName(e.target.value)}
-                className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm min-w-[120px]"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    saveRenameFolder(folder.id, name);
-                    setIsEditing(false);
-                  }
-                }}
-              />
-              <button onClick={() => { saveRenameFolder(folder.id, name); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded whitespace-nowrap">Save</button>
-              <button onClick={() => { setIsEditing(false); setName(folder.name); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-3 py-1.5 rounded whitespace-nowrap">Cancel</button>
+          <div className="flex flex-col gap-1 w-full min-w-0">
+            {isEditing ? (
+              <div className="flex gap-2 items-center overflow-x-auto max-w-[50vw] sm:max-w-none py-1 no-scrollbar" onClick={e => e.stopPropagation()}>
+                <input
+                  autoFocus
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  className="px-2 py-1 rounded bg-black border border-indigo-500 outline-none text-sm min-w-[120px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      saveRenameFolder(folder.id, name);
+                      setIsEditing(false);
+                    }
+                  }}
+                />
+                <button onClick={() => { saveRenameFolder(folder.id, name); setIsEditing(false); }} className="text-xs font-bold text-green-500 bg-green-500/10 px-3 py-1.5 rounded whitespace-nowrap">保存</button>
+                <button onClick={() => { setIsEditing(false); setName(folder.name); }} className="text-xs font-bold text-neutral-500 bg-neutral-500/10 px-3 py-1.5 rounded whitespace-nowrap">戻る</button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group/title" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-bold text-base text-neutral-100 truncate group-hover/title:text-white transition-colors">
+                  {folder.name}
+                </h3>
+              </div>
+            )}
+
+            <div className="flex items-center gap-4 mt-1">
+              <div className="flex items-center gap-1.5 text-neutral-400">
+                <span className="text-[11px] font-bold">{folderDecks.length} <span className="font-normal opacity-70">decks</span></span>
+              </div>
             </div>
-          ) : (
-            <div className="flex items-center gap-1 group/title" onClick={(e) => e.stopPropagation()}>
-              <span className="font-bold text-lg text-neutral-200 group-hover/title:text-white transition-colors">{folder.name}</span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setName(folder.name);
-                  setIsEditing(true);
-                }}
-                className="text-neutral-500 hover:text-indigo-400 p-1.5 rounded-md transition-colors hover:bg-neutral-800"
-                title="名前を変更"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                </svg>
-              </button>
-            </div>
-          )}
-          <span className="ml-2 text-xs font-bold text-neutral-400 bg-neutral-800 px-2 py-0.5 rounded-full border border-neutral-700">
-            {folderDecks.length}
-          </span>
+          </div>
         </div>
-        <button
-          onClick={(e) => deleteFolder(folder.id, e)}
-          className="text-neutral-300 hover:text-red-500 p-2"
-          title="フォルダを削除"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        </button>
+
+        <div className="relative flex flex-col items-center justify-center gap-2 shrink-0 h-full">
+          {isEditMode ? (
+            !isExpanded && (
+              <div
+                ref={setActivatorNodeRef}
+                {...dragAttributes}
+                {...dragListeners}
+                className="cursor-grab active:cursor-grabbing text-neutral-500 hover:text-white p-2 touch-none opacity-100 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1.5" /><circle cx="9" cy="12" r="1.5" /><circle cx="9" cy="19" r="1.5" /><circle cx="15" cy="5" r="1.5" /><circle cx="15" cy="12" r="1.5" /><circle cx="15" cy="19" r="1.5" /></svg>
+              </div>
+            )
+          ) : (
+            !isEditing && (
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(!showMenu);
+                  }}
+                  className="p-2 text-neutral-500 hover:text-white rounded-full hover:bg-neutral-800 transition-colors"
+                  title="メニュー"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+                </button>
+
+                {showMenu && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowMenu(false); }}></div>
+                    <div className="absolute right-0 top-10 w-40 bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMenu(false);
+                          setIsEditing(true);
+                          setName(folder.name);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm font-bold text-neutral-200 hover:bg-neutral-800 transition-colors border-b border-neutral-800 whitespace-nowrap"
+                      >
+                        名前の変更
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowMenu(false);
+                          if (deleteFolder) deleteFolder(folder.id, e);
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-neutral-800 transition-colors whitespace-nowrap"
+                      >
+                        フォルダを削除
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                <span className={`text-neutral-600 transition-all p-1.5 ${isExpanded ? 'rotate-90' : ''}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
+                </span>
+              </div>
+            )
+          )}
+        </div>
       </div>
 
-      {isExpanded && (
-        <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
-          <SortableContext items={folderDecks.map(d => d.id)} strategy={rectSortingStrategy}>
-            {folderDecks.length === 0 && <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>}
-            {folderDecks.map((deck) => (
-              <SortableDeckItem key={deck.id} deck={deck} onClick={onDeckClick} />
-            ))}
-          </SortableContext>
-        </div>
-      )}
-    </div>
+      {
+        isExpanded && (
+          <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
+            <SortableContext items={folderDecks.map(d => d.id)} strategy={rectSortingStrategy}>
+              {folderDecks.length === 0 && <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>}
+              {folderDecks.map((deck) => (
+                <SortableDeckItem key={deck.id} deck={deck} onClick={onDeckClick} isEditMode={isEditMode} onDelete={onDeleteDeck} saveRenameDeck={saveRenameDeck} />
+              ))}
+            </SortableContext>
+          </div>
+        )
+      }
+    </div >
   );
 }
 

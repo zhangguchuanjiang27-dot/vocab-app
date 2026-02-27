@@ -16,8 +16,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Name is required" }, { status: 400 });
         }
 
-        // @ts-ignore: Prisma Client not generated yet
-        const folder = await prisma.folder.create({
+        const folder = await (prisma.folder as any).create({
             data: {
                 name,
                 userId: session.user.id
@@ -38,11 +37,13 @@ export async function GET(req: Request) {
     }
 
     try {
-        // @ts-ignore: Prisma Client not generated yet
-        const folders = await prisma.folder.findMany({
+        const folders = await (prisma.folder as any).findMany({
             where: { userId: session.user.id },
             include: { decks: true },
-            orderBy: { createdAt: 'desc' }
+            orderBy: [
+                { order: 'asc' },
+                { createdAt: 'desc' }
+            ]
         });
         return NextResponse.json(folders);
     } catch (err) {

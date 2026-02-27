@@ -1533,7 +1533,7 @@ export default function DeckPage() {
     return (
         <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
             <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
-                <Link href="/" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-800 rounded-lg transition-colors">← ホームに戻る</Link>
+                <Link href="/#saved" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-800 rounded-lg transition-colors">← 保存した単語帳に戻る</Link>
                 <button
                     onClick={handleDeleteDeck}
                     className="px-4 py-2 text-xs font-bold text-red-400 hover:text-red-600 hover:bg-neutral-800 rounded-lg transition-all flex items-center gap-2"

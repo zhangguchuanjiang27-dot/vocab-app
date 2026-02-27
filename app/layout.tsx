@@ -33,6 +33,7 @@ import { prisma } from "@/app/lib/prisma";
 import Link from "next/link";
 import { Providers } from "./providers";
 import Header from "./components/Header"; // Adjust import path
+import BottomNav from "./components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Voca - AI Wordbook",
@@ -110,7 +111,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ja" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-black text-neutral-100 min-h-screen flex flex-col`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-black text-neutral-100 min-h-screen flex flex-col pb-[calc(60px+env(safe-area-inset-bottom))]`}>
         <Providers>
           {/* Server Component から呼び出す Client Component として Header を実装 */}
           {/* Client Componentを作成していないため、一旦 layout.tsx 内で完結しているこのナビゲーションバーを
@@ -132,19 +133,12 @@ export default async function RootLayout({
             />
           </nav>
 
-          <main className="flex-1">
+          <main className="flex-1 flex flex-col">
             {children}
           </main>
 
-          <footer className="py-8 text-center text-xs text-neutral-400 border-t border-neutral-900 mt-12 bg-neutral-950">
-            <div className="max-w-5xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <p>© 2026 Voca All rights reserved.</p>
-              <div className="flex gap-4">
-                <Link href="/terms" className="hover:text-neutral-600 dark:hover:text-neutral-300">利用規約</Link>
-                <Link href="/privacy" className="hover:text-neutral-600 dark:hover:text-neutral-300">プライバシーポリシー</Link>
-              </div>
-            </div>
-          </footer>
+          {/* Footer removed */}
+          <BottomNav />
         </Providers>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-JDF6ZRF07L"
