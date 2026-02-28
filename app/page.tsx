@@ -300,11 +300,16 @@ export default function Home() {
       return;
     }
 
-    // Case 1: Dropped into a Folder (overId is a Folder ID)
+    // Case 1: Dropped into a Folder (overId is a Folder ID or Empty Folder Drop ID)
     const isOverFolder = folders.some(f => f.id === overId);
-
     if (isOverFolder) {
       await moveDeckToFolder(activeId, overId);
+      return;
+    }
+
+    if (overId.endsWith('-empty-drop')) {
+      const targetFolderId = overId.replace('-empty-drop', '');
+      await moveDeckToFolder(activeId, targetFolderId);
       return;
     }
 
@@ -1810,6 +1815,23 @@ function SortableDeckItem({ deck, onClick, isEditMode, onDelete, saveRenameDeck 
 }
 
 // --- Folder Component with Sortable ---
+
+function EmptyFolderDropArea({ folderId }: { folderId: string }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `${folderId}-empty-drop`, data: { type: 'EmptyFolder' } });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`col-span-full text-center text-sm py-8 italic border-2 border-dashed rounded-xl transition-all
+        ${isOver ? 'border-indigo-400 text-indigo-300 bg-indigo-500/10' : 'border-neutral-800/50 text-neutral-500 hover:text-neutral-400'}
+      `}
+    >
+      <span className="block text-2xl mb-2">📥</span>
+      ここに単語帳をドロップして追加
+    </div>
+  );
+}
+
 function SortableFolderItem(props: any) {
   const {
     attributes,
@@ -1819,6 +1841,7 @@ function SortableFolderItem(props: any) {
     transform,
     transition,
     isDragging,
+    isOver,
   } = useSortable({ id: props.folder.id, data: { type: 'Folder' } });
 
   const style = {
@@ -1833,6 +1856,7 @@ function SortableFolderItem(props: any) {
       <FolderRow
         {...props}
         isDragging={isDragging}
+        isOver={isOver}
         dragListeners={listeners}
         dragAttributes={attributes}
         setActivatorNodeRef={setActivatorNodeRef}
@@ -1854,6 +1878,7 @@ function FolderRow({
   onDeleteDeck,
   saveRenameDeck,
   isDragging,
+  isOver,
   dragListeners,
   dragAttributes,
   setActivatorNodeRef
@@ -1870,11 +1895,11 @@ function FolderRow({
   onDeleteDeck?: (id: string, e: any) => void;
   saveRenameDeck?: (id: string, title: string) => void;
   isDragging?: boolean;
+  isOver?: boolean;
   dragListeners?: any;
   dragAttributes?: any;
   setActivatorNodeRef?: any;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: folder.id, data: { type: 'Folder' } });
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(folder.name);
   const [showMenu, setShowMenu] = useState(false);
@@ -1883,7 +1908,6 @@ function FolderRow({
 
   return (
     <div
-      ref={setNodeRef}
       className={`rounded-2xl border transition-all duration-200 mb-3
           ${showMenu ? 'z-50 relative' : ''}
           ${isOver
@@ -2009,7 +2033,7 @@ function FolderRow({
         isExpanded && (
           <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-2">
             <SortableContext items={folderDecks.map(d => d.id)} strategy={rectSortingStrategy}>
-              {folderDecks.length === 0 && <p className="col-span-full text-center text-sm text-neutral-400 py-4 italic">デッキがありません</p>}
+              {folderDecks.length === 0 && <EmptyFolderDropArea folderId={folder.id} />}
               {folderDecks.map((deck) => (
                 <SortableDeckItem key={deck.id} deck={deck} onClick={onDeckClick} isEditMode={isEditMode} onDelete={onDeleteDeck} saveRenameDeck={saveRenameDeck} />
               ))}
