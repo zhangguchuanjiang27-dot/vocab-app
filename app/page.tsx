@@ -1301,10 +1301,10 @@ export default function Home() {
             {/* Footer Removed as requested */}
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row justify-between items-center pt-2 sm:pt-4 gap-3 sm:gap-4">
+          <div className={`flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 ${showSaved ? 'hidden' : 'pt-2 sm:pt-4'}`}>
 
             {/* Gamification Stats */}
-            <div className={`flex flex-col gap-2 w-full sm:w-auto ${showSaved ? 'hidden' : 'flex'}`}>
+            <div className="flex flex-col gap-2 w-full sm:w-auto flex">
               <Link href="/profile" className="block group">
                 <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer w-full">
                   {/* Level segment */}

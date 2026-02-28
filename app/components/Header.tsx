@@ -122,22 +122,7 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">Voca</span>
                     </Link>
 
-                    {session && (
-                        <div className="flex items-center gap-2 sm:gap-2">
-                            <Link href="/ranking" className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-900 transition-colors group">
-                                <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-1">👑</span>
-                                <span className="hidden sm:inline text-sm font-bold text-neutral-400 ml-1">ランキング</span>
-                            </Link>
 
-                            <button
-                                onClick={() => setShowContactModal(true)}
-                                className="flex items-center justify-center w-9 h-9 sm:w-auto sm:px-3 sm:h-auto sm:py-1.5 rounded-full hover:bg-neutral-900 transition-colors group"
-                            >
-                                <span className="group-hover:scale-110 transition-transform text-xl sm:text-base leading-none -mt-0.5">💌</span>
-                                <span className="hidden sm:inline text-sm font-bold text-neutral-400 ml-1">サポート</span>
-                            </button>
-                        </div>
-                    )}
 
                 </div>
 
