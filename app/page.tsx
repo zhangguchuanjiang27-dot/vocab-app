@@ -1661,8 +1661,17 @@ export default function Home() {
         }
 
 
-        {/* Hidden Admin Link */}
-        {/* Removed */}
+        {/* Admin Link */}
+        {(session?.user as any)?.role === 'admin' && (
+          <div className="flex justify-center mt-8 pb-8">
+            <Link
+              href="/sys-ctrl-99"
+              className="text-[10px] text-neutral-600 hover:text-indigo-400 font-bold transition-colors px-3 py-1.5 rounded-full border border-neutral-800 hover:border-indigo-500/30"
+            >
+              管理者ダッシュボード
+            </Link>
+          </div>
+        )}
       </main >
     </div >
   );
