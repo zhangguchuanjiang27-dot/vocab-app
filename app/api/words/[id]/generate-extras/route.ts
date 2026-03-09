@@ -85,8 +85,8 @@ export async function POST(
                 単語 "${word.word}" について、以下のすべての意味を考慮して、類義語と派生語をリストアップしてください。
                 意味: ${word.meaning}
 
-                1. **類義語 (Synonyms)**: 全てを網羅するように最大5つまで。
-                2. **派生語 (Derivatives)**: 存在するものを全て。
+                1. **類義語 (Synonyms)**: 全てを網羅するように最大5つまで。必ず**英語**で出力してください。
+                2. **派生語 (Derivatives)**: 存在するものを全て。必ず**英語**で出力してください。
 
                 【品詞ラベルのルール】
                 品詞は必ず以下の略称（1文字）で出力してください：
@@ -99,10 +99,10 @@ export async function POST(
                 出力形式:
                 {
                   "synonyms": [
-                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
+                    { "word": "英語の単語", "partOfSpeech": "略称", "meaning": "日本語の意味" }
                   ],
                   "derivatives": [
-                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
+                    { "word": "英語の単語", "partOfSpeech": "略称", "meaning": "日本語の意味" }
                   ]
                 }
                 `;
@@ -110,6 +110,7 @@ export async function POST(
                 prompt = `
                 単語 "${word.word}" (意味: ${word.meaning}) の **類義語** を5つ提案してください。
                 複数の意味がある場合は、それぞれの意味に対してバランスよく提案してください。
+                生成する類義語は必ず**英語**で出力してください。
 
                 【品詞ラベルのルール】
                 品詞は必ず以下の略称（1文字）で出力してください：
@@ -122,7 +123,7 @@ export async function POST(
                 出力形式:
                 {
                   "synonyms": [
-                    { "word": "単語", "partOfSpeech": "略称", "meaning": "意味" }
+                    { "word": "英語の単語", "partOfSpeech": "略称", "meaning": "日本語の意味" }
                   ]
                 }
                 `;

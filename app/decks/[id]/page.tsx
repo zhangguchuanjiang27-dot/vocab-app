@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import confetti from "canvas-confetti";
+import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
+import { useDrag } from "@use-gesture/react";
 
 type WordCard = {
     id?: string;
@@ -94,6 +96,125 @@ const formatMeaningText = (text: string) => {
     return text.replace(/\s*(\(|【|\[)(名|動|形|副|代|接|前|間|冠|群|他|自|熟|自動|他動|可算|不可算|単数|複数|名詞|動詞|形容詞|副詞|代名詞|接続詞|前置詞|間投詞|冠詞)(\)|】|\])/g, '\n$1$2$3').trim();
 };
 
+export type TargetMatch = {
+    matchedString: string;
+    suffixToKeep: string;
+    corePhrase: string;
+};
+
+// Helper: Extract core phrase by removing placeholders like 'be', 'do', '~', 'someone'
+const extractCorePhrase = (phrase: string): string => {
+    let core = phrase.toLowerCase();
+    const placeholders = [
+        /\b(?:be|do|have|get|someone|somebody|something|one's|one|a|an|the)\b/gi,
+        /[~〜]/g, // Tildes
+        /[().,!?]/g // Punctuation
+    ];
+
+    placeholders.forEach(regex => {
+        core = core.replace(regex, ' ');
+    });
+
+    // Clean up multiple spaces
+    return core.replace(/\s+/g, ' ').trim();
+};
+
+const findTargetMatchInSentence = (basePhrase: string, sentence: string): TargetMatch | null => {
+    if (!basePhrase || !sentence) return null;
+
+    const corePhrase = basePhrase.split(/\s+/).length > 1 ? extractCorePhrase(basePhrase) : basePhrase.toLowerCase().trim();
+    if (!corePhrase) return null; // Fallback if phrase was entirely placeholders
+
+    // For single words or short phrases, we still check word-by-word or by core phrase substring
+    const lowerCore = corePhrase.toLowerCase();
+
+    // 1. Phrasal exactly matches inside the sentence
+    if (basePhrase.split(/\s+/).length > 1) {
+        if (sentence.toLowerCase().includes(lowerCore)) {
+            // Find the actual matched casing in the sentence
+            const idx = sentence.toLowerCase().indexOf(lowerCore);
+            return {
+                matchedString: sentence.substring(idx, idx + lowerCore.length),
+                suffixToKeep: "",
+                corePhrase: corePhrase
+            };
+        }
+        // If it's a phrase and the core isn't found, it's too complex or conjugated to easily blank out.
+        return null;
+    }
+
+    // 2. Single word processing (conjugations and suffixes)
+    const lowerBase = corePhrase;
+
+    // Map of common irregular verbs that should be disqualified from Fill-In logic
+    const irregularVerbs: Record<string, string[]> = {
+        'take': ['took', 'taken', 'taking'], 'go': ['went', 'gone', 'going'],
+        'see': ['saw', 'seen', 'seeing'], 'eat': ['ate', 'eaten', 'eating'],
+        'come': ['came', 'coming'], 'get': ['got', 'gotten', 'getting'],
+        'give': ['gave', 'given', 'giving'], 'know': ['knew', 'known', 'knowing'],
+        'make': ['made', 'making'], 'say': ['said', 'saying'],
+        'think': ['thought', 'thinking'], 'write': ['wrote', 'written', 'writing'],
+        'speak': ['spoke', 'spoken', 'speaking'], 'break': ['broke', 'broken', 'breaking'],
+        'choose': ['chose', 'chosen', 'choosing'], 'drive': ['drove', 'driven', 'driving'],
+        'fall': ['fell', 'fallen', 'falling'], 'fly': ['flew', 'flown', 'flying'],
+        'forget': ['forgot', 'forgotten', 'forgetting'], 'begin': ['began', 'begun', 'beginning'],
+        'drink': ['drank', 'drunk', 'drinking'], 'ring': ['rang', 'rung', 'ringing'],
+        'run': ['ran', 'running'], 'sing': ['sang', 'sung', 'singing'],
+        'swim': ['swam', 'swum', 'swimming'], 'buy': ['bought', 'buying'],
+        'catch': ['caught', 'catching'], 'fight': ['fought', 'fighting'],
+        'teach': ['taught', 'teaching'], 'build': ['built', 'building'],
+        'lend': ['lent', 'lending'], 'send': ['sent', 'sending'],
+        'spend': ['spent', 'spending'], 'leave': ['left', 'leaving'],
+        'feel': ['felt', 'feeling'], 'keep': ['kept', 'keeping'],
+        'sleep': ['slept', 'sleeping'], 'meet': ['met', 'meeting'],
+        'lead': ['led', 'leading'], 'read': ['reading'], // Note: 'reads' or 'read' are ok. 'reading' is ok as suffix 'ing'. We put it here if we want to disqualify irregular base matching but actually 'read' doesn't change spelling except suffix. 
+        'hear': ['heard', 'hearing'], 'pay': ['paid', 'paying'],
+        'find': ['found', 'finding'], 'have': ['had', 'having', 'has'],
+        'do': ['did', 'done'], 'be': ['am', 'is', 'are', 'was', 'were', 'been']
+    };
+
+    // Helper to strip punctuation from a word
+    const stripPunctuation = (word: string) => word.replace(/^[^a-zA-Z0-9]+|[^a-zA-Z0-9]+$/g, '');
+    const tokens = sentence.split(/\s+/);
+
+    for (const token of tokens) {
+        const w = stripPunctuation(token);
+        if (!w) continue;
+        const lw = w.toLowerCase();
+
+        // Check if the word is an irregular form - if so, disqualify it by returning null early
+        if (irregularVerbs[lowerBase] && irregularVerbs[lowerBase].includes(lw)) {
+            return null; // Skip this example entirely
+        }
+
+        // Exact match
+        if (lw === lowerBase) {
+            return { matchedString: w, suffixToKeep: "", corePhrase: lowerBase };
+        }
+
+        // Check standard suffixes that we want to keep visible
+        const stems = [
+            { stem: lowerBase, form: 'regular' },
+            { stem: lowerBase.endsWith('e') ? lowerBase.slice(0, -1) : lowerBase, form: 'drop-e' },
+            { stem: lowerBase.endsWith('y') ? lowerBase.slice(0, -1) + 'i' : lowerBase, form: 'y-to-i' },
+            { stem: lowerBase + lowerBase.slice(-1), form: 'double' }
+        ];
+
+        for (const { stem, form } of stems) {
+            if (stem.length > 2) {
+                // Determine the visible suffix (what is rendered outside the brackets) and the matched substring
+                if (lw === stem + 's') return { matchedString: w, suffixToKeep: form === 'y-to-i' ? 'es' : 's', corePhrase: lowerBase };
+                if (lw === stem + 'es') return { matchedString: w, suffixToKeep: form === 'y-to-i' ? 'ies' : 'es', corePhrase: lowerBase };
+                if (lw === stem + 'ed') return { matchedString: w, suffixToKeep: form === 'y-to-i' ? 'ied' : 'ed', corePhrase: lowerBase };
+                if (lw === stem + 'd') return { matchedString: w, suffixToKeep: 'd', corePhrase: lowerBase };
+                if (lw === stem + 'ing') return { matchedString: w, suffixToKeep: form === 'double' ? w.slice(-4) : 'ing', corePhrase: lowerBase };
+            }
+        }
+    }
+
+    return null;
+};
+
 export default function DeckPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
@@ -129,6 +250,61 @@ export default function DeckPage() {
     const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
     const [includeMastered, setIncludeMastered] = useState(false);
     const [earnedXp, setEarnedXp] = useState(0);
+
+    // Swipe animation state
+    const cardX = useMotionValue(0);
+    const cardY = useMotionValue(0);
+    const cardRotate = useTransform(cardX, [-200, 200], [-15, 15]);
+    const cardOpacity = useTransform(cardX, [-200, -100, 0, 100, 200], [0.5, 1, 1, 1, 0.5]);
+    const rightOverlayOpacity = useTransform(cardX, [0, 100], [0, 1]);
+    const leftOverlayOpacity = useTransform(cardX, [0, -100], [0, 1]);
+    const swipeControls = useAnimation();
+
+    const bindCardDrag = useDrag(({ down, movement: [mx, my], velocity: [vx, vy], direction: [dx, dy] }) => {
+        if (mode !== 'flashcard' || showExamples) return;
+
+        if (down) {
+            cardX.set(mx);
+            cardY.set(my);
+        } else {
+            const currentX = cardX.get();
+            if (currentX > 100 || (vx > 0.5 && dx > 0)) {
+                // Swipe Right -> Known
+                swipeControls.start({ x: 500, opacity: 0, transition: { duration: 0.2 } }).then(() => {
+                    handleSwipeComplete('right');
+                });
+            } else if (currentX < -100 || (vx > 0.5 && dx < 0)) {
+                // Swipe Left -> Review
+                swipeControls.start({ x: -500, opacity: 0, transition: { duration: 0.2 } }).then(() => {
+                    handleSwipeComplete('left');
+                });
+            } else {
+                // Snap back
+                swipeControls.start({ x: 0, y: 0, transition: { type: 'spring', stiffness: 300, damping: 20 } });
+            }
+        }
+    });
+
+    const handleSwipeComplete = (direction: 'left' | 'right') => {
+        const words = reviewWords || (isRandomMode ? shuffledWords : sortedWords);
+        const currentCard = words[currentIndex];
+
+        if (direction === 'left' && currentCard?.id) {
+            setWrongWordIds(prev => new Set(prev).add(currentCard.id as string));
+        }
+
+        setIsFlipped(false);
+        setShowExamples(false);
+        cardX.set(0);
+        cardY.set(0);
+        swipeControls.set({ opacity: 1 });
+
+        if (currentIndex < words.length - 1) {
+            setCurrentIndex((prev) => prev + 1);
+        } else {
+            finishSession(flippedIndices.size * 5);
+        }
+    };
 
     // Sort & Filter
     const [sortKey, setSortKey] = useState<'created_desc' | 'created_asc' | 'pos'>('created_asc');
@@ -181,15 +357,40 @@ export default function DeckPage() {
         const card = words[currentIndex];
         if (!card) return null;
 
-        const candidates = [
+        const allExamples = [
             { text: card.example, translation: card.example_jp },
             ...(card.otherExamples || [])
-        ].filter(ex => ex && ex.text && ex.translation && (challengeType === 'word' || ex.text.toLowerCase().includes(card.word.toLowerCase())));
+        ].filter(ex => ex && ex.text && ex.translation && ex.text.trim() !== "" && ex.translation.trim() !== "");
+
+        if (allExamples.length === 0) {
+            return null;
+        }
+
+        // Map examples to include their TargetMatch object
+        const mappedExamples = allExamples.map(ex => {
+            const match = challengeType === 'word'
+                ? { matchedString: card.word, suffixToKeep: "", corePhrase: card.word }
+                : findTargetMatchInSentence(card.word, ex.text);
+
+            return {
+                ...ex,
+                targetMatch: match
+            };
+        });
+
+        // Valid candidates: For fill-in mode, we STRICTLY require a targetMatch.
+        // For other modes (word, full), any example is fine.
+        const candidates = mappedExamples.filter(ex =>
+            challengeType !== 'fill-in' || ex.targetMatch !== null
+        );
 
         if (candidates.length > 0) {
             return candidates[Math.floor(Math.random() * candidates.length)];
         }
-        return { text: card.example, translation: card.example_jp };
+
+        // If there are no valid examples (e.g. all use irregular conjugations for fill-in),
+        // we return null. The UI will gracefully degrade to a standard "Word" challenge.
+        return null;
     }, [currentIndex, isRandomMode, reviewWords, deck?.id, challengeType, includeMastered, shuffledWords, includeMastered]);
 
     // Dictation Mode Auto-Speak
@@ -794,6 +995,7 @@ export default function DeckPage() {
 
     const handleRestart = (isReviewMistakes = false, newChallengeType?: 'word' | 'fill-in' | 'full') => {
         if (newChallengeType) setChallengeType(newChallengeType);
+        setWrongWordIds(new Set());
 
         if (isReviewMistakes && deck) {
             const missed = (isRandomMode ? shuffledWords : sortedWords).filter(w => w.id && wrongWordIds.has(w.id));
@@ -821,8 +1023,6 @@ export default function DeckPage() {
                     setShuffledWords(shuffleArray(activeWords));
                 }
             }
-
-            setWrongWordIds(new Set());
         }
 
         setIsFinished(false);
@@ -845,12 +1045,14 @@ export default function DeckPage() {
             .trim();
     };
 
-    const handleCheckAnswer = (cardId: string | undefined, correctWord: string, correctExample?: string) => {
+    const handleCheckAnswer = (cardId: string | undefined, correctWord: string, correctExample?: string, targetCorePhrase?: string) => {
         const input = normalizeText(writingInput);
         let expected = "";
 
         if (challengeType === 'full' && correctExample) {
             expected = normalizeText(correctExample);
+        } else if (challengeType === 'fill-in' && targetCorePhrase) {
+            expected = normalizeText(targetCorePhrase);
         } else {
             expected = normalizeText(correctWord);
         }
@@ -1049,18 +1251,41 @@ export default function DeckPage() {
                     <div className="w-20"></div>
                 </header>
 
-                <main className="flex-1 flex flex-col items-center justify-start mt-4 sm:mt-12 perspective-1000 w-full max-w-2xl mx-auto">
-                    <div className="relative w-full h-[360px] sm:h-[420px] max-w-md sm:max-w-2xl mx-auto cursor-pointer group" onClick={() => {
-                        setIsFlipped(!isFlipped);
-                        if (!isFlipped) setFlippedIndices(prev => new Set(prev).add(currentIndex));
-                    }}>
+                <main className="flex-1 flex flex-col items-center justify-start mt-4 sm:mt-12 perspective-1000 w-full max-w-2xl mx-auto overflow-hidden">
+                    <motion.div
+                        key={currentIndex}
+                        {...bindCardDrag()}
+                        style={{ x: cardX, y: cardY, rotate: cardRotate, opacity: cardOpacity }}
+                        animate={swipeControls}
+                        className="relative w-full h-[360px] sm:h-[420px] max-w-md sm:max-w-2xl mx-auto cursor-pointer group touch-none"
+                        onClick={() => {
+                            if (Math.abs(cardX.get()) < 5) {
+                                setIsFlipped(!isFlipped);
+                                if (!isFlipped) setFlippedIndices(prev => new Set(prev).add(currentIndex));
+                            }
+                        }}
+                    >
+                        {/* Swipe Feedbacks */}
+                        <motion.div
+                            style={{ opacity: rightOverlayOpacity }}
+                            className="absolute top-8 left-8 z-40 border-4 border-green-500 text-green-500 font-black text-4xl rounded-xl px-4 py-2 transform -rotate-12 pointer-events-none bg-black/20 backdrop-blur-sm"
+                        >
+                            GOT IT
+                        </motion.div>
+                        <motion.div
+                            style={{ opacity: leftOverlayOpacity }}
+                            className="absolute top-8 right-8 z-40 border-4 border-rose-500 text-rose-500 font-black text-4xl rounded-xl px-4 py-2 transform rotate-12 pointer-events-none bg-black/20 backdrop-blur-sm"
+                        >
+                            REVIEW
+                        </motion.div>
+
                         <div className={`absolute inset-0 w-full h-full duration-500 preserve-3d transition-transform ${isFlipped ? "rotate-y-180" : ""}`}>
                             {/* Front */}
-                            <div className="absolute inset-0 backface-hidden bg-[#1e1e1e] rounded-3xl shadow-xl flex flex-col border border-neutral-800">
-                                <div className="flex-1 flex flex-col justify-end items-center pb-4">
+                            <div className="absolute inset-0 backface-hidden bg-[#1e1e1e] rounded-3xl shadow-xl border border-neutral-800 grid grid-rows-[1fr_auto_1fr]">
+                                <div className="flex flex-col justify-end items-center pb-4">
                                     <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">単語</span>
                                 </div>
-                                <div className="flex-none flex items-center justify-center min-h-[80px] px-4 relative w-full overflow-hidden">
+                                <div className="flex items-center justify-center min-h-[80px] px-4 relative w-full overflow-hidden">
                                     <h2 className={`${currentCard.word.length > 18 ? 'text-[1.3rem] sm:text-2xl tracking-tighter' :
                                         currentCard.word.length > 14 ? 'text-2xl sm:text-3xl tracking-tight' :
                                             currentCard.word.length > 10 ? 'text-4xl sm:text-5xl' :
@@ -1077,12 +1302,12 @@ export default function DeckPage() {
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
                                     </button>
                                 </div>
-                                <div className="flex-1 relative flex flex-col justify-start pt-4 items-center">
+                                <div className="relative flex flex-col justify-start pt-4 items-center">
                                     <p className="absolute bottom-8 text-neutral-300 dark:text-neutral-600 text-xs font-bold animate-pulse">クリックして反転 ↻</p>
                                 </div>
                             </div>
                             {/* Back */}
-                            <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl flex flex-col overflow-hidden">
+                            <div className="absolute inset-0 backface-hidden rotate-y-180 bg-indigo-600 dark:bg-indigo-900 text-white rounded-3xl shadow-xl overflow-hidden grid grid-rows-[1fr_auto_1fr]">
                                 {/* Mistake Tagging */}
                                 <button
                                     onClick={(e) => currentCard.id && toggleWrongWord(currentCard.id, e)}
@@ -1096,10 +1321,10 @@ export default function DeckPage() {
                                     <p className="text-[10px] mt-1 font-bold text-center">復習リスト</p>
                                 </button>
 
-                                <div className="flex-1 flex flex-col justify-end items-center pb-4 relative z-10 pointer-events-none">
+                                <div className="flex flex-col justify-end items-center pb-4 relative z-10 pointer-events-none">
                                     <span className="text-xs font-bold text-indigo-200 uppercase tracking-widest border-b border-indigo-400/30 pb-1">意味</span>
                                 </div>
-                                <div className="flex-none flex items-center justify-center min-h-[80px] px-4 sm:px-12 relative z-10 pointer-events-none w-full overflow-hidden mb-6">
+                                <div className="flex items-center justify-center min-h-[80px] px-4 sm:px-12 relative z-10 pointer-events-none w-full overflow-hidden mb-6">
                                     <h3 className={`${currentCard.meaning.length > 20 ? 'text-lg sm:text-xl tracking-tighter' :
                                         currentCard.meaning.length > 15 ? 'text-xl sm:text-2xl tracking-tight' :
                                             currentCard.meaning.length > 10 ? 'text-2xl sm:text-3xl' :
@@ -1109,55 +1334,60 @@ export default function DeckPage() {
                                     </h3>
                                 </div>
 
-                                {/* 例文セクション (トグル式) */}
-                                <div className="flex-1 flex flex-col justify-start items-center pt-8 pb-4 px-4 w-full min-h-0 relative z-20 pointer-events-auto">
-                                    {!showExamples ? (
-                                        (currentCard.otherExamples && currentCard.otherExamples.length > 0) ? (
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
-                                                className="px-6 py-2 bg-white/20 hover:bg-white/30 rounded-full text-sm font-bold border border-white/30 backdrop-blur-sm transition-all shadow-md"
-                                            >
-                                                例文を見る
-                                            </button>
-                                        ) : (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (currentCard.id) handleGenerateDetails(currentCard.id);
-                                                }}
-                                                className="px-6 py-2 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full text-sm font-bold shadow-lg transition-all flex items-center gap-2"
-                                            >
-                                                <span>🪄</span> 例文を生成
-                                            </button>
-                                        )
+                                {/* 例文セクション */}
+                                <div className="flex flex-col justify-start items-center pt-8 pb-4 px-4 w-full min-h-0 relative z-20 pointer-events-auto">
+                                    {(currentCard.otherExamples && currentCard.otherExamples.length > 0) ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowExamples(true); }}
+                                            className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full text-sm font-bold border border-white/20 backdrop-blur-sm transition-all shadow-md flex items-center gap-2"
+                                        >
+                                            <span>📖</span> 例文を見る
+                                        </button>
                                     ) : (
-                                        <div className="w-full max-w-[90%] bg-black/10 rounded-xl p-4 sm:p-6 text-left relative animate-in fade-in duration-300 flex flex-col min-h-0" onClick={(e) => e.stopPropagation()}>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setShowExamples(false); }}
-                                                className="absolute top-2 right-2 p-1.5 text-neutral-400 hover:text-white bg-black/20 hover:bg-black/40 rounded-full transition-colors z-10 shrink-0"
-                                                title="Close examples"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                            </button>
-                                            <div className="overflow-y-auto pr-2 space-y-4">
-                                                {currentCard.otherExamples?.filter((ex: any) => ex.text.trim() !== "").map((ex: any, i: number) => (
-                                                    <div key={i} className="text-left border-l-2 border-indigo-300 dark:border-indigo-400 pl-4 py-1">
-                                                        <span className="text-[10px] uppercase font-black text-indigo-200 tracking-widest mb-1 block">{ex.role}</span>
-                                                        <div className="flex gap-2 items-start">
-                                                            <div>
-                                                                <p className="text-lg italic font-serif text-white leading-tight">{ex.text}</p>
-                                                                {ex.translation && <p className="text-sm text-indigo-100 font-light mt-1">{ex.translation}</p>}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (currentCard.id) handleGenerateDetails(currentCard.id);
+                                            }}
+                                            className="px-8 py-3 bg-amber-400 hover:bg-amber-300 text-amber-900 rounded-full text-sm font-bold shadow-lg transition-all flex items-center gap-2"
+                                        >
+                                            <span>🪄</span> 例文を生成
+                                        </button>
                                     )}
                                 </div>
+
+                                {/* 例文フルオーバーレイモード */}
+                                {showExamples && (
+                                    <div className="absolute inset-0 z-30 bg-indigo-900 flex flex-col pt-16 pb-6 px-6 sm:px-12 animate-in fade-in duration-200" onClick={(e) => e.stopPropagation()}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setShowExamples(false); }}
+                                            className="absolute top-4 right-4 p-2 text-indigo-300 hover:text-white bg-indigo-800/50 hover:bg-indigo-700 rounded-full transition-colors flex items-center gap-2 pr-4 z-30"
+                                        >
+                                            <span className="text-sm font-bold">✕ 戻る</span>
+                                        </button>
+
+                                        <div className="overflow-y-auto flex-1 space-y-6 pr-4 scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-transparent">
+                                            <h4 className="text-xl font-black text-indigo-100 mb-6 border-b border-indigo-700/50 pb-4 sticky top-0 bg-indigo-900/90 backdrop-blur-sm z-10 pt-2">例文・フレーズ</h4>
+
+                                            {currentCard.otherExamples?.filter((ex: any) => ex.text.trim() !== "").map((ex: any, i: number) => (
+                                                <div key={i} className="text-left bg-indigo-800/30 rounded-2xl p-5 border border-indigo-700/30 shadow-sm relative overflow-hidden group hover:bg-indigo-800/50 transition-colors">
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-400"></div>
+                                                    <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-md bg-indigo-800 text-indigo-200 tracking-widest mb-3 inline-block">{ex.role}</span>
+                                                    <div className="flex gap-2 items-start">
+                                                        <div>
+                                                            <p className="text-[1.1rem] sm:text-xl font-serif text-white leading-relaxed tracking-wide">{ex.text}</p>
+                                                            {ex.translation && <p className="text-sm sm:text-base text-indigo-200/80 font-medium mt-3 border-t border-indigo-700/30 pt-3">{ex.translation}</p>}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="h-4"></div> {/* Bottom padding for scroll */}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                     <div className="flex items-center gap-6 mt-12 w-full max-w-sm justify-between">
                         <button onClick={handlePrev} disabled={currentIndex === 0} className={`p-4 rounded-full transition-all ${currentIndex === 0 ? "text-neutral-300 cursor-not-allowed" : "bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 shadow-lg hover:scale-110 active:scale-95"}`}><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg></button>
                         <span className="text-sm font-bold text-neutral-400 uppercase tracking-widest">{isFlipped ? "Back" : "Front"}</span>
@@ -1185,14 +1415,19 @@ export default function DeckPage() {
                                 + {earnedXp} XP GET!
                             </div>
                         )}
-                        <div className="flex flex-wrap gap-4 justify-center mt-8">
-                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto">最初から学習する</button>
+                        <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center mt-8 w-full max-w-2xl mx-auto">
+                            <button onClick={() => handleRestart(false)} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto text-center">最初から学習する</button>
                             {wrongWordIds.size > 0 && (
-                                <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center gap-2">
+                                <button onClick={() => handleRestart(true)} className="px-8 py-3 bg-rose-500 text-white rounded-full font-bold shadow-lg hover:bg-rose-600 transition w-full sm:w-auto flex items-center justify-center gap-2">
                                     <span>🔁</span> {wrongWordIds.size}件を復習する
                                 </button>
                             )}
-                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-neutral-800 border border-neutral-700 rounded-full font-bold hover:bg-neutral-700 transition w-full sm:w-auto">単語一覧に戻る</button>
+                            {reviewWords && wrongWordIds.size === 0 && (
+                                <button onClick={handleRetryCurrentSession} className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg hover:bg-indigo-700 transition w-full sm:w-auto flex items-center justify-center gap-2">
+                                    <span>↺</span> もう一度学習する
+                                </button>
+                            )}
+                            <button onClick={() => setMode('list')} className="px-8 py-3 bg-neutral-800 border border-neutral-700 rounded-full font-bold hover:bg-neutral-700 transition w-full sm:w-auto text-center">単語一覧に戻る</button>
                         </div>
                     </div>
                 </div>
@@ -1237,18 +1472,25 @@ export default function DeckPage() {
                                         </button>
                                         {(() => {
                                             const normalizedText = activeExample.text;
-                                            const normalizedWord = currentCard.word;
-                                            const parts = normalizedText.split(new RegExp(`(${normalizedWord})`, 'gi'));
+                                            const targetObj = activeExample.targetMatch || { matchedString: currentCard.word, suffixToKeep: '', corePhrase: currentCard.word };
+                                            const matchStr = targetObj.matchedString;
 
-                                            // Fallback if split fails (shouldn't happen with regex unless special chars issue)
-                                            if (parts.length === 1 && !parts[0].toLowerCase().includes(normalizedWord.toLowerCase())) {
+                                            if (!normalizedText.toLowerCase().includes(matchStr.toLowerCase())) {
                                                 return <span>{activeExample.text} <span className="text-neutral-500 text-sm">(Term not found in example)</span></span>
                                             }
 
+                                            // Split text using the exact matched string form
+                                            const parts = normalizedText.split(new RegExp(`(${matchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+
                                             return parts.map((part, i) => (
-                                                part.toLowerCase() === normalizedWord.toLowerCase() ? (
-                                                    <span key={i} className="inline-block min-w-[3ch] text-indigo-500 border-b-2 border-indigo-500/50 px-1 mx-1 font-mono bg-indigo-500/10 rounded">
-                                                        [{' '.repeat(part.length)}]
+                                                part.toLowerCase() === matchStr.toLowerCase() ? (
+                                                    <span key={i} className="inline-flex items-baseline">
+                                                        <span className="inline-block min-w-[3ch] text-indigo-500 border-b-2 border-indigo-500/50 px-1 mx-1 font-mono bg-indigo-500/10 rounded">
+                                                            [{' '.repeat(targetObj.corePhrase.length)}]
+                                                        </span>
+                                                        {targetObj.suffixToKeep && (
+                                                            <span className="text-neutral-300 font-bold">{targetObj.suffixToKeep}</span>
+                                                        )}
                                                     </span>
                                                 ) : (
                                                     <span key={i}>{part}</span>
@@ -1296,7 +1538,7 @@ export default function DeckPage() {
                                     type="text"
                                     value={writingInput}
                                     onChange={(e) => setWritingInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
+                                    onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example, activeExample?.targetMatch?.corePhrase)}
                                     disabled={isAnswerChecked}
                                     placeholder={challengeType === 'full' ? "全文を入力" : ""}
                                     className={`order-2 w-full p-4 text-xl sm:text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
@@ -1350,7 +1592,7 @@ export default function DeckPage() {
                             {!isAnswerChecked && (
                                 <div className="order-3 space-y-4 w-full">
                                     <button
-                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
+                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example, activeExample?.targetMatch?.corePhrase)}
                                         disabled={!writingInput.trim()}
                                         className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -1446,26 +1688,31 @@ export default function DeckPage() {
                                         <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider block">English</span>
                                         <div className="p-5 bg-neutral-800/50 border border-neutral-700/50 rounded-2xl text-lg sm:text-xl font-serif text-neutral-300 leading-relaxed shadow-inner">
                                             {(() => {
-                                                const text = activeExample.text;
-                                                const word = currentCard.word;
-                                                const parts = text.split(new RegExp(`(${word})`, 'gi'));
+                                                const normalizedText = activeExample.text;
+                                                const targetObj = activeExample.targetMatch || { matchedString: currentCard.word, suffixToKeep: '', corePhrase: currentCard.word };
+                                                const matchStr = targetObj.matchedString;
 
-                                                if (parts.length === 1 && !text.toLowerCase().includes(word.toLowerCase())) {
-                                                    // Word not found by regex (maybe conjugation?) - just show blank at end? Or show full text?
-                                                    // Fallback: replace similar words?
-                                                    // Simple fallback:
-                                                    return (
-                                                        <>
-                                                            {text} <span className="text-indigo-400 font-bold ml-2">( {word} )</span>
-                                                        </>
-                                                    )
+                                                if (!normalizedText.toLowerCase().includes(matchStr.toLowerCase())) {
+                                                    return <span>{activeExample.text} <span className="text-neutral-500 text-sm">(Term not found in example)</span></span>
                                                 }
 
-                                                return parts.map((part, i) =>
-                                                    part.toLowerCase() === word.toLowerCase()
-                                                        ? <span key={i} className="inline-block text-indigo-400 font-black min-w-[60px] text-center bg-indigo-500/10 rounded px-1 mx-1 border-b-2 border-indigo-400"> [ &nbsp;&nbsp; ] </span>
-                                                        : part
-                                                );
+                                                // Split text using the exact matched string form
+                                                const parts = normalizedText.split(new RegExp(`(${matchStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+
+                                                return parts.map((part, i) => (
+                                                    part.toLowerCase() === matchStr.toLowerCase() ? (
+                                                        <span key={i} className="inline-flex items-baseline">
+                                                            <span className="inline-block min-w-[3ch] text-indigo-500 border-b-2 border-indigo-500/50 px-1 mx-1 font-mono bg-indigo-500/10 rounded">
+                                                                [{' '.repeat(targetObj.corePhrase.length)}]
+                                                            </span>
+                                                            {targetObj.suffixToKeep && (
+                                                                <span className="text-neutral-300 font-bold">{targetObj.suffixToKeep}</span>
+                                                            )}
+                                                        </span>
+                                                    ) : (
+                                                        <span key={i}>{part}</span>
+                                                    )
+                                                ));
                                             })()}
                                         </div>
                                     </div>
@@ -1501,7 +1748,7 @@ export default function DeckPage() {
                                     type="text"
                                     value={writingInput}
                                     onChange={(e) => setWritingInput(e.target.value)}
-                                    onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
+                                    onKeyDown={(e) => e.key === 'Enter' && !isAnswerChecked && handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example, activeExample?.targetMatch?.corePhrase)}
                                     disabled={isAnswerChecked}
                                     placeholder={challengeType === 'full' ? "全文を入力" : ""}
                                     className={`order-2 w-full p-4 text-xl sm:text-2xl font-bold text-center bg-black text-white border-2 rounded-2xl focus:outline-none transition-all ${isAnswerChecked
@@ -1555,7 +1802,7 @@ export default function DeckPage() {
                             {!isAnswerChecked && (
                                 <div className="order-3 space-y-4 w-full">
                                     <button
-                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example)}
+                                        onClick={() => handleCheckAnswer(currentCard.id, currentCard.word, activeExample?.text || currentCard.example, activeExample?.targetMatch?.corePhrase)}
                                         disabled={!writingInput.trim()}
                                         className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-indigo-500/30 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
@@ -1576,8 +1823,8 @@ export default function DeckPage() {
         );
     }
     return (
-        <div className="min-h-screen bg-[#050505] text-neutral-100 p-6 sm:p-12 font-sans transition-colors duration-300 pb-24">
-            <header className="max-w-4xl mx-auto flex items-center justify-between mb-8">
+        <div className="flex-1 flex flex-col bg-neutral-900 md:bg-black text-neutral-100 p-6 md:p-12 pb-0 md:pb-0 font-sans transition-colors duration-300">
+            <header className="max-w-4xl mx-auto w-full flex items-center justify-between mb-8 shrink-0">
                 <Link href="/#saved" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-800 rounded-lg transition-colors">← 保存した単語帳に戻る</Link>
                 <button
                     onClick={handleDeleteDeck}
@@ -1588,9 +1835,9 @@ export default function DeckPage() {
                 </button>
             </header>
 
-            <main className="max-w-4xl mx-auto">
+            <main className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
                 {/* Cover / Info */}
-                <div className="bg-neutral-900 rounded-3xl p-8 sm:p-12 shadow-sm border border-neutral-800 mb-8 text-center sm:text-left flex flex-col items-start justify-between gap-6">
+                <div className="flex-1 md:flex-none rounded-none md:rounded-[2rem] md:bg-[#131313] px-6 py-8 md:p-12 mb-0 md:mb-8 text-center sm:text-left flex flex-col items-start justify-between gap-6 -mx-6 md:mx-0 transition-colors">
                     <div className="w-full min-w-0">
                         {isEditingTitle ? (
                             <div className="flex items-center justify-center sm:justify-start gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
@@ -1695,14 +1942,14 @@ export default function DeckPage() {
                 </div>
 
                 {/* Word List */}
-                <div className="bg-neutral-900 rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+                <div className="flex-1 bg-neutral-900 md:bg-[#131313] rounded-none md:rounded-[2rem] border-y border-x-0 md:border-none border-neutral-800 overflow-hidden -mx-6 md:mx-0 md:mb-8 transition-colors">
                     {/* Encouragement Message */}
                     <div className="bg-indigo-900/20 px-6 py-2 text-center border-b border-indigo-800">
-                        <p className="text-xs font-bold text-indigo-300">💡 覚えた単語には <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 text-white rounded-full text-[8px] mx-1">✓</span> を付けよう！テストに出なくなります。</p>
+                        <p className="text-xs font-bold text-indigo-300">💡 覚えた単語には <span className="inline-flex items-center justify-center w-4 h-4 bg-green-500 text-white rounded-full text-[8px] mx-1">✓</span> を付けよう！<br />テストに出なくなります。</p>
                     </div>
 
-                    <div className="p-6 border-b border-neutral-800 bg-neutral-900/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 flex-1">
+                    <div className="p-3 sm:p-6 border-b border-neutral-800 bg-neutral-900/50 flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
+                        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                             {!isSelectionMode ? (
                                 <button
                                     onClick={() => setIsSelectionMode(true)}
@@ -1711,7 +1958,7 @@ export default function DeckPage() {
                                     選択する
                                 </button>
                             ) : (
-                                <div className="flex items-center gap-4 animate-in fade-in slide-in-from-left-2">
+                                <div className="flex flex-wrap items-center gap-y-2 gap-x-2 sm:gap-x-4 animate-in fade-in slide-in-from-left-2 flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
                                         <input
                                             type="checkbox"
@@ -1719,45 +1966,47 @@ export default function DeckPage() {
                                             onChange={handleSelectAll}
                                             className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
                                         />
-                                        <span className="text-sm font-bold text-neutral-400">
-                                            {selectedWordIds.size} 選択中
+                                        <span className="text-sm font-bold text-neutral-400 whitespace-nowrap">
+                                            {selectedWordIds.size}<span className="hidden xs:inline"> 選択中</span>
                                         </span>
                                     </div>
 
-                                    {selectedWordIds.size > 0 && (
-                                        <div className="flex items-center gap-2">
-                                            <button onClick={handleBulkDelete} className="px-3 py-1.5 bg-red-900/30 text-red-400 border border-red-800 rounded-lg text-xs font-bold shadow-sm hover:bg-red-900/50 transition-colors flex items-center gap-1">
-                                                <span>🗑️</span> 一括削除
-                                            </button>
-                                            <button onClick={() => setShowMoveModal(true)} className="px-3 py-1.5 bg-indigo-900/30 text-indigo-400 border border-indigo-800 rounded-lg text-xs font-bold shadow-sm hover:bg-indigo-900/50 transition-colors flex items-center gap-1">
-                                                <span>📤</span> 移動/コピー
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                        {selectedWordIds.size > 0 && (
+                                            <>
+                                                <button onClick={handleBulkDelete} className="px-2 sm:px-3 py-1.5 bg-red-900/30 text-red-400 border border-red-800 rounded-lg text-[10px] sm:text-xs font-bold shadow-sm hover:bg-red-900/50 transition-colors flex items-center gap-1 whitespace-nowrap">
+                                                    <span>🗑️</span> <span className="hidden xs:inline">一括</span>削除
+                                                </button>
+                                                <button onClick={() => setShowMoveModal(true)} className="px-2 sm:px-3 py-1.5 bg-indigo-900/30 text-indigo-400 border border-indigo-800 rounded-lg text-[10px] sm:text-xs font-bold shadow-sm hover:bg-indigo-900/50 transition-colors flex items-center gap-1 whitespace-nowrap">
+                                                    <span>📤</span> 移動<span className="hidden xs:inline">/コピー</span>
+                                                </button>
+                                            </>
+                                        )}
 
-                                    <button
-                                        onClick={() => {
-                                            setIsSelectionMode(false);
-                                            setSelectedWordIds(new Set());
-                                        }}
-                                        className="px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg text-xs font-bold hover:bg-neutral-700 transition ml-2"
-                                    >
-                                        キャンセル
-                                    </button>
+                                        <button
+                                            onClick={() => {
+                                                setIsSelectionMode(false);
+                                                setSelectedWordIds(new Set());
+                                            }}
+                                            className="px-2 sm:px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg text-[10px] sm:text-xs font-bold hover:bg-neutral-700 transition whitespace-nowrap"
+                                        >
+                                            取消
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
                         {/* Sort Controls */}
-                        <div className="flex items-center gap-2 text-sm">
-                            <span className="text-neutral-500 font-bold text-xs uppercase">並び替え:</span>
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-sm shrink-0 ml-auto">
+                            <span className="text-neutral-500 font-bold text-[10px] sm:text-xs uppercase hidden xxs:block">並べ替え:</span>
                             <select
                                 value={sortKey}
                                 onChange={(e) => setSortKey(e.target.value as any)}
-                                className="bg-black border border-neutral-700 rounded-lg px-2 py-1 font-bold focus:outline-none text-white"
+                                className="bg-black border border-neutral-700 rounded-lg px-2 py-1 font-bold focus:outline-none text-white text-xs sm:text-sm"
                             >
-                                <option value="created_asc">作成順 (古い順)</option>
-                                <option value="created_desc">作成順 (新しい順)</option>
+                                <option value="created_asc">作成順</option>
+                                <option value="created_desc">最新順</option>
                                 <option value="pos">品詞順</option>
                             </select>
                         </div>

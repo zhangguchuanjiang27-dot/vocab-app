@@ -172,97 +172,99 @@ export default function ProfileView({ user, allBadges }: ProfileViewProps) {
                         学習ステータス
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         {/* XP Card */}
-                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-6 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col">
+                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-4 sm:p-6 rounded-3xl border border-white/5 hover:border-indigo-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col min-h-[160px]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/20 transition-all"></div>
                             <div className="relative z-10 flex flex-col h-full flex-1">
                                 <div className="flex items-center justify-between mb-2">
-                                    <div className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                         Total XP
                                     </div>
-                                    <span className="text-xl">✨</span>
+                                    <span className="text-lg">✨</span>
                                 </div>
-                                <div className="mt-auto pt-4 flex flex-col flex-1 justify-between">
-                                    <div className="text-4xl font-black font-mono text-white mb-2 tracking-tight">
+                                <div className="mt-auto flex flex-col flex-1 justify-end">
+                                    <div className="text-3xl sm:text-4xl font-black font-mono text-white mb-1 tracking-tight flex items-baseline">
                                         {user.xp?.toLocaleString()}
                                     </div>
-                                    <div className="mt-auto">
-                                        {/* Small Level Progress indication */}
+                                    <div>
                                         <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-white/5">
                                             <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${progress}%` }}></div>
                                         </div>
-                                        <div className="flex justify-between mt-1.5 text-[10px] text-neutral-500 font-mono">
-                                            <span>Current: {xpInCurrentLevel}</span>
-                                            <span>Next: {xpRequiredForNext}</span>
+                                        <div className="flex justify-between mt-1 text-[8px] sm:text-[10px] text-neutral-500 font-mono">
+                                            <span>{xpInCurrentLevel} XP</span>
+                                            <span>{xpRequiredForNext} XP</span>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Streak Card */}
+                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-4 sm:p-6 rounded-3xl border border-white/5 hover:border-orange-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col min-h-[160px]">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-orange-500/20 transition-all"></div>
+                            <div className="relative z-10 flex flex-col h-full flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                        Streak
+                                    </div>
+                                    <span className="text-lg">🔥</span>
+                                </div>
+                                <div className="mt-auto flex flex-col flex-1 justify-end">
+                                    <div className="text-3xl sm:text-4xl font-black font-mono text-orange-400 tracking-tight flex items-baseline gap-1">
+                                        {user.loginStreak || 0}
+                                        <span className="text-[10px] sm:text-xs text-neutral-500 font-sans font-medium uppercase">Days</span>
+                                    </div>
+                                    <div className="mt-2 text-[10px] sm:text-xs text-neutral-500 font-medium">
+                                        継続は力なり！
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Coins Card */}
-                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-6 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col">
+                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-4 sm:p-6 rounded-3xl border border-white/5 hover:border-emerald-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col min-h-[160px]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-all"></div>
                             <div className="relative z-10 flex flex-col h-full flex-1">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                         Coins
                                     </div>
-                                    <span className="text-xl">🪙</span>
+                                    <span className="text-lg">🪙</span>
                                 </div>
-                                <div className="mt-auto pt-4 flex flex-col flex-1 justify-between">
-                                    <div className="text-4xl font-black font-mono text-emerald-400 tracking-tight flex items-baseline gap-1">
+                                <div className="mt-auto flex flex-col flex-1 justify-end">
+                                    <div className="text-3xl sm:text-4xl font-black font-mono text-emerald-400 tracking-tight flex items-baseline gap-1">
                                         {isUnlimited ? "∞" : user.credits.toLocaleString()}
                                     </div>
-                                    <div className="mt-auto">
-                                        <p className="text-xs text-neutral-500 mt-2 font-medium">
-                                            アイテムや生成枠の解放に使用可能
-                                        </p>
+                                    <div className="mt-2 text-[10px] sm:text-xs text-neutral-500 font-medium truncate">
+                                        アイテムや生成に
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Pro-Plan/Subscription status shortcut inside coin card */}
-                            {user.stripeCustomerId && (
-                                <div className="relative z-10 mt-4 border-t border-white/5 pt-4">
-                                    <button
-                                        onClick={() => handleSubscription(user.subscriptionPlan === 'pro' ? 'basic' : 'pro')}
-                                        className="text-xs font-bold text-white bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl w-full flex items-center justify-center gap-2 transition-all border border-transparent hover:border-white/10"
-                                    >
-                                        ⚙️ プラン管理
-                                    </button>
-                                    {user.subscriptionPeriodEnd && (
-                                        <div className="text-[10px] text-center text-neutral-500 mt-2">
-                                            更新日: {new Date(user.subscriptionPeriodEnd).toLocaleDateString()}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
                         {/* Decks Card */}
-                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-6 rounded-3xl border border-white/5 hover:border-amber-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col">
+                        <div className="group bg-neutral-900/40 backdrop-blur-sm p-4 sm:p-6 rounded-3xl border border-white/5 hover:border-amber-500/30 transition-all hover:-translate-y-1 relative overflow-hidden flex flex-col min-h-[160px]">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-amber-500/20 transition-all"></div>
                             <div className="relative z-10 flex flex-col h-full flex-1">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="text-xs text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                        <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                         Decks
                                     </div>
-                                    <span className="text-xl">📚</span>
+                                    <span className="text-lg">📚</span>
                                 </div>
-                                <div className="mt-auto pt-4 flex flex-col flex-1 justify-between">
-                                    <div className="text-4xl font-black font-mono text-white tracking-tight">
+                                <div className="mt-auto flex flex-col flex-1 justify-end">
+                                    <div className="text-3xl sm:text-4xl font-black font-mono text-white tracking-tight flex items-baseline">
                                         {user._count.decks}
-                                        <span className="text-sm text-neutral-500 ml-1.5 font-sans font-medium">作成済み</span>
                                     </div>
-                                    <div className="mt-auto">
-                                        <Link href="/#saved" className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors">
-                                            単語帳一覧を見る
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 translate-y-[0.5px]"><path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" /></svg>
+                                    <div className="mt-1">
+                                        <Link href="/#saved" className="inline-flex items-center gap-0.5 text-[10px] sm:text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors">
+                                            一覧を見る
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" /></svg>
                                         </Link>
                                     </div>
                                 </div>

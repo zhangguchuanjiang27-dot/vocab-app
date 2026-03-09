@@ -164,6 +164,11 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        <div className="text-center mb-12">
+          <p className="text-[11px] text-neutral-500 font-bold leading-relaxed max-w-md mx-auto">
+            ※AIを使用しているため、誤った情報や不具合が生じる可能性があることをご了承ください。
+          </p>
+        </div>
         <div className="border-t border-neutral-800 pt-16">
           <h2 className="font-black text-2xl mb-10 text-center text-white">よくある質問</h2>
           <div className="grid md:grid-cols-2 gap-10 text-sm">

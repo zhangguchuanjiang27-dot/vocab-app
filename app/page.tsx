@@ -30,6 +30,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Layers, Folder } from 'lucide-react';
 
 // 型定義
 type WordCard = {
@@ -959,6 +960,9 @@ export default function Home() {
               </div>
             </div>
 
+            <p className="text-[10px] text-neutral-500 font-bold text-center mb-4 leading-relaxed max-w-sm mx-auto">
+              ※AIを使用しているため、誤った情報や不具合が生じる可能性があることをご了承ください。
+            </p>
             <button
               onClick={() => setShowSubscriptionModal(false)}
               className="w-full py-2 text-neutral-500 hover:text-white font-bold transition-colors text-sm"
@@ -1449,7 +1453,7 @@ export default function Home() {
                         onDragStart={handleDragStart}
                         onDragEnd={handleDragEnd}
                       >
-                        <div className="space-y-8">
+                        <div className="flex flex-col gap-4">
                           {/* Folders Section */}
                           {folders.length > 0 && (
                             <SortableContext items={folders.map(f => f.id)} strategy={rectSortingStrategy}>
@@ -1718,9 +1722,7 @@ function SortableDeckItem({ deck, onClick, isEditMode, onDelete, saveRenameDeck 
       <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
         {/* Left Icon (Folder representation) */}
         <div className="w-12 h-12 bg-sky-500/20 rounded-xl flex items-center justify-center shrink-0">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-sky-400">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
+          <Layers className="w-6 h-6 text-sky-400" />
         </div>
 
         {/* Center Content */}
@@ -1831,7 +1833,7 @@ function EmptyFolderDropArea({ folderId }: { folderId: string }) {
   return (
     <div
       ref={setNodeRef}
-      className={`col-span-full text-center text-sm py-8 italic border-2 border-dashed rounded-xl transition-all
+      className={`col-span-full text-center text-sm py-8 border-2 border-dashed rounded-xl transition-all
         ${isOver ? 'border-indigo-400 text-indigo-300 bg-indigo-500/10' : 'border-neutral-800/50 text-neutral-500 hover:text-neutral-400'}
       `}
     >
@@ -1917,7 +1919,7 @@ function FolderRow({
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-200 mb-3
+      className={`rounded-2xl border transition-all duration-200
           ${showMenu ? 'z-50 relative' : ''}
           ${isOver
           ? 'bg-indigo-900/40 border-indigo-500 scale-[1.02] shadow-xl'
@@ -1932,9 +1934,7 @@ function FolderRow({
         <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
           {/* Left Icon (Folder representation) */}
           <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center shrink-0">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-indigo-400">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <Folder className="w-6 h-6 text-indigo-400 fill-indigo-400/20" />
           </div>
 
           <div className="flex flex-col gap-1 w-full min-w-0">

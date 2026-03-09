@@ -60,7 +60,10 @@ export default function RankingPage() {
     if (status === 'unauthenticated') {
         return (
             <div className="min-h-screen bg-[#050505] p-6 flex flex-col items-center justify-center text-center font-sans text-white">
-                <h1 className="text-3xl font-black mb-4">👑 ワードマスター ランキング</h1>
+                <h1 className="text-3xl flex flex-col items-center justify-center font-black mb-4 gap-1">
+                    <span className="text-4xl">👑</span>
+                    <span className="text-center">ワードマスター<br />ランキング</span>
+                </h1>
                 <p className="text-neutral-500 mb-8">ランキングを見るにはログインが必要です。</p>
                 <Link href="/api/auth/signin" className="bg-white text-black px-6 py-3 rounded-full font-bold hover:opacity-80 transition">
                     ログインしてランキングを見る
@@ -97,9 +100,9 @@ export default function RankingPage() {
                     <Link href="/" className="text-sm font-bold text-neutral-500 hover:text-indigo-500 mb-6 inline-block">
                         ← トップに戻る
                     </Link>
-                    <h1 className="text-3xl font-black mb-2 flex items-center justify-center gap-2">
+                    <h1 className="text-3xl font-black mb-2 flex flex-col items-center justify-center gap-2">
                         <span className="text-4xl">👑</span>
-                        <span>ワードマスター ランキング</span>
+                        <span className="text-center">ワードマスター<br />ランキング</span>
                     </h1>
                     <p className="text-neutral-500 text-sm">
                         生成・登録した単語数のランキングです。
