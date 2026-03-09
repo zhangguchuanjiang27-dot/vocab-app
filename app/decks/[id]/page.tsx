@@ -1255,7 +1255,7 @@ export default function DeckPage() {
                     <motion.div
                         key={currentIndex}
                         {...bindCardDrag()}
-                        style={{ x: cardX, y: cardY, rotate: cardRotate, opacity: cardOpacity }}
+                        style={{ x: cardX, y: cardY, rotate: cardRotate, opacity: cardOpacity } as any}
                         animate={swipeControls}
                         className="relative w-full h-[360px] sm:h-[420px] max-w-md sm:max-w-2xl mx-auto cursor-pointer group touch-none"
                         onClick={() => {
@@ -1267,13 +1267,13 @@ export default function DeckPage() {
                     >
                         {/* Swipe Feedbacks */}
                         <motion.div
-                            style={{ opacity: rightOverlayOpacity }}
+                            style={{ opacity: rightOverlayOpacity } as any}
                             className="absolute top-8 left-8 z-40 border-4 border-green-500 text-green-500 font-black text-4xl rounded-xl px-4 py-2 transform -rotate-12 pointer-events-none bg-black/20 backdrop-blur-sm"
                         >
                             GOT IT
                         </motion.div>
                         <motion.div
-                            style={{ opacity: leftOverlayOpacity }}
+                            style={{ opacity: leftOverlayOpacity } as any}
                             className="absolute top-8 right-8 z-40 border-4 border-rose-500 text-rose-500 font-black text-4xl rounded-xl px-4 py-2 transform rotate-12 pointer-events-none bg-black/20 backdrop-blur-sm"
                         >
                             REVIEW
