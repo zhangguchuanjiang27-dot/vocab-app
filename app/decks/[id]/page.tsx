@@ -1254,7 +1254,7 @@ export default function DeckPage() {
                 <main className="flex-1 flex flex-col items-center justify-start mt-4 sm:mt-12 perspective-1000 w-full max-w-2xl mx-auto overflow-hidden">
                     <motion.div
                         key={currentIndex}
-                        {...bindCardDrag()}
+                        {...(bindCardDrag() as any)}
                         style={{ x: cardX, y: cardY, rotate: cardRotate, opacity: cardOpacity } as any}
                         animate={swipeControls}
                         className="relative w-full h-[360px] sm:h-[420px] max-w-md sm:max-w-2xl mx-auto cursor-pointer group touch-none"
