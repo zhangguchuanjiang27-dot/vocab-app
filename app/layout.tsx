@@ -110,7 +110,7 @@ export default async function RootLayout({
 
 
   return (
-    <html lang="ja" className="dark">
+    <html lang="ja" className="dark" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} ${merriweather.variable} ${notoSerifJP.variable} bg-black text-neutral-100 min-h-screen flex flex-col pb-[calc(60px+env(safe-area-inset-bottom))]`}>
         <Providers session={session}>
           {/* Server Component から呼び出す Client Component として Header を実装 */}

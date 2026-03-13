@@ -55,6 +55,9 @@ model User {
   isPublicRanking Boolean @default(false)
   badges        UserBadge[]
   inquiries     Inquiry[]
+  dailyStudyCount Int      @default(0)  // 「本日の10問」の累計学習回数
+  dailyLastStudiedAt DateTime?         // 「本日の10問」の最終学習日時
+  dailyActivities DailyActivity[]
 
   // Stripe Subscription
   stripeCustomerId       String?
@@ -111,6 +114,9 @@ model Deck {
     folderId  String?
     folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
+    study_count Int      @default(0)
+    last_studied_at DateTime?
+
     words     WordCard[]
 }
 
@@ -161,4 +167,15 @@ model Folder {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   decks     Deck[]
+}
+
+// 日別のアクティビティ（学習量）
+model DailyActivity {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @default(now()) // 日付（時間は00:00:00に丸める）
+  xp        Int      @default(0)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
 }

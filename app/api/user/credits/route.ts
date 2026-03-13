@@ -12,15 +12,6 @@ export async function GET() {
 
     const user = (await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: {
-            credits: true,
-            xp: true,
-            subscriptionPlan: true,
-            isPublicRanking: true,
-            badges: {
-                include: { badge: true }
-            }
-        } as any,
     })) as any;
 
     return NextResponse.json({
@@ -28,6 +19,8 @@ export async function GET() {
         xp: user?.xp ?? 0,
         subscriptionPlan: user?.subscriptionPlan,
         isPublicRanking: user?.isPublicRanking ?? false,
+        dailyStudyCount: user?.['dailyStudyCount'] ?? 0,
+        dailyLastStudiedAt: user?.['dailyLastStudiedAt'],
         badges: user?.badges ?? []
     });
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
@@ -26,6 +26,8 @@ type WordCard = {
 type Deck = {
     id: string;
     title: string;
+    study_count?: number;
+    last_studied_at?: string | null;
     words: WordCard[];
 };
 
@@ -219,7 +221,9 @@ export default function DeckPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const deckId = params.id as string;
+    const from = searchParams.get('from');
 
     const [deck, setDeck] = useState<Deck | null>(null);
     const [loading, setLoading] = useState(true);
@@ -250,6 +254,20 @@ export default function DeckPage() {
     const [reviewWords, setReviewWords] = useState<WordCard[] | null>(null); // null means normal mode
     const [includeMastered, setIncludeMastered] = useState(false);
     const [earnedXp, setEarnedXp] = useState(0);
+
+    const lastStudiedText = useMemo(() => {
+        if (!deck?.last_studied_at) return "未学習";
+        const lastDate = new Date(deck.last_studied_at);
+        const now = new Date();
+        const lastDateDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diffTime = nowDay.getTime() - lastDateDay.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return "今日";
+        if (diffDays === 1) return "昨日";
+        return `${diffDays}日前`;
+    }, [deck?.last_studied_at]);
 
     // Swipe animation state
     const cardX = useMotionValue(0);
@@ -699,7 +717,35 @@ export default function DeckPage() {
         }
     }, [session, status, deckId]);
 
+    const fetchDailyQuiz = async () => {
+        try {
+            const res = await fetch("/api/user/daily-quiz");
+            if (res.ok) {
+                const data = await res.json();
+                const processedWords = data.words.map((w: any) => processWordCard(w));
+                setDeck({
+                    id: "daily-10",
+                    title: "本日の10問",
+                    words: processedWords,
+                    study_count: data.study_count,
+                    last_studied_at: data.last_studied_at
+                });
+            } else {
+                alert("クイズの作成に失敗しました");
+                router.push("/");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("クイズ作成エラー");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchDeck = async () => {
+        if (deckId === 'daily-10') {
+            return fetchDailyQuiz();
+        }
         try {
             const res = await fetch(`/api/decks/${deckId}`);
             if (res.ok) {
@@ -1111,6 +1157,26 @@ export default function DeckPage() {
         setIsFinished(true);
         setEarnedXp(earned);
 
+        // Record study session
+        try {
+            if (!reviewWords) {
+                const res = await fetch(`/api/decks/${deckId}/study`, {
+                    method: "POST",
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Update local deck state with new stats
+                    setDeck(prev => prev ? ({
+                        ...prev,
+                        study_count: data.study_count,
+                        last_studied_at: data.last_studied_at
+                    }) : null);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to record study session", e);
+        }
+
         if (earned > 0) {
             // Shoot confetti
             confetti({
@@ -1290,7 +1356,7 @@ export default function DeckPage() {
                                         currentCard.word.length > 14 ? 'text-2xl sm:text-3xl tracking-tight' :
                                             currentCard.word.length > 10 ? 'text-4xl sm:text-5xl' :
                                                 'text-5xl sm:text-6xl'
-                                        } font-black text-center mb-0 whitespace-nowrap overflow-hidden text-ellipsis w-full px-10 sm:px-16`} style={{ fontFamily: 'var(--font-merriweather)' }}>
+                                        } font-black text-center mb-0 whitespace-normal break-words leading-snug w-full px-6 pr-14 sm:px-12 sm:pr-20`} style={{ fontFamily: 'var(--font-merriweather)' }}>
                                         {currentCard.word}
                                     </h2>
                                     {/* 音声再生ボタン (Front) */}
@@ -1824,28 +1890,31 @@ export default function DeckPage() {
     }
     return (
         <div className="flex-1 flex flex-col bg-neutral-900 md:bg-black text-neutral-100 p-6 md:p-12 pb-0 md:pb-0 font-sans transition-colors duration-300">
-            <header className="max-w-4xl mx-auto w-full flex items-center justify-between mb-8 shrink-0">
-                <Link href="/#saved" className="px-4 py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-800 rounded-lg transition-colors">← 保存した単語帳に戻る</Link>
+            <header className="max-w-4xl mx-auto w-full flex items-center justify-between mb-2 md:mb-8 shrink-0 px-2 md:px-0">
+                <Link href={from === 'home' ? "/" : "/#saved"} className="p-2 md:px-4 md:py-2 text-sm font-bold text-neutral-500 hover:bg-neutral-800 rounded-lg transition-colors flex items-center gap-1">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+                    <span className="hidden md:inline">{from === 'home' ? "ホームに戻る" : "保存した単語帳に戻る"}</span>
+                </Link>
                 <button
                     onClick={handleDeleteDeck}
-                    className="px-4 py-2 text-xs font-bold text-red-400 hover:text-red-600 hover:bg-neutral-800 rounded-lg transition-all flex items-center gap-2"
+                    className="p-2 md:px-4 md:py-2 text-xs font-bold text-red-400 hover:text-red-600 hover:bg-neutral-800 rounded-lg transition-all flex items-center gap-2"
                 >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    単語帳を削除
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span className="hidden md:inline">単語帳を削除</span>
                 </button>
             </header>
 
             <main className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
                 {/* Cover / Info */}
-                <div className="flex-1 md:flex-none rounded-none md:rounded-[2rem] md:bg-[#131313] px-6 py-8 md:p-12 mb-0 md:mb-8 text-center sm:text-left flex flex-col items-start justify-between gap-6 -mx-6 md:mx-0 transition-colors">
-                    <div className="w-full min-w-0">
+                <div className="flex-1 md:flex-none rounded-none md:rounded-[2rem] md:bg-[#131313] px-6 pt-4 pb-12 md:p-16 mb-0 md:mb-8 text-center flex flex-col items-center justify-center gap-8 -mx-6 md:mx-0 transition-all duration-500">
+                    <div className="w-full relative z-10 flex flex-col items-center">
                         {isEditingTitle ? (
-                            <div className="flex items-center justify-center sm:justify-start gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                            <div className="flex items-center justify-center gap-3 w-full animate-in fade-in slide-in-from-top-2 duration-200">
                                 <input
                                     autoFocus
                                     value={editTitle}
                                     onChange={(e) => setEditTitle(e.target.value)}
-                                    className="flex-1 min-w-[200px] text-center sm:text-left text-3xl sm:text-4xl font-black bg-transparent border-b-4 border-indigo-500 px-1 py-1 focus:outline-none text-neutral-100 placeholder-neutral-500"
+                                    className="flex-1 min-w-[200px] text-center text-3xl sm:text-5xl font-black bg-transparent border-b-4 border-indigo-500 px-1 py-1 focus:outline-none text-neutral-100 placeholder-neutral-500"
                                     placeholder="タイトルを入力"
                                     onKeyDown={(e) => e.key === 'Enter' && handleUpdateTitle()}
                                 />
@@ -1867,76 +1936,133 @@ export default function DeckPage() {
                                 </div>
                             </div>
                         ) : (
-
                             <div
-                                className="group flex items-center justify-center sm:justify-start gap-2 sm:gap-4 cursor-pointer hover:bg-neutral-800/50 p-2 -m-2 rounded-2xl transition-all min-w-0"
+                                className="group flex items-center justify-center gap-4 cursor-pointer p-4 -m-4 rounded-2xl transition-all"
                                 onClick={() => { setIsEditingTitle(true); setEditTitle(deck.title); }}
                             >
-                                <div className="w-[36px] shrink-0 sm:hidden"></div>
-                                <h1 className="text-3xl sm:text-4xl font-black mb-0 leading-tight whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-indigo-400 transition-colors text-center sm:text-left">
+                                {/* Balancing spacer to keep title centered */}
+                                <div className="w-10 shrink-0"></div>
+
+                                <h1 className="text-4xl sm:text-6xl font-black mb-0 leading-tight text-white drop-shadow-2xl text-center tracking-tight group-hover:text-indigo-300 transition-colors flex-1">
                                     <span style={{ fontFamily: 'var(--font-merriweather), var(--font-noto-serif-jp), serif' }}>{deck.title}</span>
                                 </h1>
-                                <div className="p-2 rounded-lg text-neutral-500 hover:text-indigo-400 hover:bg-neutral-800 transition-all shrink-0 w-[36px] flex items-center justify-center" title="タイトルを変更">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                <div className="p-2 rounded-xl text-neutral-500 hover:text-indigo-400 hover:bg-neutral-800/80 transition-all shrink-0 w-10 flex items-center justify-center">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                 </div>
                             </div>
                         )}
-                        <p className="text-neutral-500 font-mono">{deck.words.length} 語</p>
+
+                        {/* Glassmorphism Stats Pill */}
+                        <div className="mt-8 px-6 py-3 rounded-2xl bg-white/[0.03] backdrop-blur-md border border-white/[0.08] shadow-2xl flex flex-col sm:flex-row items-center gap-y-2 sm:gap-x-8 transition-all hover:bg-white/[0.05] hover:border-white/[0.12]">
+                            <div className="flex items-center gap-2 text-neutral-400">
+                                <span className="text-[11px] font-bold font-mono tracking-wider"><span className="text-sm text-neutral-200">{deck.words.length}</span> <span className="font-normal opacity-60">WORDS</span></span>
+                            </div>
+                            <div className="hidden sm:block w-px h-4 bg-white/[0.1]"></div>
+                            <div className="flex items-center gap-2 text-neutral-300 font-bold text-xs uppercase tracking-wide">
+                                <span className="text-base">🔥</span> <span className="opacity-70">学習回数:</span> <span className="text-indigo-400 text-sm">{deck.study_count ?? 0}</span><span className="text-[10px] opacity-60">回</span>
+                            </div>
+                            <div className="hidden sm:block w-px h-4 bg-white/[0.1]"></div>
+                            <div className="flex items-center gap-2 text-neutral-400 font-bold text-xs uppercase tracking-wide">
+                                <span className="text-base">📅</span> <span className="opacity-70">最終学習:</span> <span className="text-neutral-200">{lastStudiedText}</span>
+                            </div>
+                        </div>
                     </div>
 
                     {deck.words.length > 0 && (
                         <div className="flex flex-col gap-4 w-full shrink-0">
-                            <div className="flex items-center gap-2 bg-neutral-800 p-1 rounded-xl w-fit self-center sm:self-start mb-2">
-                                <button
-                                    onClick={() => setIsRandomMode(false)}
-                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-400'}`}
-                                >
-                                    🔢 順序通り
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        if (deck) setShuffledWords(shuffleArray(sortedWords));
-                                        setIsRandomMode(true);
-                                    }}
-                                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-700'}`}
-                                >
-                                    🔀 ランダム
-                                </button>
-                            </div>
-                            <div className="flex flex-wrap gap-3 justify-center sm:justify-start items-center">
-                                <button onClick={() => { handleRestart(); setMode('flashcard'); }} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">🎴</span> フラッシュカード
-                                </button>
-                                <button onClick={() => setSelectingModeFor('writing_test')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">📝</span> ライティング
-                                </button>
-                                <button onClick={() => setSelectingModeFor('dictation')} className="px-6 py-3.5 bg-neutral-800 border-2 border-neutral-700 text-indigo-400 text-lg font-bold rounded-full shadow-md hover:border-indigo-500 transition-all active:scale-95 flex items-center gap-3">
-                                    <span className="text-2xl">🎧</span> ディクテーション
-                                </button>
+                            {/* Learning Options Group */}
+                            <div className="bg-white/5 border-y sm:border border-neutral-800/50 rounded-none sm:rounded-2xl p-4 sm:p-5 -mx-6 sm:mx-0 flex flex-col sm:flex-row justify-between items-center gap-4 mb-2">
+                                <div className="flex flex-col items-center sm:items-start gap-2">
+                                    <span className="text-[10px] font-black uppercase text-neutral-500 tracking-widest ml-1">出題順</span>
+                                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl w-fit">
+                                        <button
+                                            onClick={() => setIsRandomMode(false)}
+                                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${!isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                        >
+                                            🔢 順序通り
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (deck) setShuffledWords(shuffleArray(sortedWords));
+                                                setIsRandomMode(true);
+                                            }}
+                                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${isRandomMode ? 'bg-indigo-600 shadow-md text-white' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                        >
+                                            🔀 ランダム
+                                        </button>
+                                    </div>
+                                </div>
 
-                                <div className="flex items-center gap-2 ml-2">
-                                    <label className="flex items-center gap-2 cursor-pointer select-none px-3 py-2 rounded-lg hover:bg-neutral-800 transition">
+                                <div className="flex flex-col items-center sm:items-end gap-2">
+                                    <span className="text-[10px] font-black uppercase text-neutral-500 tracking-widest mr-1">学習対象</span>
+                                    <label className="flex items-center gap-3 cursor-pointer select-none px-4 py-2 rounded-xl bg-black/40 hover:bg-black/60 transition border border-white/5">
                                         <input
                                             type="checkbox"
                                             checked={includeMastered}
                                             onChange={(e) => setIncludeMastered(e.target.checked)}
                                             className="w-4 h-4 rounded border-neutral-700 text-indigo-600 focus:ring-indigo-500"
                                         />
-                                        <span className="text-xs font-bold text-neutral-500">✓ 済みも含める</span>
+                                        <span className="text-xs font-bold text-neutral-300 whitespace-nowrap">✓ 済みも含める</span>
                                     </label>
                                 </div>
-
-                                {deck.words.some(w => !w.example && (!w.otherExamples || w.otherExamples.length === 0)) && (
-                                    <button
-                                        onClick={handleBulkGenerate}
-                                        disabled={isBulkGenerating}
-                                        className="ml-auto px-6 py-3 bg-amber-500 text-white text-sm font-bold rounded-full shadow-lg hover:bg-amber-600 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
-                                    >
-                                        <span className="text-xl">{isBulkGenerating ? "⏳" : "🪄"}</span>
-                                        {isBulkGenerating ? "生成中..." : "例文生成"}
-                                    </button>
-                                )}
                             </div>
+
+                            {/* Learning Mode Cards */}
+                            <div className="flex flex-col gap-4 w-full max-w-xl mx-auto mt-2">
+                                {/* Count increment info banner */}
+                                <div className="bg-indigo-900/10 border border-indigo-500/30 rounded-2xl px-5 py-3 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-500">
+                                    <span className="text-xl">✨</span>
+                                    <p className="text-xs sm:text-sm font-bold text-indigo-300 leading-relaxed">
+                                        フラッシュカード、ライティング、ディクテーションを最後まで完了すると、学習回数がカウントされます。
+                                    </p>
+                                </div>
+                                {/* Flashcard Card */}
+                                <button
+                                    onClick={() => { handleRestart(); setMode('flashcard'); }}
+                                    className="w-full bg-neutral-800/80 border-2 border-neutral-700/50 rounded-3xl p-5 flex items-center gap-5 hover:bg-neutral-700/80 hover:border-indigo-500/50 transition-all active:scale-[0.98] shadow-lg group"
+                                >
+                                    <span className="text-4xl bg-neutral-900/50 p-3 rounded-2xl group-hover:scale-110 transition-transform">🎴</span>
+                                    <div className="flex-1 text-left">
+                                        <h3 className="text-xl font-black text-white">フラッシュカード</h3>
+                                    </div>
+                                    <svg className="text-neutral-600 group-hover:text-indigo-400 transition-colors" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+
+                                {/* Writing Card */}
+                                <button
+                                    onClick={() => setSelectingModeFor('writing_test')}
+                                    className="w-full bg-neutral-800/80 border-2 border-neutral-700/50 rounded-3xl p-5 flex items-center gap-5 hover:bg-neutral-700/80 hover:border-indigo-500/50 transition-all active:scale-[0.98] shadow-lg group"
+                                >
+                                    <span className="text-4xl bg-neutral-900/50 p-3 rounded-2xl group-hover:scale-110 transition-transform">📝</span>
+                                    <div className="flex-1 text-left">
+                                        <h3 className="text-xl font-black text-white">ライティング</h3>
+                                    </div>
+                                    <svg className="text-neutral-600 group-hover:text-indigo-400 transition-colors" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+
+                                {/* Dictation Card */}
+                                <button
+                                    onClick={() => setSelectingModeFor('dictation')}
+                                    className="w-full bg-neutral-800/80 border-2 border-neutral-700/50 rounded-3xl p-5 flex items-center gap-5 hover:bg-neutral-700/80 hover:border-indigo-500/50 transition-all active:scale-[0.98] shadow-lg group"
+                                >
+                                    <span className="text-4xl bg-neutral-900/50 p-3 rounded-2xl group-hover:scale-110 transition-transform">🎧</span>
+                                    <div className="flex-1 text-left">
+                                        <h3 className="text-xl font-black text-white">ディクテーション</h3>
+                                    </div>
+                                    <svg className="text-neutral-600 group-hover:text-indigo-400 transition-colors" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </button>
+                            </div>
+
+                            {deck.words.some(w => !w.example && (!w.otherExamples || w.otherExamples.length === 0)) && (
+                                <button
+                                    onClick={handleBulkGenerate}
+                                    disabled={isBulkGenerating}
+                                    className="px-6 py-4 bg-amber-500 text-white text-base font-bold rounded-3xl shadow-lg hover:bg-amber-600 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 mt-4 w-full max-w-xl mx-auto"
+                                >
+                                    <span className="text-2xl">{isBulkGenerating ? "⏳" : "🪄"}</span>
+                                    {isBulkGenerating ? "生成中..." : "例文を一括生成"}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -2012,552 +2138,558 @@ export default function DeckPage() {
                         </div>
                     </div>
 
-                    {sortedWords.length === 0 ? (
-                        <div className="p-12 text-center text-neutral-400">単語がありません。ホーム画面から追加してください。</div>
-                    ) : (
-                        sortedWords.map((card, idx) => (
-                            <div
-                                key={card.id || idx}
-                                className="group p-6 border-b border-neutral-800 last:border-0 hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative select-none"
-                            >
-                                {isSelectionMode && (
-                                    <div className="pt-1.5 flex flex-col gap-2 items-center">
-                                        <input
-                                            type="checkbox"
-                                            checked={card.id ? selectedWordIds.has(card.id) : false}
-                                            onChange={() => card.id && toggleSelectWord(card.id)}
-                                            className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Mastered Checkbox */}
-                                {!isSelectionMode && (
-                                    <button
-                                        onClick={(e) => card.id && toggleMastered(card.id, !!card.isMastered, e)}
-                                        className={`pt-1.5 transition-opacity ${card.isMastered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
-                                        title={card.isMastered ? "マスター済み (学習対象から除外)" : "未マスター"}
-                                    >
-                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${card.isMastered ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300'}`}>
-                                            {card.isMastered && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                    {
+                        sortedWords.length === 0 ? (
+                            <div className="p-12 text-center text-neutral-400">単語がありません。ホーム画面から追加してください。</div>
+                        ) : (
+                            sortedWords.map((card, idx) => (
+                                <div
+                                    key={card.id || idx}
+                                    className="group p-6 border-b border-neutral-800 last:border-0 hover:bg-neutral-800/30 transition-colors flex gap-4 items-start relative select-none"
+                                >
+                                    {isSelectionMode && (
+                                        <div className="pt-1.5 flex flex-col gap-2 items-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={card.id ? selectedWordIds.has(card.id) : false}
+                                                onChange={() => card.id && toggleSelectWord(card.id)}
+                                                className="w-5 h-5 rounded border-neutral-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
                                         </div>
-                                    </button>
-                                )}
+                                    )}
 
-                                {/* Editing Form */}
-                                {editingWordId === card.id ? (
-                                    <div className="flex-1 space-y-4">
-                                        <div className="grid grid-cols-1 gap-4">
+                                    {/* Mastered Checkbox */}
+                                    {!isSelectionMode && (
+                                        <button
+                                            onClick={(e) => card.id && toggleMastered(card.id, !!card.isMastered, e)}
+                                            className={`pt-1.5 transition-opacity ${card.isMastered ? 'opacity-100' : 'opacity-30 hover:opacity-100'}`}
+                                            title={card.isMastered ? "マスター済み (学習対象から除外)" : "未マスター"}
+                                        >
+                                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${card.isMastered ? 'bg-green-500 border-green-500 text-white' : 'border-neutral-300'}`}>
+                                                {card.isMastered && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
+                                            </div>
+                                        </button>
+                                    )}
+
+                                    {/* Editing Form */}
+                                    {editingWordId === card.id ? (
+                                        <div className="flex-1 space-y-4">
+                                            <div className="grid grid-cols-1 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">単語</label>
+                                                    <input
+                                                        value={editFormData.word}
+                                                        onChange={(e) => setEditFormData({ ...editFormData, word: e.target.value })}
+                                                        className="w-full p-2 border border-neutral-700 rounded bg-black text-white font-serif font-bold"
+                                                    />
+                                                </div>
+
+                                                {/* POS Field Removed */}
+                                            </div>
                                             <div>
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">単語</label>
-                                                <input
-                                                    value={editFormData.word}
-                                                    onChange={(e) => setEditFormData({ ...editFormData, word: e.target.value })}
-                                                    className="w-full p-2 border border-neutral-700 rounded bg-black text-white font-serif font-bold"
-                                                />
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
+                                                <textarea
+                                                    value={editFormData.meaning}
+                                                    onChange={(e) => setEditFormData({ ...editFormData, meaning: e.target.value })}
+                                                    rows={3}
+                                                    className="w-full p-2 border border-neutral-700 rounded bg-black text-white font-bold text-sm"
+                                                ></textarea>
                                             </div>
+                                            {/* Primary Example fields removed for modernization */}
 
-                                            {/* POS Field Removed */}
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-1">意味</label>
-                                            <textarea
-                                                value={editFormData.meaning}
-                                                onChange={(e) => setEditFormData({ ...editFormData, meaning: e.target.value })}
-                                                rows={3}
-                                                className="w-full p-2 border border-neutral-700 rounded bg-black text-white font-bold text-sm"
-                                            ></textarea>
-                                        </div>
-                                        {/* Primary Example fields removed for modernization */}
-
-                                        {/* 追加の例文の編集セクション */}
-                                        <div className="space-y-4 pt-4 border-t border-neutral-800">
-                                            <div className="flex items-center justify-between">
-                                                <label className="block text-xs font-bold text-neutral-400 uppercase">追加の例文</label>
-                                                <button
-                                                    onClick={() => {
-                                                        const newExamples = [...editFormData.otherExamples, { role: "", text: "", translation: "" }];
-                                                        setEditFormData({ ...editFormData, otherExamples: newExamples });
-                                                    }}
-                                                    className="px-3 py-1 bg-neutral-800 text-indigo-400 rounded-lg text-xs font-bold hover:bg-neutral-700 transition"
-                                                >
-                                                    + 例文を追加
-                                                </button>
-                                            </div>
-
-                                            {editFormData.otherExamples.map((ex, i) => (
-                                                <div key={i} className="p-4 bg-neutral-800/50 rounded-xl space-y-3 relative group/ex">
+                                            {/* 追加の例文の編集セクション */}
+                                            <div className="space-y-4 pt-4 border-t border-neutral-800">
+                                                <div className="flex items-center justify-between">
+                                                    <label className="block text-xs font-bold text-neutral-400 uppercase">追加の例文</label>
                                                     <button
                                                         onClick={() => {
-                                                            const newExamples = editFormData.otherExamples.filter((_, idx) => idx !== i);
+                                                            const newExamples = [...editFormData.otherExamples, { role: "", text: "", translation: "" }];
                                                             setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                         }}
-                                                        className="absolute top-2 right-2 text-neutral-400 hover:text-red-500 transition-colors"
+                                                        className="px-3 py-1 bg-neutral-800 text-indigo-400 rounded-lg text-xs font-bold hover:bg-neutral-700 transition"
                                                     >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                        + 例文を追加
                                                     </button>
-                                                    <div>
-                                                        <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">役割（例：動詞、熟語）</label>
-                                                        <input
-                                                            value={ex.role}
-                                                            placeholder="例: 動詞"
-                                                            onChange={(e) => {
-                                                                const newExamples = [...editFormData.otherExamples];
-                                                                newExamples[i].role = e.target.value;
+                                                </div>
+
+                                                {editFormData.otherExamples.map((ex, i) => (
+                                                    <div key={i} className="p-4 bg-neutral-800/50 rounded-xl space-y-3 relative group/ex">
+                                                        <button
+                                                            onClick={() => {
+                                                                const newExamples = editFormData.otherExamples.filter((_, idx) => idx !== i);
                                                                 setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                             }}
-                                                            className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black font-bold"
-                                                        />
-                                                    </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            className="absolute top-2 right-2 text-neutral-400 hover:text-red-500 transition-colors"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                        </button>
                                                         <div>
-                                                            <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">英文</label>
-                                                            <textarea
-                                                                value={ex.text}
+                                                            <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">役割（例：動詞、熟語）</label>
+                                                            <input
+                                                                value={ex.role}
+                                                                placeholder="例: 動詞"
                                                                 onChange={(e) => {
                                                                     const newExamples = [...editFormData.otherExamples];
-                                                                    newExamples[i].text = e.target.value;
+                                                                    newExamples[i].role = e.target.value;
                                                                     setEditFormData({ ...editFormData, otherExamples: newExamples });
                                                                 }}
-                                                                rows={2}
-                                                                className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
-                                                            ></textarea>
+                                                                className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black font-bold"
+                                                            />
                                                         </div>
-                                                        <div>
-                                                            <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">和訳</label>
-                                                            <textarea
-                                                                value={ex.translation}
-                                                                onChange={(e) => {
-                                                                    const newExamples = [...editFormData.otherExamples];
-                                                                    newExamples[i].translation = e.target.value;
-                                                                    setEditFormData({ ...editFormData, otherExamples: newExamples });
-                                                                }}
-                                                                rows={2}
-                                                                className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
-                                                            ></textarea>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">英文</label>
+                                                                <textarea
+                                                                    value={ex.text}
+                                                                    onChange={(e) => {
+                                                                        const newExamples = [...editFormData.otherExamples];
+                                                                        newExamples[i].text = e.target.value;
+                                                                        setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                                    }}
+                                                                    rows={2}
+                                                                    className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
+                                                                ></textarea>
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[10px] font-bold text-neutral-400 uppercase mb-1">和訳</label>
+                                                                <textarea
+                                                                    value={ex.translation}
+                                                                    onChange={(e) => {
+                                                                        const newExamples = [...editFormData.otherExamples];
+                                                                        newExamples[i].translation = e.target.value;
+                                                                        setEditFormData({ ...editFormData, otherExamples: newExamples });
+                                                                    }}
+                                                                    rows={2}
+                                                                    className="w-full p-1.5 text-xs border border-neutral-700 rounded bg-black"
+                                                                ></textarea>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Synonyms Edit */}
-                                        <div className="pt-4 border-t border-neutral-800">
-                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">類義語 (Synonyms)</label>
-                                            {editFormData.synonyms.map((s, i) => (
-                                                <div key={i} className="flex gap-2 mb-2 items-center">
-                                                    <input value={s.word} onChange={e => {
-                                                        const n = [...editFormData.synonyms]; n[i].word = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
-                                                    <input value={s.partOfSpeech} onChange={e => {
-                                                        const n = [...editFormData.synonyms]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
-                                                    <input value={s.meaning} onChange={e => {
-                                                        const n = [...editFormData.synonyms]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
-                                                    <button onClick={() => {
-                                                        const n = editFormData.synonyms.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, synonyms: n });
-                                                    }} className="text-red-400 hover:text-red-600">×</button>
-                                                </div>
-                                            ))}
-                                            <button onClick={() => setEditFormData({ ...editFormData, synonyms: [...editFormData.synonyms, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
-                                        </div>
-
-                                        {/* Derivatives Edit */}
-                                        <div className="pt-4 border-t border-neutral-800">
-                                            <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">派生語 (Derivatives)</label>
-                                            {editFormData.derivatives.map((d, i) => (
-                                                <div key={i} className="flex gap-2 mb-2 items-center">
-                                                    <input value={d.word} onChange={e => {
-                                                        const n = [...editFormData.derivatives]; n[i].word = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
-                                                    <input value={d.partOfSpeech} onChange={e => {
-                                                        const n = [...editFormData.derivatives]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
-                                                    <input value={d.meaning} onChange={e => {
-                                                        const n = [...editFormData.derivatives]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
-                                                    <button onClick={() => {
-                                                        const n = editFormData.derivatives.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, derivatives: n });
-                                                    }} className="text-red-400 hover:text-red-600">×</button>
-                                                </div>
-                                            ))}
-                                            <button onClick={() => setEditFormData({ ...editFormData, derivatives: [...editFormData.derivatives, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
-                                        </div>
-                                        <div className="flex justify-end gap-2 mt-2">
-                                            <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
-                                            <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold text-sm">保存</button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
-                                            <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xl sm:text-2xl font-black font-serif tracking-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
-                                                    <button
-                                                        onClick={() => speak(card.word)}
-                                                        className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-800 transition-colors shrink-0"
-                                                        title="Play word"
-                                                    >
-                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                    </button>
-                                                </div>
-                                                {/* POS Badge Removed */}
+                                                ))}
                                             </div>
-                                            <div className="flex-1 pt-1">
-                                                <div className="text-sm sm:text-base font-bold text-neutral-200 mb-2 leading-relaxed whitespace-pre-wrap break-words" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{formatMeaningText(card.meaning)}</div>
-                                                <div className="space-y-1">
-                                                    {/* 例文セクション (ロック機能なし) */}
-                                                    {(card.example || (card.otherExamples && card.otherExamples.length > 0)) ? (
-                                                        <div className="space-y-3">
-                                                            <button
-                                                                onClick={() => card.id && toggleExampleVisibility(card.id)}
-                                                                className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors mb-2"
-                                                            >
-                                                                <span className="text-[10px]">{expandedListItems[card.id!] ? '▼' : '▶'}</span>
-                                                                {expandedListItems[card.id!] ? '例文を隠す' : '例文を表示'}
-                                                            </button>
 
-                                                            {expandedListItems[card.id!] && (
-                                                                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
-                                                                    {/* Legacy primary example display removed for modernization */}
+                                            {/* Synonyms Edit */}
+                                            <div className="pt-4 border-t border-neutral-800">
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">類義語 (Synonyms)</label>
+                                                {editFormData.synonyms.map((s, i) => (
+                                                    <div key={i} className="flex gap-2 mb-2 items-center">
+                                                        <input value={s.word} onChange={e => {
+                                                            const n = [...editFormData.synonyms]; n[i].word = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                        }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
+                                                        <input value={s.partOfSpeech} onChange={e => {
+                                                            const n = [...editFormData.synonyms]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                        }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
+                                                        <input value={s.meaning} onChange={e => {
+                                                            const n = [...editFormData.synonyms]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, synonyms: n });
+                                                        }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
+                                                        <button onClick={() => {
+                                                            const n = editFormData.synonyms.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, synonyms: n });
+                                                        }} className="text-red-400 hover:text-red-600">×</button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => setEditFormData({ ...editFormData, synonyms: [...editFormData.synonyms, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
+                                            </div>
 
-                                                                    {/* 追加の例文表示 (リスト表示) */}
-                                                                    {card.otherExamples && card.otherExamples.length > 0 && (
-                                                                        <>
-                                                                            <div className="mb-4 flex justify-end">
-                                                                                <button
-                                                                                    onClick={() => card.id && handleGenerateDetails(card.id, true)}
-                                                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-900/60 transition-colors border border-indigo-800"
-                                                                                >
-                                                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
-                                                                                    再生成 (🪙1)
-                                                                                </button>
-                                                                            </div>
-                                                                            <div className="mt-4 space-y-6">
-                                                                                {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
-                                                                                    <div key={i} className="relative pl-4 border-l-2 border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                                                                                        {ex.role && (
-                                                                                            <div className="mb-2">
-                                                                                                <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-950/40 text-indigo-400 rounded-md border border-indigo-900/50">
-                                                                                                    {ex.role}
-                                                                                                </span>
-                                                                                            </div>
-                                                                                        )}
+                                            {/* Derivatives Edit */}
+                                            <div className="pt-4 border-t border-neutral-800">
+                                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">派生語 (Derivatives)</label>
+                                                {editFormData.derivatives.map((d, i) => (
+                                                    <div key={i} className="flex gap-2 mb-2 items-center">
+                                                        <input value={d.word} onChange={e => {
+                                                            const n = [...editFormData.derivatives]; n[i].word = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                        }} className="w-1/3 p-1 text-xs border rounded bg-black" placeholder="Word" />
+                                                        <input value={d.partOfSpeech} onChange={e => {
+                                                            const n = [...editFormData.derivatives]; n[i].partOfSpeech = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                        }} className="w-1/4 p-1 text-xs border rounded bg-black" placeholder="POS" />
+                                                        <input value={d.meaning} onChange={e => {
+                                                            const n = [...editFormData.derivatives]; n[i].meaning = e.target.value; setEditFormData({ ...editFormData, derivatives: n });
+                                                        }} className="flex-1 p-1 text-xs border rounded bg-black" placeholder="Meaning" />
+                                                        <button onClick={() => {
+                                                            const n = editFormData.derivatives.filter((_, idx) => idx !== i); setEditFormData({ ...editFormData, derivatives: n });
+                                                        }} className="text-red-400 hover:text-red-600">×</button>
+                                                    </div>
+                                                ))}
+                                                <button onClick={() => setEditFormData({ ...editFormData, derivatives: [...editFormData.derivatives, { word: "", partOfSpeech: "", meaning: "" }] })} className="text-xs text-indigo-500 font-bold">+ 追加</button>
+                                            </div>
+                                            <div className="flex justify-end gap-2 mt-2">
+                                                <button onClick={handleCancelEdit} className="px-4 py-2 bg-neutral-800 rounded font-bold text-sm">キャンセル</button>
+                                                <button onClick={handleSaveEdit} className="px-4 py-2 bg-indigo-600 text-white rounded font-bold text-sm">保存</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-baseline pr-12">
+                                                <div className="flex flex-wrap items-baseline gap-2 sm:gap-3 min-w-[120px] sm:min-w-[200px]">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xl sm:text-2xl font-black font-serif tracking-tight" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
+                                                        <button
+                                                            onClick={() => speak(card.word)}
+                                                            className="p-1.5 text-neutral-300 hover:text-indigo-500 rounded-full hover:bg-neutral-800 transition-colors shrink-0"
+                                                            title="Play word"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                        </button>
+                                                    </div>
+                                                    {/* POS Badge Removed */}
+                                                </div>
+                                                <div className="flex-1 pt-1">
+                                                    <div className="text-sm sm:text-base font-bold text-neutral-200 mb-2 leading-relaxed whitespace-pre-wrap break-words" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>{formatMeaningText(card.meaning)}</div>
+                                                    <div className="space-y-1">
+                                                        {/* 例文セクション (ロック機能なし) */}
+                                                        {(card.example || (card.otherExamples && card.otherExamples.length > 0)) ? (
+                                                            <div className="space-y-3">
+                                                                <button
+                                                                    onClick={() => card.id && toggleExampleVisibility(card.id)}
+                                                                    className="flex items-center gap-1 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-colors mb-2"
+                                                                >
+                                                                    <span className="text-[10px]">{expandedListItems[card.id!] ? '▼' : '▶'}</span>
+                                                                    {expandedListItems[card.id!] ? '例文を隠す' : '例文を表示'}
+                                                                </button>
 
-                                                                                        <div className="flex items-start gap-4">
-                                                                                            <button
-                                                                                                onClick={() => speak(ex.text)}
-                                                                                                className="mt-1 flex items-center justify-center w-10 h-10 bg-neutral-800 border border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
-                                                                                                title="Listen to example"
-                                                                                            >
-                                                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                                                                                            </button>
-                                                                                            <div className="flex-1 min-w-0">
-                                                                                                <div className="text-base sm:text-lg text-neutral-100 font-serif leading-tight mb-1">
-                                                                                                    {ex.text}
+                                                                {expandedListItems[card.id!] && (
+                                                                    <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                                                        {/* Legacy primary example display removed for modernization */}
+
+                                                                        {/* 追加の例文表示 (リスト表示) */}
+                                                                        {card.otherExamples && card.otherExamples.length > 0 && (
+                                                                            <>
+                                                                                <div className="mb-4 flex justify-end">
+                                                                                    <button
+                                                                                        onClick={() => card.id && handleGenerateDetails(card.id, true)}
+                                                                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-900/40 text-indigo-400 rounded-full text-[10px] font-bold hover:bg-indigo-900/60 transition-colors border border-indigo-800"
+                                                                                    >
+                                                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3" /></svg>
+                                                                                        再生成 (🪙1)
+                                                                                    </button>
+                                                                                </div>
+                                                                                <div className="mt-4 space-y-6">
+                                                                                    {card.otherExamples.filter((ex: any) => ex && typeof ex.text === 'string' && ex.text.trim() !== "").map((ex: any, i) => (
+                                                                                        <div key={i} className="relative pl-4 border-l-2 border-indigo-600 animate-in fade-in slide-in-from-left-2 duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                                                                                            {ex.role && (
+                                                                                                <div className="mb-2">
+                                                                                                    <span className="text-[10px] font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-950/40 text-indigo-400 rounded-md border border-indigo-900/50">
+                                                                                                        {ex.role}
+                                                                                                    </span>
                                                                                                 </div>
-                                                                                                <div className="text-sm text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
-                                                                                                    {ex.translation}
+                                                                                            )}
+
+                                                                                            <div className="flex items-start gap-4">
+                                                                                                <button
+                                                                                                    onClick={() => speak(ex.text)}
+                                                                                                    className="mt-1 flex items-center justify-center w-10 h-10 bg-neutral-800 border border-neutral-700 text-indigo-500 rounded-full hover:bg-indigo-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm shrink-0"
+                                                                                                    title="Listen to example"
+                                                                                                >
+                                                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                                                                                </button>
+                                                                                                <div className="flex-1 min-w-0">
+                                                                                                    <div className="text-base sm:text-lg text-neutral-100 font-serif leading-tight mb-1">
+                                                                                                        {ex.text}
+                                                                                                    </div>
+                                                                                                    <div className="text-sm text-neutral-400 font-light leading-snug" style={{ fontFamily: 'var(--font-noto-serif-jp)' }}>
+                                                                                                        {ex.translation}
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => card.id && handleGenerateDetails(card.id)}
-                                                            className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-900/10 rounded-full w-fit"
-                                                        >
-                                                            <span>🪄</span> 例文を生成
-                                                        </button>
-                                                    )}
+                                                                                    ))}
+                                                                                </div>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => card.id && handleGenerateDetails(card.id)}
+                                                                className="mt-2 text-xs font-bold text-amber-500 hover:text-amber-600 flex items-center gap-1 px-3 py-1.5 bg-amber-900/10 rounded-full w-fit"
+                                                            >
+                                                                <span>🪄</span> 例文を生成
+                                                            </button>
+                                                        )}
 
-                                                    {/* Synonyms & Derivatives Section */}
-                                                    {expandedListItems[card.id!] && (
-                                                        <div className="mt-8 pt-6 border-t border-neutral-800 animate-in fade-in slide-in-from-top-2">
+                                                        {/* Synonyms & Derivatives Section */}
+                                                        {expandedListItems[card.id!] && (
+                                                            <div className="mt-8 pt-6 border-t border-neutral-800 animate-in fade-in slide-in-from-top-2">
 
-                                                            {/* Generate Button if missing or empty */}
-                                                            {(!card.synonyms || card.synonyms.length === 0) && (!card.derivatives || card.derivatives.length === 0) ? (
-                                                                <div className="pb-4">
-                                                                    <button
-                                                                        onClick={() => card.id && handleGenerateExtras(card.id, 'all', false)}
-                                                                        className="w-full py-3 bg-gradient-to-r from-indigo-900/10 to-purple-900/10 text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-900/20 hover:to-purple-900/20 transition-all flex items-center justify-center gap-2 border border-indigo-800/30 shadow-sm"
-                                                                    >
-                                                                        <span>✨</span> 類義語・派生語を生成 (1コイン)
-                                                                    </button>
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <div className="flex justify-end mb-4">
+                                                                {/* Generate Button if missing or empty */}
+                                                                {(!card.synonyms || card.synonyms.length === 0) && (!card.derivatives || card.derivatives.length === 0) ? (
+                                                                    <div className="pb-4">
                                                                         <button
-                                                                            onClick={() => card.id && handleGenerateExtras(card.id, 'all', true)}
-                                                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-neutral-400 rounded-full text-[10px] font-bold hover:bg-neutral-700 transition-colors border border-neutral-700"
+                                                                            onClick={() => card.id && handleGenerateExtras(card.id, 'all', false)}
+                                                                            className="w-full py-3 bg-gradient-to-r from-indigo-900/10 to-purple-900/10 text-indigo-400 font-bold text-xs rounded-xl hover:from-indigo-900/20 hover:to-purple-900/20 transition-all flex items-center justify-center gap-2 border border-indigo-800/30 shadow-sm"
                                                                         >
-                                                                            <span>↻</span> 類義語・派生語を再生成 (🪙1)
+                                                                            <span>✨</span> 類義語・派生語を生成 (1コイン)
                                                                         </button>
                                                                     </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="flex justify-end mb-4">
+                                                                            <button
+                                                                                onClick={() => card.id && handleGenerateExtras(card.id, 'all', true)}
+                                                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 text-neutral-400 rounded-full text-[10px] font-bold hover:bg-neutral-700 transition-colors border border-neutral-700"
+                                                                            >
+                                                                                <span>↻</span> 類義語・派生語を再生成 (🪙1)
+                                                                            </button>
+                                                                        </div>
 
-                                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                                                        {/* Synonyms */}
-                                                                        <div>
-                                                                            <div className="flex items-center justify-between mb-3">
-                                                                                <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">類義語 (Synonyms)</h4>
+                                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                                            {/* Synonyms */}
+                                                                            <div>
+                                                                                <div className="flex items-center justify-between mb-3">
+                                                                                    <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">類義語 (Synonyms)</h4>
+                                                                                </div>
+
+                                                                                {!card.synonyms || card.synonyms.length === 0 ? (
+                                                                                    <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                                ) : (
+                                                                                    <ul className="space-y-2">
+                                                                                        {card.synonyms.map((s, i) => {
+                                                                                            const formatPOS = (pos: string) => {
+                                                                                                const lower = pos.toLowerCase();
+                                                                                                if (lower.startsWith('verb')) return '動';
+                                                                                                if (lower.startsWith('noun')) return '名';
+                                                                                                if (lower.startsWith('adj')) return '形';
+                                                                                                if (lower.startsWith('adv')) return '副';
+                                                                                                if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
+                                                                                                return pos;
+                                                                                            };
+                                                                                            return (
+                                                                                                <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
+                                                                                                    <div className="font-bold text-indigo-400">{s.word}</div>
+                                                                                                    <div className="text-xs text-neutral-400 flex items-start gap-2">
+                                                                                                        <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
+                                                                                                        <span>{s.meaning}</span>
+                                                                                                    </div>
+                                                                                                </li>
+                                                                                            );
+                                                                                        })}
+                                                                                    </ul>
+                                                                                )}
                                                                             </div>
 
-                                                                            {!card.synonyms || card.synonyms.length === 0 ? (
-                                                                                <p className="text-xs text-neutral-400 italic">なし</p>
-                                                                            ) : (
-                                                                                <ul className="space-y-2">
-                                                                                    {card.synonyms.map((s, i) => {
-                                                                                        const formatPOS = (pos: string) => {
-                                                                                            const lower = pos.toLowerCase();
-                                                                                            if (lower.startsWith('verb')) return '動';
-                                                                                            if (lower.startsWith('noun')) return '名';
-                                                                                            if (lower.startsWith('adj')) return '形';
-                                                                                            if (lower.startsWith('adv')) return '副';
-                                                                                            if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
-                                                                                            return pos;
-                                                                                        };
-                                                                                        return (
-                                                                                            <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
-                                                                                                <div className="font-bold text-indigo-400">{s.word}</div>
-                                                                                                <div className="text-xs text-neutral-400 flex items-start gap-2">
-                                                                                                    <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(s.partOfSpeech)}</span>
-                                                                                                    <span>{s.meaning}</span>
-                                                                                                </div>
-                                                                                            </li>
-                                                                                        );
-                                                                                    })}
-                                                                                </ul>
-                                                                            )}
-                                                                        </div>
+                                                                            {/* Derivatives */}
+                                                                            <div>
+                                                                                <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">派生語 (Derivatives)</h4>
 
-                                                                        {/* Derivatives */}
-                                                                        <div>
-                                                                            <h4 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">派生語 (Derivatives)</h4>
-
-                                                                            {!card.derivatives || card.derivatives.length === 0 ? (
-                                                                                <p className="text-xs text-neutral-400 italic">なし</p>
-                                                                            ) : (
-                                                                                <ul className="space-y-2">
-                                                                                    {card.derivatives.map((d, i) => {
-                                                                                        const formatPOS = (pos: string) => {
-                                                                                            const lower = pos.toLowerCase();
-                                                                                            if (lower.startsWith('verb')) return '動';
-                                                                                            if (lower.startsWith('noun')) return '名';
-                                                                                            if (lower.startsWith('adj')) return '形';
-                                                                                            if (lower.startsWith('adv')) return '副';
-                                                                                            if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
-                                                                                            return pos;
-                                                                                        };
-                                                                                        return (
-                                                                                            <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
-                                                                                                <div className="font-bold text-purple-400">{d.word}</div>
-                                                                                                <div className="text-xs text-neutral-400 flex items-start gap-2">
-                                                                                                    <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
-                                                                                                    <span>{d.meaning}</span>
-                                                                                                </div>
-                                                                                            </li>
-                                                                                        );
-                                                                                    })}
-                                                                                </ul>
-                                                                            )}
+                                                                                {!card.derivatives || card.derivatives.length === 0 ? (
+                                                                                    <p className="text-xs text-neutral-400 italic">なし</p>
+                                                                                ) : (
+                                                                                    <ul className="space-y-2">
+                                                                                        {card.derivatives.map((d, i) => {
+                                                                                            const formatPOS = (pos: string) => {
+                                                                                                const lower = pos.toLowerCase();
+                                                                                                if (lower.startsWith('verb')) return '動';
+                                                                                                if (lower.startsWith('noun')) return '名';
+                                                                                                if (lower.startsWith('adj')) return '形';
+                                                                                                if (lower.startsWith('adv')) return '副';
+                                                                                                if (lower.startsWith('phr') || lower.startsWith('idiom')) return '熟';
+                                                                                                return pos;
+                                                                                            };
+                                                                                            return (
+                                                                                                <li key={i} className="text-sm bg-black/20 p-2 rounded-lg border border-neutral-800">
+                                                                                                    <div className="font-bold text-purple-400">{d.word}</div>
+                                                                                                    <div className="text-xs text-neutral-400 flex items-start gap-2">
+                                                                                                        <span className="shrink-0 bg-neutral-800 text-neutral-300 px-1.5 rounded text-[10px]">{formatPOS(d.partOfSpeech)}</span>
+                                                                                                        <span>{d.meaning}</span>
+                                                                                                    </div>
+                                                                                                </li>
+                                                                                            );
+                                                                                        })}
+                                                                                    </ul>
+                                                                                )}
+                                                                            </div>
                                                                         </div>
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Action Buttons */}
-                                        <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity">
-                                            {/* Edit Button */}
-                                            <button
-                                                onClick={() => handleStartEdit(card)}
-                                                className="text-neutral-300 hover:text-indigo-500 bg-black/80 sm:bg-transparent rounded-full p-1.5"
-                                                title="Edit word"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                                            </button>
-                                            {/* Delete Button */}
-                                            <button
-                                                onClick={() => handleDeleteWord(card.id)}
-                                                className="text-neutral-300 hover:text-red-500 bg-black/80 sm:bg-transparent rounded-full p-1.5"
-                                                title="Remove word"
-                                            >
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))
-                    )}
-                </div>
+                                            {/* Action Buttons */}
+                                            <div className="absolute top-4 right-4 flex gap-2 opacity-100 transition-opacity">
+                                                {/* Edit Button */}
+                                                <button
+                                                    onClick={() => handleStartEdit(card)}
+                                                    className="text-neutral-300 hover:text-indigo-500 bg-black/80 sm:bg-transparent rounded-full p-1.5"
+                                                    title="Edit word"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                                </button>
+                                                {/* Delete Button */}
+                                                <button
+                                                    onClick={() => handleDeleteWord(card.id)}
+                                                    className="text-neutral-300 hover:text-red-500 bg-black/80 sm:bg-transparent rounded-full p-1.5"
+                                                    title="Remove word"
+                                                >
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            ))
+                        )
+                    }
+                </div >
             </main >
 
             {/* Move/Copy Modal */}
-            {showMoveModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-800 scale-100 flex flex-col gap-6">
-                        <div>
-                            <h3 className="text-2xl font-black mb-2 flex items-center gap-2">
-                                <span>📤</span> 移動 / コピー
-                            </h3>
-                            <p className="text-neutral-500 text-sm">
-                                選択した <span className="font-bold text-white">{selectedWordIds.size}</span> 件の単語を操作します。
-                            </p>
-                        </div>
-
-                        <div className="space-y-4">
+            {
+                showMoveModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-800 scale-100 flex flex-col gap-6">
                             <div>
-                                <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">移動先の単語帳</label>
-                                <select
-                                    value={targetDeckId}
-                                    onChange={(e) => setTargetDeckId(e.target.value)}
-                                    className="w-full p-4 rounded-xl bg-neutral-800 border-none font-bold text-neutral-200 focus:ring-2 focus:ring-indigo-500"
-                                >
-                                    <option value="">選択してください...</option>
-                                    {myDecks.map(d => (
-                                        <option key={d.id} value={d.id}>{d.title}</option>
-                                    ))}
-                                </select>
+                                <h3 className="text-2xl font-black mb-2 flex items-center gap-2">
+                                    <span>📤</span> 移動 / コピー
+                                </h3>
+                                <p className="text-neutral-500 text-sm">
+                                    選択した <span className="font-bold text-white">{selectedWordIds.size}</span> 件の単語を操作します。
+                                </p>
                             </div>
 
-                            <div className="flex flex-col gap-3 pt-2">
-                                <button
-                                    disabled={!targetDeckId}
-                                    onClick={() => handleMoveWords('move')}
-                                    className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-                                >
-                                    <span>➡️ 単語を移動する</span>
-                                </button>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">移動先の単語帳</label>
+                                    <select
+                                        value={targetDeckId}
+                                        onChange={(e) => setTargetDeckId(e.target.value)}
+                                        className="w-full p-4 rounded-xl bg-neutral-800 border-none font-bold text-neutral-200 focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">選択してください...</option>
+                                        {myDecks.map(d => (
+                                            <option key={d.id} value={d.id}>{d.title}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                                <button
-                                    disabled={!targetDeckId}
-                                    onClick={() => handleMoveWords('copy')}
-                                    className="w-full py-4 bg-neutral-800 text-white border-2 border-neutral-700 rounded-xl font-bold hover:bg-neutral-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
-                                >
-                                    <span>📋 コピーする</span>
-                                    <span className="text-xs font-normal px-2 py-0.5 bg-yellow-900/30 text-yellow-400 rounded-full border border-yellow-800">
-                                        🪙 -{selectedWordIds.size}
-                                    </span>
-                                </button>
+                                <div className="flex flex-col gap-3 pt-2">
+                                    <button
+                                        disabled={!targetDeckId}
+                                        onClick={() => handleMoveWords('move')}
+                                        className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                                    >
+                                        <span>➡️ 単語を移動する</span>
+                                    </button>
+
+                                    <button
+                                        disabled={!targetDeckId}
+                                        onClick={() => handleMoveWords('copy')}
+                                        className="w-full py-4 bg-neutral-800 text-white border-2 border-neutral-700 rounded-xl font-bold hover:bg-neutral-700 transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+                                    >
+                                        <span>📋 コピーする</span>
+                                        <span className="text-xs font-normal px-2 py-0.5 bg-yellow-900/30 text-yellow-400 rounded-full border border-yellow-800">
+                                            🪙 -{selectedWordIds.size}
+                                        </span>
+                                    </button>
+                                </div>
                             </div>
+
+                            <button
+                                onClick={() => setShowMoveModal(false)}
+                                className="mt-2 text-neutral-400 font-bold text-sm hover:text-neutral-200 transition-colors"
+                            >
+                                キャンセル
+                            </button>
                         </div>
-
-                        <button
-                            onClick={() => setShowMoveModal(false)}
-                            className="mt-2 text-neutral-400 font-bold text-sm hover:text-neutral-200 transition-colors"
-                        >
-                            キャンセル
-                        </button>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Mode Selection Modal */}
-            {selectingModeFor && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-800 flex flex-col gap-6">
-                        <div className="text-center">
-                            <h3 className="text-2xl font-black mb-2 text-white">
-                                {selectingModeFor === 'dictation' ? 'Dictation Mode' : 'Writing Mode'}
-                            </h3>
-                            <p className="text-neutral-400 text-sm">出題形式を選んでください</p>
+            {
+                selectingModeFor && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-neutral-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl border border-neutral-800 flex flex-col gap-6">
+                            <div className="text-center">
+                                <h3 className="text-2xl font-black mb-2 text-white">
+                                    {selectingModeFor === 'dictation' ? 'Dictation Mode' : 'Writing Mode'}
+                                </h3>
+                                <p className="text-neutral-400 text-sm">出題形式を選んでください</p>
+                            </div>
+
+                            <div className="space-y-3">
+                                {/* Word Only */}
+                                <button
+                                    onClick={() => {
+                                        handleRestart(false, 'word');
+                                        setMode(selectingModeFor);
+                                        setSelectingModeFor(null);
+                                    }}
+                                    className="w-full p-4 rounded-xl border-2 border-neutral-700 hover:border-indigo-500 bg-neutral-800/50 hover:bg-neutral-800 transition-all group text-left relative overflow-hidden"
+                                >
+                                    <div className="relative z-10">
+                                        <div className="font-bold text-lg text-white mb-1">単語のみ</div>
+                                        <div className="text-xs text-neutral-400">
+                                            {selectingModeFor === 'dictation'
+                                                ? "音声を聞いて単語を書き取る基本モード"
+                                                : "意味を見て単語を入力する基本モード"}
+                                        </div>
+                                    </div>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                        🍎
+                                    </div>
+                                </button>
+
+                                {/* Fill-in */}
+                                <button
+                                    onClick={() => {
+                                        handleRestart(false, 'fill-in');
+                                        setMode(selectingModeFor);
+                                        setSelectingModeFor(null);
+                                    }}
+                                    className="w-full p-4 rounded-xl border-2 border-indigo-500/50 hover:border-indigo-400 bg-indigo-900/10 hover:bg-indigo-900/20 transition-all group text-left relative overflow-hidden"
+                                >
+                                    <div className="relative z-10">
+                                        <div className="font-bold text-lg text-indigo-300 mb-1">例文穴埋め</div>
+                                        <div className="text-xs text-indigo-200/60">
+                                            {selectingModeFor === 'dictation'
+                                                ? "例文を聞いて空欄の単語を書き取る"
+                                                : "日本語訳を見て空欄の単語を埋める"}
+                                        </div>
+                                    </div>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                        🧩
+                                    </div>
+                                </button>
+
+                                {/* Full Sentence */}
+                                <button
+                                    onClick={() => {
+                                        handleRestart(false, 'full');
+                                        setMode(selectingModeFor);
+                                        setSelectingModeFor(null);
+                                    }}
+                                    className="w-full p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-400 bg-amber-900/10 hover:bg-amber-900/20 transition-all group text-left relative overflow-hidden"
+                                >
+                                    <div className="relative z-10">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="font-bold text-lg text-amber-500">例文全文</div>
+                                            <span className="text-[10px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded">HARD</span>
+                                        </div>
+                                        <div className="text-xs text-amber-200/60">
+                                            {selectingModeFor === 'dictation'
+                                                ? "読み上げられた例文をすべて書き取る"
+                                                : "日本語訳を見て英文をすべて書く"}
+                                        </div>
+                                    </div>
+                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
+                                        🔥
+                                    </div>
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={() => setSelectingModeFor(null)}
+                                className="mt-2 text-neutral-500 hover:text-white font-bold text-sm transition-colors py-2"
+                            >
+                                キャンセル
+                            </button>
                         </div>
-
-                        <div className="space-y-3">
-                            {/* Word Only */}
-                            <button
-                                onClick={() => {
-                                    handleRestart(false, 'word');
-                                    setMode(selectingModeFor);
-                                    setSelectingModeFor(null);
-                                }}
-                                className="w-full p-4 rounded-xl border-2 border-neutral-700 hover:border-indigo-500 bg-neutral-800/50 hover:bg-neutral-800 transition-all group text-left relative overflow-hidden"
-                            >
-                                <div className="relative z-10">
-                                    <div className="font-bold text-lg text-white mb-1">単語のみ</div>
-                                    <div className="text-xs text-neutral-400">
-                                        {selectingModeFor === 'dictation'
-                                            ? "音声を聞いて単語を書き取る基本モード"
-                                            : "意味を見て単語を入力する基本モード"}
-                                    </div>
-                                </div>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
-                                    🍎
-                                </div>
-                            </button>
-
-                            {/* Fill-in */}
-                            <button
-                                onClick={() => {
-                                    handleRestart(false, 'fill-in');
-                                    setMode(selectingModeFor);
-                                    setSelectingModeFor(null);
-                                }}
-                                className="w-full p-4 rounded-xl border-2 border-indigo-500/50 hover:border-indigo-400 bg-indigo-900/10 hover:bg-indigo-900/20 transition-all group text-left relative overflow-hidden"
-                            >
-                                <div className="relative z-10">
-                                    <div className="font-bold text-lg text-indigo-300 mb-1">例文穴埋め</div>
-                                    <div className="text-xs text-indigo-200/60">
-                                        {selectingModeFor === 'dictation'
-                                            ? "例文を聞いて空欄の単語を書き取る"
-                                            : "日本語訳を見て空欄の単語を埋める"}
-                                    </div>
-                                </div>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
-                                    🧩
-                                </div>
-                            </button>
-
-                            {/* Full Sentence */}
-                            <button
-                                onClick={() => {
-                                    handleRestart(false, 'full');
-                                    setMode(selectingModeFor);
-                                    setSelectingModeFor(null);
-                                }}
-                                className="w-full p-4 rounded-xl border-2 border-amber-500/50 hover:border-amber-400 bg-amber-900/10 hover:bg-amber-900/20 transition-all group text-left relative overflow-hidden"
-                            >
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <div className="font-bold text-lg text-amber-500">例文全文</div>
-                                        <span className="text-[10px] font-black bg-amber-500 text-black px-1.5 py-0.5 rounded">HARD</span>
-                                    </div>
-                                    <div className="text-xs text-amber-200/60">
-                                        {selectingModeFor === 'dictation'
-                                            ? "読み上げられた例文をすべて書き取る"
-                                            : "日本語訳を見て英文をすべて書く"}
-                                    </div>
-                                </div>
-                                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-4xl opacity-10 group-hover:opacity-20 transition-opacity">
-                                    🔥
-                                </div>
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={() => setSelectingModeFor(null)}
-                            className="mt-2 text-neutral-500 hover:text-white font-bold text-sm transition-colors py-2"
-                        >
-                            キャンセル
-                        </button>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }

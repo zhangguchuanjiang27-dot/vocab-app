@@ -13,7 +13,7 @@ export default function BottomNav() {
 
     useEffect(() => {
         const updateHash = () => setCurrentHash(window.location.hash);
-        updateHash(); // Initial check
+        updateHash(); // Initial check and sync on path change
 
         window.addEventListener("hashchange", updateHash);
         window.addEventListener("open-saved-decks", () => setCurrentHash("#saved"));
@@ -24,7 +24,7 @@ export default function BottomNav() {
             window.removeEventListener("open-saved-decks", () => setCurrentHash("#saved"));
             window.removeEventListener("close-saved-decks", () => setCurrentHash(""));
         };
-    }, []);
+    }, [pathname]);
 
     if (!session) {
         return null;

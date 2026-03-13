@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { signOut, useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 import Typewriter from 'typewriter-effect';
 import CountUp from 'react-countup';
@@ -50,6 +51,8 @@ type Deck = {
   createdAt: string;
   words: WordCard[];
   folderId?: string | null;
+  study_count?: number;
+  last_studied_at?: string | null;
 };
 
 type Folder = {
@@ -109,6 +112,10 @@ export default function Home() {
   const [newFolderName, setNewFolderName] = useState("");
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<string>>(new Set());
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
+  const [streak, setStreak] = useState<number>(0);
+  const [mounted, setMounted] = useState(false);
+  const [dailyStudyCount, setDailyStudyCount] = useState<number>(0);
+  const [dailyLastStudiedAt, setDailyLastStudiedAt] = useState<string | null>(null);
 
   // 詳細表示と音声用
   const [expandedWordIndex, setExpandedWordIndex] = useState<number | null>(null);
@@ -127,15 +134,29 @@ export default function Home() {
 
   // 初回ロード時にデータをAPIから取得
   useEffect(() => {
+    setMounted(true);
     if (session?.user) {
       fetchDecks();
       fetchFolders();
       fetchCredits();
+      fetchStreak();
     } else {
       setSavedDecks([]);
       setFolders([]);
     }
   }, [session]);
+
+  const fetchStreak = async () => {
+    try {
+      const res = await fetch("/api/user/streak");
+      if (res.ok) {
+        const data = await res.json();
+        setStreak(data.streak);
+      }
+    } catch (e) {
+      console.error("Failed to fetch streak", e);
+    }
+  };
 
   // ハッシュやイベントを監視して「保存した単語帳」領域を開く
   useEffect(() => {
@@ -451,6 +472,8 @@ export default function Home() {
         setXp(newXp);
         setBadges(data.badges || []);
         setPrevLevel(newLevel);
+        setDailyStudyCount(data.dailyStudyCount || 0);
+        setDailyLastStudiedAt(data.dailyLastStudiedAt || null);
       }
     } catch (e) {
       console.error("Failed to fetch credits", e);
@@ -605,7 +628,8 @@ export default function Home() {
 
   // 単語帳クリック時の処理（詳細ページへ遷移）
   const handleDeckClick = (deckId: string) => {
-    router.push(`/decks/${deckId}`);
+    const url = showSaved ? `/decks/${deckId}` : `/decks/${deckId}?from=home`;
+    router.push(url);
   };
 
   const handleGenerate = async () => {
@@ -771,12 +795,17 @@ export default function Home() {
   };
 
   return (
-    <div className="flex-1 bg-black text-neutral-100 px-6 pt-6 pb-2 sm:px-12 sm:pt-12 sm:pb-4 font-sans transition-colors duration-300 overflow-x-hidden relative">
+    <div className="flex-1 bg-black text-neutral-100 font-sans transition-colors duration-300 overflow-x-hidden relative">
 
-      {/* 🌌 Ambient Background Glow */}
-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-500/5 blur-[120px] rounded-full animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-purple-500/5 blur-[100px] rounded-full animate-pulse delay-1000"></div>
+      {/* 🌌 Ambient Background Glow & Patterns */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Geometric Grid Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#1e1e1e_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.15]"></div>
+
+        {/* Dynamic Blobs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-indigo-500/10 blur-[120px] rounded-full animate-pulse"></div>
+        <div className="absolute top-[20%] right-[-10%] w-[40vw] h-[40vw] bg-purple-500/10 blur-[100px] rounded-full animate-pulse delay-700"></div>
+        <div className="absolute bottom-[-10%] left-[10%] w-[45vw] h-[45vw] bg-blue-500/10 blur-[120px] rounded-full animate-pulse delay-1000"></div>
       </div>
 
       {/* Level Up Animation Overlay */}
@@ -973,7 +1002,7 @@ export default function Home() {
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto flex flex-col gap-8">
+      <main className="w-full max-w-7xl mx-auto flex flex-col gap-8 px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {!session ? (
           <div className="flex flex-col gap-24 pb-24">
             {/* Hero Section */}
@@ -1305,60 +1334,47 @@ export default function Home() {
             {/* Footer Removed as requested */}
           </div>
         ) : (
-          <div className={`flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 ${showSaved ? 'hidden' : 'pt-2 sm:pt-4'}`}>
+          <div className={`flex flex-col gap-8 ${showSaved ? 'hidden' : 'pt-4 sm:pt-8'}`}>
+            {/* 💎 Personalized Dashboard Header (Glassmorphism) */}
+            <div className="relative overflow-hidden p-6 md:p-10 rounded-3xl sm:rounded-[2.5rem] bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] shadow-2xl transition-all hover:bg-white/[0.05] hover:border-white/[0.12]">
+              {/* Internal Glows */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl -translate-y-1/2 translate-x-1/2 rounded-full"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 blur-3xl translate-y-1/2 -translate-x-1/2 rounded-full"></div>
 
-            {/* Gamification Stats */}
-            <div className="flex flex-col gap-2 w-full sm:w-auto flex">
-              <Link href="/profile" className="block group">
-                <div className="flex items-center justify-between bg-neutral-900 px-4 py-3 sm:px-6 sm:py-3 rounded-full border border-neutral-800 shadow-sm group-hover:border-indigo-300 transition-colors cursor-pointer w-full">
-                  {/* Level segment */}
-                  <div className="flex items-center gap-2.5 flex-1 select-none">
-                    <div className="relative shrink-0">
-                      <span className="text-xl sm:text-2xl">⭐</span>
-                    </div>
-                    <div className="flex flex-col min-w-[90px] sm:min-w-[140px]">
-                      <div className="flex justify-between items-end mb-1">
-                        <div className="flex items-baseline gap-1">
-                          <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">Lv.</span>
-                          <span className="text-sm font-black text-white leading-none">{getLevelInfo(xp).level}</span>
-                        </div>
-                        <p className="text-[9px] text-indigo-500 font-bold leading-none tracking-tight">
-                          {getLevelInfo(xp).xpInCurrentLevel}<span className="text-neutral-600 font-normal mx-0.5">/</span>{getLevelInfo(xp).xpRequiredForNext}
-                        </p>
-                      </div>
-                      <div className="w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-indigo-500 transition-all duration-1000 ease-out"
-                          style={{ width: `${getLevelInfo(xp).progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-px h-6 bg-neutral-800 mx-2 shrink-0"></div>
-
-                  {/* Coin segment */}
-                  <div className="flex items-center gap-2 flex-1 justify-center sm:justify-start select-none">
-                    <span className="text-lg sm:text-xl shrink-0">🪙</span>
-                    <div className="flex flex-col">
-                      <p className="text-[8px] sm:text-[10px] text-neutral-400 font-bold uppercase tracking-wider leading-none mb-0.5 hidden xs:block">コイン</p>
-                      <p className="font-bold text-sm sm:text-base text-neutral-100 leading-none">
-                        {userPlan === 'unlimited' ? "無制限" : (credits ?? "...")}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Chevron segment */}
-                  <div className="pl-2 text-neutral-300 group-hover:text-indigo-500 transition-colors shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 sm:w-5 sm:h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                  </div>
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-12">
+                <div className="flex flex-col">
+                  <span className="text-lg sm:text-xl font-bold text-neutral-400 mb-1" style={{ fontFamily: 'var(--font-merriweather)' }}>
+                    Welcome back,
+                  </span>
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+                      {session?.user?.name?.split(' ')[0] || 'Learner'}!
+                    </span>
+                  </h1>
                 </div>
-              </Link>
+
+                <div className="w-full md:max-w-[400px]">
+                  {/* Level Stats - Compact on Desktop */}
+                  <Link href="/profile" className="w-full px-5 py-5 rounded-[2rem] bg-white/[0.05] border border-white/10 flex items-center gap-5 transition-all hover:bg-white/[0.08] group shadow-xl">
+                    <div className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform bg-indigo-500/20 w-14 h-14 rounded-2xl flex items-center justify-center">⭐</div>
+                    <div className="flex flex-col flex-1">
+                      <div className="flex justify-between items-baseline mb-3">
+                        <span className="text-xl font-black text-indigo-400 tracking-tight leading-none">Level {getLevelInfo(xp).level}</span>
+                        <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider leading-none">{getLevelInfo(xp).xpInCurrentLevel} / {getLevelInfo(xp).xpRequiredForNext} XP</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-neutral-800/50 rounded-full overflow-hidden shadow-inner p-[1px]">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${getLevelInfo(xp).progress}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-purple-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
             </div>
-
-
           </div>
         )
         }
@@ -1520,89 +1536,164 @@ export default function Home() {
                   }
                 </div >
               ) : (
-                <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
+                <div className="w-full grid lg:grid-cols-[400px_1fr] gap-8 items-start">
                   {/* Left: Input */}
-                  <div className="flex flex-col gap-4 sticky top-8">
-                    <div className="bg-neutral-900 p-5 rounded-2xl border border-neutral-800 shadow-sm">
-                      <div className="mb-6">
-                        <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">
-                          単語・フレーズを入力 <span className="text-neutral-500 font-normal ml-1 text-[10px]">(1行に1つ入力)</span>
-                        </label>
-                        <textarea
-                          className="w-full h-[200px] p-3 text-base bg-black border border-neutral-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed overflow-x-auto text-neutral-100 placeholder:text-neutral-600"
-                          wrap="off"
-                          placeholder={"apple\ntake off\nclimate change"}
-                          value={wordInput}
-                          onChange={(e) => setWordInput(e.target.value)}
-                        />
-                      </div>
+                  <div className="flex flex-col gap-8 sticky top-8">
+                    {/* Input Form Card */}
+                    <div className="bg-neutral-900 p-6 sm:p-8 rounded-3xl sm:rounded-[2rem] border border-neutral-800 shadow-2xl relative overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative z-10">
+                        <div className="mb-6">
+                          <label className="block text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3 px-1">
+                            テキストから単語帳を作成
+                          </label>
+                          <textarea
+                            className="w-full h-[240px] sm:h-[280px] p-5 text-base bg-black/60 border border-neutral-800 rounded-2xl sm:rounded-3xl focus:outline-none focus:ring-4 focus:ring-indigo-500/20 resize-none font-mono leading-relaxed overflow-x-auto text-neutral-100 placeholder:text-neutral-700 transition-all"
+                            wrap="off"
+                            placeholder={"apple\ntake off\nclimate change"}
+                            value={wordInput}
+                            onChange={(e) => setWordInput(e.target.value)}
+                          />
+                        </div>
 
-                      <button
-                        onClick={handleGenerate}
-                        disabled={loading || !wordInput.trim()}
-                        className={`w-full py-4 rounded-xl font-bold text-sm transition-all relative overflow-hidden group
-                          ${loading
-                            ? "bg-neutral-100 text-neutral-400"
-                            : "bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98]"
-                          }
-                        `}
-                      >
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          {loading ? (
-                            <>
-                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              生成中...
-                            </>
-                          ) : (
-                            <>
-                              <span className="text-lg">✨</span> リストを生成
-                            </>
+                        <button
+                          onClick={handleGenerate}
+                          disabled={loading || !wordInput.trim()}
+                          className={`w-full py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm tracking-widest uppercase transition-all relative overflow-hidden group
+                            ${loading
+                              ? "bg-neutral-800 text-neutral-600 cursor-not-allowed"
+                              : "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl shadow-indigo-600/30 hover:shadow-indigo-600/50 hover:scale-[1.02] active:scale-[0.98]"
+                            }
+                          `}
+                        >
+                          <span className="relative z-10 flex items-center justify-center gap-3">
+                            {loading ? (
+                              <>
+                                <svg className="animate-spin h-5 w-5 text-neutral-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                作成中...
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-xl">✨</span> 単語帳を作成
+                              </>
+                            )}
+                          </span>
+                          {!loading && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                           )}
-                        </span>
-                        {!loading && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>}
-                      </button>
-                      <p className="mt-3 text-[10px] text-neutral-400 text-center leading-tight">
-                        ※一度に合計50項目まで生成可能です
-                      </p>
-                      {error && <p className="mt-2 text-xs text-red-500 text-center">{error}</p>}
+                        </button>
+                        <p className="mt-4 text-[10px] text-neutral-500 text-center font-bold tracking-tight">
+                          ※ Up to 50 items per generation
+                        </p>
+                        {error && <p className="mt-3 text-xs text-red-400 text-center font-bold">{error}</p>}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right: Output List */}
+                  {/* Right: Output List / Dashboard */}
                   <div className="h-full">
                     {words.length === 0 ? (
-                      <div className="min-h-[300px] h-full flex flex-col items-center justify-center border border-dashed border-neutral-800 rounded-3xl text-neutral-400 p-12 text-center bg-neutral-900/30 relative overflow-hidden group">
+                      <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+                        {/* 📊 Dashboard Widgets Grid */}
+                        {mounted && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
 
-                        {/* 🃏 Floating Cards Visual (Empty State) */}
-                        <div className="absolute inset-0 pointer-events-none opacity-30 select-none overflow-hidden">
-                          <div className="absolute top-[20%] right-[10%] bg-neutral-800 p-3 rounded-xl shadow-lg rotate-12 animate-float delay-0 scale-75 blur-[1px]">
-                            <div className="w-16 h-2 bg-neutral-700 rounded-full mb-2"></div>
-                            <div className="w-8 h-2 bg-neutral-700/50 rounded-full"></div>
-                          </div>
-                          <div className="absolute bottom-[30%] left-[10%] bg-neutral-800 p-4 rounded-xl shadow-lg -rotate-6 animate-float delay-1000 scale-90 blur-[2px]">
-                            <div className="w-20 h-2.5 bg-neutral-700 rounded-full mb-2"></div>
-                            <div className="w-12 h-2.5 bg-neutral-700/50 rounded-full"></div>
-                          </div>
-                          <div className="absolute top-[10%] left-[20%] bg-indigo-500/10 p-2 rounded-lg rotate-[-12deg] animate-pulse">
-                            <span className="text-2xl">✨</span>
-                          </div>
-                        </div>
+                            {/* 1. Daily Quiz Widget */}
+                            <div
+                              className="bg-gradient-to-br from-indigo-600/10 to-purple-600/10 border border-indigo-500/20 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 shadow-xl relative group cursor-pointer hover:border-indigo-500/40 transition-all sm:col-span-2"
+                              onClick={() => router.push('/decks/daily-10')}
+                            >
+                              <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-10">
+                                <svg width="40" height="40" className="sm:w-[60px] sm:h-[60px]" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                              </div>
+                              <div className="relative z-10 flex flex-col h-full pr-16 sm:pr-24">
+                                <div className="flex justify-between items-start mb-4">
+                                  <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">本日の10問</h3>
+                                  <span className="text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full">毎日更新</span>
+                                </div>
+                                <div className="mb-6 sm:mb-8">
+                                  <span className="text-2xl sm:text-3xl font-black text-white block mb-2">
+                                    今日の実力試し
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-medium text-neutral-400">
+                                    保存した単語から10問をランダムに出題します
+                                  </span>
+                                </div>
+                                <div className="mt-auto flex items-center gap-4 text-[10px] sm:text-xs font-bold text-neutral-500 uppercase tracking-widest whitespace-nowrap">
+                                  <span className="flex items-center gap-1.5"><span className="text-indigo-400">{dailyStudyCount}</span> 回学習</span>
+                                  <div className="w-1 h-1 rounded-full bg-neutral-800"></div>
+                                  <span>最終: {dailyLastStudiedAt ? (() => {
+                                    const lastDate = new Date(dailyLastStudiedAt);
+                                    const now = new Date();
+                                    const lastDateDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+                                    const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                    const diffTime = nowDay.getTime() - lastDateDay.getTime();
+                                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                    if (diffDays === 0) return "今日";
+                                    if (diffDays === 1) return "昨日";
+                                    return `${diffDays}日前`;
+                                  })() : "未学習"}</span>
+                                </div>
+                              </div>
+                              <div className="absolute right-6 sm:right-10 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:bg-indigo-500 transition-all z-20">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                              </div>
+                            </div>
 
-                        <div className="relative z-10">
-                          <div className="w-16 h-16 bg-neutral-800 rounded-2xl flex items-center justify-center text-3xl shadow-xl mb-6 mx-auto group-hover:scale-110 transition-transform duration-500">
-                            🚀
+                            {/* 2. Resume Study Card */}
+                            {savedDecks.length > 0 && (() => {
+                              const latestDeck = [...savedDecks].sort((a, b) => {
+                                if (!a.last_studied_at) return 1;
+                                if (!b.last_studied_at) return -1;
+                                return new Date(b.last_studied_at).getTime() - new Date(a.last_studied_at).getTime();
+                              })[0];
+                              if (!latestDeck.last_studied_at) return null;
+
+                              return (
+                                <div className="group relative overflow-hidden bg-neutral-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 transition-all hover:border-indigo-500/50 cursor-pointer shadow-xl sm:col-span-2" onClick={() => handleDeckClick(latestDeck.id)}>
+                                  <div className="absolute top-0 right-0 p-4 sm:p-6 text-indigo-500/20 group-hover:text-indigo-500/40 transition-colors">
+                                    <Layers className="w-10 h-10 sm:w-16 sm:h-16" />
+                                  </div>
+                                  <div className="relative z-10 flex flex-col h-full pr-16 sm:pr-24">
+                                    <div className="flex justify-between items-start mb-4">
+                                      <h3 className="text-xs font-black text-indigo-400 uppercase tracking-widest">直近に学習した単語帳</h3>
+                                    </div>
+                                    <div className="mb-6 sm:mb-8">
+                                      <span className="text-2xl sm:text-3xl font-black text-white truncate block mb-2">{latestDeck.title}</span>
+                                      <span className="text-xs sm:text-sm font-medium text-neutral-400">
+                                        最後に学習した単語帳から再開します
+                                      </span>
+                                    </div>
+                                    <div className="mt-auto flex items-center gap-4 text-xs font-bold text-neutral-500 uppercase tracking-widest whitespace-nowrap">
+                                      <span className="flex items-center gap-1.5"><span className="text-indigo-400">{latestDeck.study_count || 0}</span> 回学習</span>
+                                      <div className="w-1 h-1 rounded-full bg-neutral-800"></div>
+                                      <span>最終: {latestDeck.last_studied_at ? (() => {
+                                        const lastDate = new Date(latestDeck.last_studied_at);
+                                        const now = new Date();
+                                        const lastDateDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+                                        const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                        const diffTime = nowDay.getTime() - lastDateDay.getTime();
+                                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                                        if (diffDays === 0) return "今日";
+                                        if (diffDays === 1) return "昨日";
+                                        return `${diffDays}日前`;
+                                      })() : "未学習"}</span>
+                                    </div>
+                                  </div>
+                                  <div className="absolute right-6 sm:right-10 top-1/2 -translate-y-1/2 w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:bg-indigo-500 transition-all z-20">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                           </div>
-                          <p className="whitespace-pre-line leading-relaxed font-bold text-neutral-400">
-                            まずは単語・フレーズを入力して、{"\n"}
-                            あなただけの学習リストを作りましょう！
-                          </p>
-                        </div>
+                        )}
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-6">
+                      <div className="w-full flex flex-col gap-6 animate-in slide-in-from-bottom-4 duration-500">
                         {/* Toolbar */}
                         <div className="bg-neutral-900 p-4 rounded-xl border border-neutral-800 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between sticky top-8 z-10">
                           <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
@@ -1629,9 +1720,9 @@ export default function Home() {
                         <div className="bg-neutral-900 rounded-xl border border-neutral-800 shadow-sm overflow-hidden">
                           {words.map((card, idx) => (
                             <div key={idx} className="group relative p-6 border-b border-neutral-800 last:border-0 hover:bg-neutral-800/50 transition-colors">
-                              <button onClick={() => handleRemoveWord(idx)} className="absolute top-4 right-4 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                              <button onClick={() => handleRemoveWord(idx)} className="absolute top-3 right-4 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all z-10">✕</button>
 
-                              <div className="flex items-baseline gap-4 mb-3">
+                              <div className="flex items-baseline gap-4 mb-3 pr-12">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xl font-bold text-neutral-100" style={{ fontFamily: 'var(--font-merriweather)' }}>{card.word}</span>
                                   <button
@@ -1648,7 +1739,7 @@ export default function Home() {
 
 
 
-                              <div className="absolute top-6 right-6 text-xs text-neutral-200 font-mono select-none group-hover:text-transparent">
+                              <div className="absolute top-3 right-4 text-xs text-neutral-400 font-mono select-none group-hover:text-transparent">
                                 #{idx + 1}
                               </div>
                             </div>
@@ -1752,9 +1843,27 @@ function SortableDeckItem({ deck, onClick, isEditMode, onDelete, saveRenameDeck 
             </div>
           )}
 
-          <div className="flex items-center gap-4 mt-1">
-            <div className="flex items-center gap-1.5 text-neutral-400">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 sm:gap-x-4 mt-1.5">
+            <div className="flex items-center gap-1.5 text-neutral-400 shrink-0">
               <span className="text-[11px] font-bold">{deck.words.length} <span className="font-normal opacity-70">words</span></span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-y-1 sm:gap-x-3">
+              <div className="flex items-center gap-1.5 text-neutral-500 font-bold text-[10px] whitespace-nowrap">
+                <span className="w-4 text-center">🔥</span> 学習回数: {deck.study_count ?? 0}回
+              </div>
+              <div className="flex items-center gap-1.5 text-neutral-500/80 font-bold text-[10px] whitespace-nowrap">
+                <span className="w-4 text-center">📅</span> 最終学習: {deck.last_studied_at ? (() => {
+                  const lastDate = new Date(deck.last_studied_at);
+                  const now = new Date();
+                  const lastDateDay = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate());
+                  const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  const diffTime = nowDay.getTime() - lastDateDay.getTime();
+                  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays === 0) return "今日";
+                  if (diffDays === 1) return "昨日";
+                  return `${diffDays}日前`;
+                })() : "未学習"}
+              </div>
             </div>
           </div>
         </div>

@@ -158,6 +158,33 @@ export async function addXp(userId: string, amount: number) {
         } as any,
     });
 
+    // 日別アクティビティを記録
+    try {
+        // 今日の日付 (00:00:00) を取得
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // @ts-ignore
+        await prisma.dailyActivity.upsert({
+            where: {
+                userId_date: {
+                    userId,
+                    date: today,
+                }
+            },
+            update: {
+                xp: { increment: amount }
+            },
+            create: {
+                userId,
+                date: today,
+                xp: amount
+            }
+        });
+    } catch (e) {
+        console.error("Failed to record daily activity", e);
+    }
+
     // バッジ獲得チェック（非同期で実行）
     checkBadges(userId).catch(console.error);
 
