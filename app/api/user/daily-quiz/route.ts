@@ -31,7 +31,11 @@ export async function GET() {
         });
 
         if (words.length === 0) {
-            return NextResponse.json([]);
+            return NextResponse.json({
+                words: [],
+                study_count: 0,
+                last_studied_at: null
+            });
         }
 
         // 今日の日付文字列を取得 (サーバー時間基準)

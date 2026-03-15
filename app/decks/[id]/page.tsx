@@ -7,6 +7,7 @@ import Link from "next/link";
 import confetti from "canvas-confetti";
 import { motion, useMotionValue, useTransform, useAnimation } from "framer-motion";
 import { useDrag } from "@use-gesture/react";
+import { Layers, Folder as FolderIcon } from 'lucide-react';
 
 type WordCard = {
     id?: string;
@@ -29,6 +30,7 @@ type Deck = {
     study_count?: number;
     last_studied_at?: string | null;
     words: WordCard[];
+    folderId?: string | null;
 };
 
 type Folder = {
@@ -444,7 +446,8 @@ export default function DeckPage() {
     const [showMoveModal, setShowMoveModal] = useState(false);
     const [targetDeckId, setTargetDeckId] = useState<string>("");
     const [moveAction, setMoveAction] = useState<'copy' | 'move'>('copy');
-    const [myDecks, setMyDecks] = useState<{ id: string, title: string }[]>([]);
+    const [myDecks, setMyDecks] = useState<Deck[]>([]);
+    const [folders, setFolders] = useState<Folder[]>([]);
     const [credits, setCredits] = useState(0);
     const [plan, setPlan] = useState<string | null>(null);
 
@@ -470,10 +473,16 @@ export default function DeckPage() {
 
     useEffect(() => {
         if (showMoveModal) {
-            // Fetch user's decks for the move modal
-            fetch("/api/decks").then(res => res.json()).then(data => {
-                if (Array.isArray(data)) {
-                    setMyDecks(data.filter((d: any) => d.id !== deckId)); // Exclude current deck
+            // Fetch user's decks and folders for the move modal
+            Promise.all([
+                fetch("/api/decks").then(res => res.json()),
+                fetch("/api/folders").then(res => res.json())
+            ]).then(([decksData, foldersData]) => {
+                if (Array.isArray(decksData)) {
+                    setMyDecks(decksData.filter((d: any) => d.id !== deckId));
+                }
+                if (Array.isArray(foldersData)) {
+                    setFolders(foldersData);
                 }
             }).catch(console.error);
         }
@@ -584,10 +593,16 @@ export default function DeckPage() {
                 }) : null);
             }
 
-            // Fetch target deck to update local myDecks cache (so future moves know about new words immediately)
-            fetch("/api/decks").then(res => res.json()).then(data => {
-                if (Array.isArray(data)) {
-                    setMyDecks(data.filter((d: any) => d.id !== deckId));
+            // Refresh decks and folders cache
+            Promise.all([
+                fetch("/api/decks").then(res => res.json()),
+                fetch("/api/folders").then(res => res.json())
+            ]).then(([decksData, foldersData]) => {
+                if (Array.isArray(decksData)) {
+                    setMyDecks(decksData.filter((d: any) => d.id !== deckId));
+                }
+                if (Array.isArray(foldersData)) {
+                    setFolders(foldersData);
                 }
             }).catch(console.error);
 
@@ -2140,7 +2155,22 @@ export default function DeckPage() {
 
                     {
                         sortedWords.length === 0 ? (
-                            <div className="p-12 text-center text-neutral-400">単語がありません。ホーム画面から追加してください。</div>
+                            <div className="p-12 sm:p-20 text-center flex flex-col items-center justify-center animate-in fade-in zoom-in duration-500">
+                                <div className="w-24 h-24 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6">
+                                    <span className="text-5xl">📚</span>
+                                </div>
+                                <h3 className="text-xl sm:text-2xl font-bold text-white mb-4">まだ単語が登録されていません</h3>
+                                <p className="text-neutral-500 max-w-sm mx-auto mb-8 leading-relaxed">
+                                    実力試しを始めるには、まず単語帳を作成してください。<br className="hidden sm:block" />
+                                    AIを使って一瞬で作ることもできます。
+                                </p>
+                                <Link
+                                    href="/"
+                                    className="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all"
+                                >
+                                    単語帳を作成しにいく
+                                </Link>
+                            </div>
                         ) : (
                             sortedWords.map((card, idx) => (
                                 <div
@@ -2551,17 +2581,65 @@ export default function DeckPage() {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-neutral-400 uppercase mb-2">移動先の単語帳</label>
-                                    <select
-                                        value={targetDeckId}
-                                        onChange={(e) => setTargetDeckId(e.target.value)}
-                                        className="w-full p-4 rounded-xl bg-neutral-800 border-none font-bold text-neutral-200 focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">選択してください...</option>
-                                        {myDecks.map(d => (
-                                            <option key={d.id} value={d.id}>{d.title}</option>
-                                        ))}
-                                    </select>
+                                    <label className="block text-xs font-bold text-neutral-400 uppercase mb-3">移動先の単語帳を選択</label>
+                                    <div className="max-h-[30vh] overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
+                                        {myDecks.length === 0 ? (
+                                            <p className="text-neutral-500 text-xs py-4 text-center">移動可能な単語帳がありません</p>
+                                        ) : (
+                                            <>
+                                                {/* Root Decks */}
+                                                {myDecks.filter(d => !d.folderId).map((d) => (
+                                                    <button
+                                                        key={d.id}
+                                                        onClick={() => setTargetDeckId(d.id)}
+                                                        className={`flex justify-between items-center p-3 rounded-xl border transition-all text-left group ${targetDeckId === d.id ? 'border-indigo-500 bg-indigo-500/10' : 'border-neutral-800 hover:bg-neutral-800'}`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Layers className={`w-4 h-4 opacity-70 ${targetDeckId === d.id ? 'text-indigo-400' : 'text-sky-400'}`} />
+                                                            <div className="flex flex-col">
+                                                                <span className={`font-bold text-sm ${targetDeckId === d.id ? 'text-white' : 'text-neutral-300'}`}>{d.title}</span>
+                                                                <span className="text-[10px] text-neutral-500 font-bold">{d.words?.length || 0} words</span>
+                                                            </div>
+                                                        </div>
+                                                        {targetDeckId === d.id && <div className="w-2 h-2 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />}
+                                                    </button>
+                                                ))}
+
+                                                {/* Folders & Nested Decks */}
+                                                {folders.map(folder => {
+                                                    const folderDecks = myDecks.filter(d => d.folderId === folder.id);
+                                                    if (folderDecks.length === 0) return null;
+
+                                                    return (
+                                                        <div key={folder.id} className="mt-2 first:mt-0">
+                                                            <div className="flex items-center gap-2 px-2 py-1 mb-1">
+                                                                <FolderIcon className="w-3 h-3 text-indigo-400" />
+                                                                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{folder.name}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-2 ml-2 pl-3 border-l-2 border-neutral-800">
+                                                                {folderDecks.map(d => (
+                                                                    <button
+                                                                        key={d.id}
+                                                                        onClick={() => setTargetDeckId(d.id)}
+                                                                        className={`flex justify-between items-center p-2.5 rounded-xl border transition-all text-left group ${targetDeckId === d.id ? 'border-indigo-500 bg-indigo-500/10' : 'border-neutral-800 hover:bg-neutral-800'}`}
+                                                                    >
+                                                                        <div className="flex items-center gap-3">
+                                                                            <Layers className={`w-3.5 h-3.5 opacity-70 ${targetDeckId === d.id ? 'text-indigo-400' : 'text-sky-400'}`} />
+                                                                            <div className="flex flex-col">
+                                                                                <span className={`font-bold text-xs ${targetDeckId === d.id ? 'text-white' : 'text-neutral-300'}`}>{d.title}</span>
+                                                                                <span className="text-[9px] text-neutral-500 font-bold">{d.words?.length || 0} words</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        {targetDeckId === d.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-col gap-3 pt-2">

@@ -91,6 +91,7 @@ export default function Home() {
   const [wordInput, setWordInput] = useState("");
   const [words, setWords] = useState<WordCard[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSavingDeck, setIsSavingDeck] = useState(false);
   const [error, setError] = useState("");
 
   // 保存・一覧用ステート
@@ -554,12 +555,13 @@ export default function Home() {
 
   // デッキ保存処理
   const handleSaveDeck = async () => {
-    if (!words.length) return;
+    if (!words.length || isSavingDeck) return;
     if (!deckTitle.trim()) {
       alert("保存する単語帳に名前をつけてください");
       return;
     }
 
+    setIsSavingDeck(true);
     try {
       const res = await fetch("/api/decks", {
         method: "POST",
@@ -582,6 +584,8 @@ export default function Home() {
     } catch (e: any) {
       console.error(e);
       alert(`保存に失敗しました: ${e.message}`);
+    } finally {
+      setIsSavingDeck(false);
     }
   };
 
@@ -640,7 +644,7 @@ export default function Home() {
     const lineCount = lines.length;
 
     if (lineCount > 50) {
-      alert(`一度に生成できるのは最大50項目までです。\n現在の入力: ${lineCount}項目\n\n品質を保つため、50項目以下に分割して入力してください。`);
+      alert(`一度に生成できるのは最大50個までです。\n現在の入力: ${lineCount}個\n\n品質を保つため、50個以下に分割して入力してください。`);
       return;
     }
 
@@ -733,7 +737,7 @@ export default function Home() {
 
   // 既存のデッキに追加処理
   const handleAddToExistingDeck = async (deckId: string, deckTitle: string) => {
-    if (!words.length) return;
+    if (!words.length || isSavingDeck) return;
 
     // 重複チェック
     const targetDeck = savedDecks.find(d => d.id === deckId);
@@ -768,6 +772,7 @@ export default function Home() {
 
     if (!confirm(message)) return;
 
+    setIsSavingDeck(true);
     try {
       const res = await fetch(`/api/decks/${deckId}`, {
         method: "PUT",
@@ -791,6 +796,8 @@ export default function Home() {
     } catch (e: any) {
       console.error(e);
       alert(`追加に失敗しました: ${e.message}`);
+    } finally {
+      setIsSavingDeck(false);
     }
   };
 
@@ -891,22 +898,66 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-neutral-900 w-full max-w-md rounded-2xl p-6 shadow-2xl border border-neutral-800">
             <h3 className="text-xl font-bold mb-4">どの単語帳に追加しますか？</h3>
-            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-2 mb-4">
+            <div className="max-h-[60vh] overflow-y-auto flex flex-col gap-2 mb-4 pr-1">
               {savedDecks.length === 0 ? (
                 <p className="text-neutral-500 text-center py-4">保存された単語帳がありません</p>
               ) : (
-                savedDecks.map((deck) => (
-                  <button
-                    key={deck.id}
-                    onClick={() => handleAddToExistingDeck(deck.id, deck.title)}
-                    className="flex justify-between items-center p-4 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors text-left group"
-                  >
-                    <span className="font-bold">{deck.title}</span>
-                    <span className="text-xs text-neutral-400 group-hover:text-indigo-500">
-                      + Add here
-                    </span>
-                  </button>
-                ))
+                <>
+                  {/* Root Decks */}
+                  {savedDecks.filter(d => !d.folderId).map((deck) => (
+                    <button
+                      key={deck.id}
+                      onClick={() => handleAddToExistingDeck(deck.id, deck.title)}
+                      className="flex justify-between items-center p-4 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors text-left group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Layers className="w-4 h-4 text-sky-400 opacity-70" />
+                        <div className="flex flex-col">
+                          <span className="font-bold">{deck.title}</span>
+                          <span className="text-[10px] text-neutral-500 font-bold">{deck.words.length} words</span>
+                        </div>
+                      </div>
+                      <span className="text-xs text-neutral-400 group-hover:text-indigo-500">
+                        + Add here
+                      </span>
+                    </button>
+                  ))}
+
+                  {/* Folders & Nested Decks */}
+                  {folders.map(folder => {
+                    const folderDecks = savedDecks.filter(d => d.folderId === folder.id);
+                    if (folderDecks.length === 0) return null;
+
+                    return (
+                      <div key={folder.id} className="mt-4 first:mt-0">
+                        <div className="flex items-center gap-2 px-2 py-1 mb-2">
+                          <Folder className="w-3 h-3 text-indigo-400" />
+                          <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{folder.name}</span>
+                        </div>
+                        <div className="flex flex-col gap-2 ml-2 pl-3 border-l-2 border-neutral-800">
+                          {folderDecks.map(deck => (
+                            <button
+                              key={deck.id}
+                              onClick={() => handleAddToExistingDeck(deck.id, deck.title)}
+                              className="flex justify-between items-center p-3.5 rounded-xl border border-neutral-800 hover:bg-neutral-800 transition-colors text-left group"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Layers className="w-4 h-4 text-sky-400 opacity-70" />
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-sm">{deck.title}</span>
+                                  <span className="text-[10px] text-neutral-500 font-bold">{deck.words.length} words</span>
+                                </div>
+                              </div>
+                              <span className="text-xs text-neutral-400 group-hover:text-indigo-500">
+                                + Add
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
             <button
@@ -1586,7 +1637,7 @@ export default function Home() {
                           )}
                         </button>
                         <p className="mt-4 text-[10px] text-neutral-500 text-center font-bold tracking-tight">
-                          ※ Up to 50 items per generation
+                          ※ 50個まで一度に生成できる
                         </p>
                         {error && <p className="mt-3 text-xs text-red-400 text-center font-bold">{error}</p>}
                       </div>
@@ -1707,11 +1758,25 @@ export default function Home() {
                             />
                           </div>
                           <div className="flex gap-2 w-full sm:w-auto">
-                            <button onClick={() => setShowAddToDeckModal(true)} className="px-4 py-2 text-xs font-bold border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors">
+                            <button
+                              onClick={() => setShowAddToDeckModal(true)}
+                              disabled={isSavingDeck}
+                              className="px-4 py-2 text-xs font-bold border border-neutral-700 rounded-lg hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                            >
                               + 既存に追加
                             </button>
-                            <button onClick={handleSaveDeck} className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
-                              新規保存
+                            <button
+                              onClick={handleSaveDeck}
+                              disabled={isSavingDeck}
+                              className="px-6 py-2 text-xs font-bold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                            >
+                              {isSavingDeck && (
+                                <svg className="animate-spin h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                              )}
+                              {isSavingDeck ? "保存中..." : "新規保存"}
                             </button>
                           </div>
                         </div>

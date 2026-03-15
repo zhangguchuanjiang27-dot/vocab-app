@@ -90,7 +90,7 @@ model UserBadge {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, badgeId]) // 同じバッジは1つまで
+  @@unique([userId, badgeId]) // Corrected from dateId
 }
 
 model VerificationToken {

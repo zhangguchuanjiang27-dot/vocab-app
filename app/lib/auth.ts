@@ -33,7 +33,7 @@ export const authOptions: NextAuthOptions = {
                     create: {
                         email: 'dev@example.com',
                         name: 'Developer',
-                        credits: 1000,
+                        credits: 30,
                         role: 'admin',
                     }
                 });
