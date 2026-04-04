@@ -6,8 +6,13 @@ export default withAuth(
         // 管理者権限のチェック
         if (req.nextUrl.pathname.startsWith("/sys-ctrl-99")) {
             const token = req.nextauth.token;
+            
             // ロールがadminでない場合はトップページへリダイレクト
-            if (token?.role !== "admin") {
+            // ※データベース更新直後でトークンが古い場合を考慮し、ADMIN_EMAILとの一致もチェック
+            const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+            const isEnvAdmin = ADMIN_EMAIL && token?.email === ADMIN_EMAIL;
+            
+            if (token?.role !== "admin" && !isEnvAdmin) {
                 return NextResponse.redirect(new URL("/", req.url));
             }
         }

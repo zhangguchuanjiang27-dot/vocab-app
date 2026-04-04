@@ -130,6 +130,17 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 <div className="flex items-center gap-1.5 sm:gap-6 flex-shrink-0">
                     {session ? (
                         <>
+                            {/* Admin Link */}
+                            {role === 'admin' && (
+                                <Link 
+                                    href="/sys-ctrl-99" 
+                                    className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-all font-black text-[10px] tracking-widest uppercase shadow-sm shadow-indigo-500/20 flex-shrink-0"
+                                >
+                                    <span className="text-sm">🛠️</span>
+                                    <span className="hidden sm:inline">Admin</span>
+                                </Link>
+                            )}
+
                             {/* Streak Badge */}
                             {streak !== null && (
                                 <div className={`flex items-center justify-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-full border bg-orange-950/30 border-orange-900 text-orange-400 font-bold font-mono text-xs sm:text-sm transition-all ${streakUpdated ? 'scale-110 shadow-orange-500/50 shadow-lg' : ''}`} title="連続ログイン日数">
