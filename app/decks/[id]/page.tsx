@@ -228,6 +228,8 @@ export default function DeckPage() {
     const from = searchParams.get('from');
 
     const [deck, setDeck] = useState<Deck | null>(null);
+    const [isEditingStudyCount, setIsEditingStudyCount] = useState(false);
+    const [editStudyCount, setEditStudyCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isBulkGenerating, setIsBulkGenerating] = useState(false);
 
@@ -890,6 +892,40 @@ export default function DeckPage() {
             console.error(e);
             alert("タイトル更新エラー");
         }
+    };
+
+    const handleUpdateStudyCount = async (countToSave?: number) => {
+        if (!deck) return;
+        const targetCount = countToSave !== undefined ? countToSave : editStudyCount;
+
+        try {
+            const res = await fetch(`/api/decks/${deckId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ study_count: targetCount }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setDeck({
+                    ...deck,
+                    study_count: targetCount,
+                    last_studied_at: data.last_studied_at !== undefined ? data.last_studied_at : deck.last_studied_at
+                });
+                setIsEditingStudyCount(false);
+            } else {
+                alert("学習回数の更新に失敗しました");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("学習回数の更新エラー");
+        }
+    };
+
+    const handleAdjustStudyCount = (amount: number) => {
+        if (!deck) return;
+        const newCount = Math.max(0, (deck.study_count ?? 0) + amount);
+        handleUpdateStudyCount(newCount);
     };
 
     const handleDeleteWord = async (wordId: string | undefined) => {
@@ -1974,7 +2010,71 @@ export default function DeckPage() {
                             </div>
                             <div className="hidden sm:block w-px h-4 bg-white/[0.1]"></div>
                             <div className="flex items-center gap-2 text-neutral-300 font-bold text-xs uppercase tracking-wide">
-                                <span className="text-base">🔥</span> <span className="opacity-70">学習回数:</span> <span className="text-indigo-400 text-sm">{deck.study_count ?? 0}</span><span className="text-[10px] opacity-60">回</span>
+                                <span className="text-base">🔥</span> <span className="opacity-70">学習回数:</span> 
+                                {isEditingStudyCount ? (
+                                    <div className="flex items-center gap-1 animate-in fade-in zoom-in-95 duration-150">
+                                        <input
+                                            type="number"
+                                            value={editStudyCount}
+                                            onChange={(e) => setEditStudyCount(Math.max(0, parseInt(e.target.value) || 0))}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') handleUpdateStudyCount();
+                                                if (e.key === 'Escape') setIsEditingStudyCount(false);
+                                            }}
+                                            className="w-14 bg-neutral-950/80 border border-indigo-500 rounded px-1.5 py-0.5 text-center text-indigo-300 font-bold text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            autoFocus
+                                            min="0"
+                                        />
+                                        <button
+                                            onClick={() => handleUpdateStudyCount()}
+                                            className="p-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition active:scale-90"
+                                            title="保存"
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </button>
+                                        <button
+                                            onClick={() => setIsEditingStudyCount(false)}
+                                            className="p-1 bg-neutral-800 text-neutral-400 rounded hover:bg-neutral-700 transition active:scale-90"
+                                            title="キャンセル"
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-1 group/count">
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAdjustStudyCount(-1);
+                                            }}
+                                            className="w-5 h-5 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 hover:text-indigo-400 active:scale-90 transition text-[10px] text-neutral-400 font-bold"
+                                            title="1回減らす"
+                                        >
+                                            －
+                                        </button>
+                                        <span 
+                                            onClick={() => {
+                                                setEditStudyCount(deck.study_count ?? 0);
+                                                setIsEditingStudyCount(true);
+                                            }}
+                                            className="text-indigo-400 text-sm hover:underline cursor-pointer font-bold px-1"
+                                            title="クリックして直接入力"
+                                        >
+                                            {deck.study_count ?? 0}
+                                        </span>
+                                        <span className="text-[10px] opacity-60 -ml-1 mr-0.5">回</span>
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAdjustStudyCount(1);
+                                            }}
+                                            className="w-5 h-5 flex items-center justify-center rounded-full bg-neutral-800 hover:bg-neutral-700 hover:text-indigo-400 active:scale-90 transition text-[10px] text-neutral-400 font-bold"
+                                            title="1回増やす"
+                                        >
+                                            ＋
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="hidden sm:block w-px h-4 bg-white/[0.1]"></div>
                             <div className="flex items-center gap-2 text-neutral-400 font-bold text-xs uppercase tracking-wide">

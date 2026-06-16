@@ -72,7 +72,7 @@ export async function DELETE(
     }
 }
 
-// デッキの更新（単語追加 または タイトル変更）
+// デッキの更新（単語追加、タイトル変更、学習回数変更など）
 export async function PUT(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -85,9 +85,34 @@ export async function PUT(
 
     const { id } = await params;
 
+    if (id === 'daily-10') {
+        try {
+            const body = await req.json();
+            const { study_count } = body;
+            if (study_count !== undefined) {
+                const user = await prisma.user.update({
+                    where: { id: session.user.id },
+                    data: {
+                        dailyStudyCount: Number(study_count),
+                        dailyLastStudiedAt: new Date()
+                    } as any
+                }) as any;
+                return NextResponse.json({
+                    success: true,
+                    study_count: user.dailyStudyCount,
+                    last_studied_at: user.dailyLastStudiedAt
+                });
+            }
+            return NextResponse.json({ error: "Invalid request for daily-10" }, { status: 400 });
+        } catch (err) {
+            console.error(err);
+            return NextResponse.json({ error: "Failed to update daily study count" }, { status: 500 });
+        }
+    }
+
     try {
         const body = await req.json();
-        const { words, title } = body;
+        const { words, title, study_count } = body;
 
         // まずデッキが本人のものか確認
         const deck = await prisma.deck.findUnique({
@@ -98,23 +123,39 @@ export async function PUT(
             return NextResponse.json({ error: "Deck not found" }, { status: 404 });
         }
 
+        const updateData: any = {};
+
         // タイトル変更のリクエストがある場合
         if (title !== undefined) {
-            await prisma.deck.update({
-                where: { id },
-                data: { title }
-            });
+            updateData.title = title;
         }
 
         // フォルダ移動
         // @ts-ignore
         if (body.folderId !== undefined) {
             // @ts-ignore
-            await prisma.deck.update({
+            updateData.folderId = body.folderId;
+        }
+
+        // 学習回数の変更
+        if (study_count !== undefined) {
+            updateData.study_count = Number(study_count);
+            // 学習回数が0から増えて、かつ最終学習日時が設定されていない場合は今日に設定する
+            if (deck.study_count === 0 && Number(study_count) > 0 && !deck.last_studied_at) {
+                updateData.last_studied_at = new Date();
+            }
+        }
+
+        if (Object.keys(updateData).length > 0) {
+            const updatedDeck = await prisma.deck.update({
                 where: { id },
-                // @ts-ignore
-                data: { folderId: body.folderId }
+                data: updateData
             });
+            deck.title = updatedDeck.title;
+            // @ts-ignore
+            deck.folderId = updatedDeck.folderId;
+            deck.study_count = updatedDeck.study_count;
+            deck.last_studied_at = updatedDeck.last_studied_at;
         }
 
         // 単語追加のリクエストがある場合
