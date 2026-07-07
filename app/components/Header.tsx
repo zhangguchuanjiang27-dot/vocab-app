@@ -118,8 +118,8 @@ export default function Header({ initialCredits, session, plan, subscriptionPeri
                 {/* Left Side: Logo & Nav Links */}
                 <div className="flex items-center gap-3 sm:gap-6 flex-shrink-0">
                     <Link href="/" className="font-black text-xl tracking-tight flex items-center gap-1 sm:gap-2">
-                        <img src="/logo.png" alt="Voca Logo" className="w-9 h-9 sm:w-8 sm:h-8 object-contain flex-shrink-0" />
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">Voca</span>
+                        <img src="/logo.png" alt="VOCA Logo" className="w-9 h-9 sm:w-8 sm:h-8 object-contain flex-shrink-0" />
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300">VOCA</span>
                     </Link>
 
 

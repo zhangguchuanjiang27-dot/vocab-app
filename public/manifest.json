@@ -1,6 +1,6 @@
 {
-    "name": "Voca - AI Wordbook",
-    "short_name": "Voca",
+    "name": "VOCA - AI Wordbook",
+    "short_name": "VOCA",
     "description": "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
     "start_url": "/",
     "display": "standalone",

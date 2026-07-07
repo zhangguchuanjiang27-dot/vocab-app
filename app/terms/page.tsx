@@ -6,7 +6,7 @@ export default function TermsPage() {
         <div className="max-w-3xl mx-auto px-6 py-24 text-neutral-100">
             <h1 className="text-3xl font-black mb-8 text-white">利用規約</h1>
             <div className="space-y-6 text-sm sm:text-base leading-relaxed text-neutral-300">
-                <p className="font-bold mb-8">この利用規約（以下，「本規約」といいます。）は，「Voca」（以下，「本サービス」といいます。）の利用条件を定めるものです。本サービスを利用する皆さま（以下，「ユーザー」といいます。）には，本規約に従って，本サービスをご利用いただきます。</p>
+                <p className="font-bold mb-8">この利用規約（以下，「本規約」といいます。）は，「VOCA」（以下，「本サービス」といいます。）の利用条件を定めるものです。本サービスを利用する皆さま（以下，「ユーザー」といいます。）には，本規約に従って，本サービスをご利用いただきます。</p>
 
                 <section>
                     <h3 className="text-xl font-bold mt-8 mb-4 text-white">第1条（適用）</h3>

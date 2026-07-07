@@ -36,7 +36,7 @@ import Header from "./components/Header"; // Adjust import path
 import BottomNav from "./components/BottomNav";
 
 export const metadata: Metadata = {
-  title: "Voca - AI Wordbook",
+  title: "VOCA - AI Wordbook",
   description: "AIが一瞬で単語帳を作成。効率的な英語学習をサポートします。",
   manifest: "/manifest.json",
   themeColor: "#050505",
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Voca"
+    title: "VOCA"
   }
 };
 

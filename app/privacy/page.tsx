@@ -6,7 +6,7 @@ export default function PrivacyPage() {
         <div className="max-w-3xl mx-auto px-6 py-24 text-neutral-100">
             <h1 className="text-3xl font-black mb-8 text-white">プライバシーポリシー</h1>
             <div className="space-y-6 text-sm sm:text-base leading-relaxed text-neutral-300">
-                <p className="font-bold mb-8">「Voca」（以下，「本サービス」といいます。）における，ユーザーの個人情報の取扱いについて，以下のとおりプライバシーポリシー（以下，「本ポリシー」といいます。）を定めます。</p>
+                <p className="font-bold mb-8">「VOCA」（以下，「本サービス」といいます。）における，ユーザーの個人情報の取扱いについて，以下のとおりプライバシーポリシー（以下，「本ポリシー」といいます。）を定めます。</p>
 
                 <section>
                     <h3 className="text-xl font-bold mt-8 mb-4 text-white">第1条（個人情報）</h3>

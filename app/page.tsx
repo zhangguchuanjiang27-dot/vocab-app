@@ -1064,10 +1064,10 @@ export default function Home() {
               <div className="absolute top-[10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/20 blur-[120px] rounded-full -z-10 animate-pulse"></div>
               <div className="absolute bottom-[-10%] left-[20%] w-[500px] h-[500px] bg-sky-400/20 blur-[100px] rounded-full -z-10 animate-pulse delay-1000"></div>
 
-              {/* Voca Brand Header */}
+              {/* VOCA Brand Header */}
               <div className="mb-6 animate-in fade-in slide-in-from-top-8 duration-1000">
                 <h2 className="text-4xl sm:text-5xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300" style={{ fontFamily: 'var(--font-merriweather)' }}>
-                  Voca
+                  VOCA
                 </h2>
               </div>
 
