@@ -22,6 +22,8 @@ export default function RankingPage() {
 
     useEffect(() => {
         if (status === 'unauthenticated') {
+            setRankings([]);
+            setIsPublicRanking(null);
             setLoading(false);
             return;
         }
@@ -29,21 +31,34 @@ export default function RankingPage() {
         const fetchRanking = async () => {
             setLoading(true);
             try {
-                const [rankRes, userRes] = await Promise.all([
-                    fetch(`/api/ranking?period=${period}`),
-                    fetch(`/api/user/credits`)
-                ]);
+                const userRes = await fetch(`/api/user/credits`);
+
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    const participatesInRanking = userData.isPublicRanking === true;
+                    setIsPublicRanking(participatesInRanking);
+
+                    if (!participatesInRanking) {
+                        setRankings([]);
+                        return;
+                    }
+                } else {
+                    setIsPublicRanking(false);
+                    setRankings([]);
+                    return;
+                }
+
+                const rankRes = await fetch(`/api/ranking?period=${period}`);
 
                 if (rankRes.ok) {
                     const data = await rankRes.json();
-                    setRankings(data);
-                }
-                if (userRes.ok) {
-                    const userData = await userRes.json();
-                    setIsPublicRanking(userData.isPublicRanking);
+                    setRankings(Array.isArray(data) ? data : []);
+                } else {
+                    setRankings([]);
                 }
             } catch (error) {
                 console.error(error);
+                setRankings([]);
             } finally {
                 setLoading(false);
             }
@@ -166,7 +181,11 @@ export default function RankingPage() {
 
                 {/* Ranking List */}
                 <div className="bg-neutral-900 rounded-3xl border border-neutral-800 overflow-hidden shadow-sm">
-                    {loading ? (
+                    {isPublicRanking === false ? (
+                        <div className="p-12 text-center text-neutral-400">
+                            ランキングに参加すると表示されます
+                        </div>
+                    ) : loading ? (
                         <div className="p-12 text-center text-neutral-400">
                             Loading ranking...
                         </div>

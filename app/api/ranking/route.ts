@@ -4,6 +4,21 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 
 export async function GET(req: Request) {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const currentUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { isPublicRanking: true },
+    });
+
+    if (!currentUser?.isPublicRanking) {
+        return NextResponse.json({ error: "Ranking participation required" }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const period = searchParams.get("period") || "lifetime"; // lifetime, yearly, monthly, weekly
 
